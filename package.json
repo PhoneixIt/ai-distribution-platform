@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "demo:partner-discovery": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings src/agents/partner-discovery/runner.ts",
+    "smoke": "node scripts/smoke-test.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
