@@ -22,7 +22,6 @@ type ScrapeResponse = {
 }
 
 type ResearchPage = { url: string; title: string; text: string }
-
 type Fact = { value: string; evidence: PartnerEvidenceSource }
 
 function getApiKey() {
@@ -34,18 +33,13 @@ function getApiKey() {
 async function firecrawlRequest<T>(path: string, body: unknown): Promise<T> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
-
   try {
     const response = await fetch(`${FIRECRAWL_API_URL}${path}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${getApiKey()}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${getApiKey()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       signal: controller.signal,
     })
-
     const payload = (await response.json()) as { data?: T; error?: string }
     if (!response.ok) throw new Error(payload.error || `Firecrawl HTTP ${response.status}`)
     if (payload.data === undefined) throw new Error('Firecrawl returned no data.')
@@ -56,11 +50,7 @@ async function firecrawlRequest<T>(path: string, body: unknown): Promise<T> {
 }
 
 function cleanText(value: string) {
-  return value
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/[#*_>`~-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return value.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[#*_>`~-]+/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
 function excerpt(text: string, term: string) {
@@ -70,12 +60,7 @@ function excerpt(text: string, term: string) {
 }
 
 function makeEvidence(page: ResearchPage, term: string): PartnerEvidenceSource {
-  return {
-    title: page.title || page.url,
-    url: page.url,
-    sourceType: 'company-website',
-    excerpt: excerpt(page.text, term),
-  }
+  return { title: page.title || page.url, url: page.url, sourceType: 'company-website', excerpt: excerpt(page.text, term) }
 }
 
 function uniqueFacts(facts: Fact[]) {
@@ -90,7 +75,7 @@ function findFacts(pages: ResearchPage[], patterns: Array<{ pattern: RegExp; val
       if (!match) continue
       const source = makeEvidence(page, match[0])
       if (!context || context.test(source.excerpt || '')) facts.push({ value: item.value, evidence: source })
-      context?.lastIndex = 0
+      if (context) context.lastIndex = 0
     }
   }
   return uniqueFacts(facts)
@@ -104,7 +89,6 @@ async function scrapePage(url: string) {
     blockAds: true,
     storeInCache: true,
   })
-
   return {
     page: {
       url: result.metadata?.sourceURL || result.metadata?.url || url,
@@ -117,34 +101,19 @@ async function scrapePage(url: string) {
 
 function usefulInternalLinks(links: string[], root: URL) {
   const keywords = ['about', 'service', 'solution', 'industry', 'partner', 'company', 'security', 'contact', 'impressum']
-  return [...new Set(links)]
-    .map((value) => {
-      try {
-        return new URL(value, root)
-      } catch {
-        return null
-      }
-    })
-    .filter((url): url is URL => !!url && url.origin === root.origin)
-    .filter((url) => keywords.some((keyword) => `${url.pathname} ${url.search}`.toLowerCase().includes(keyword)))
+  const urls = [...new Set(links)].map((value) => {
+    try { return new URL(value, root) } catch { return null }
+  }).filter((url): url is URL => !!url && url.origin === root.origin)
+  const scored = urls.filter((url) => keywords.some((keyword) => `${url.pathname} ${url.search}`.toLowerCase().includes(keyword)))
     .sort((left, right) => {
       const score = (url: URL) => keywords.reduce((total, keyword) => total + (`${url.pathname} ${url.search}`.toLowerCase().includes(keyword) ? 1 : 0), 0)
       return score(right) - score(left)
     })
-    .slice(0, RESEARCH_PAGE_LIMIT - 1)
-    .map((url) => url.toString())
+  return scored.slice(0, RESEARCH_PAGE_LIMIT - 1).map((url) => url.toString())
 }
 
 function failedResult(request: CompanyResearchRequest, error: unknown): CompanyResearchResult {
-  return {
-    companyName: request.companyName,
-    website: request.website,
-    evidence: [],
-    confidence: 0,
-    researchStatus: 'failed',
-    pagesFetched: 0,
-    failedUrls: [error instanceof Error ? error.message : request.website],
-  }
+  return { companyName: request.companyName, website: request.website, evidence: [], confidence: 0, researchStatus: 'failed', pagesFetched: 0, failedUrls: [error instanceof Error ? error.message : request.website] }
 }
 
 export function createFirecrawlWebSearchProvider(): WebSearchProvider {
@@ -194,56 +163,44 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         const first = await scrapePage(request.website)
         const pages: ResearchPage[] = [first.page]
         const failedUrls: string[] = []
-
-        const secondary = await Promise.allSettled(usefulInternalLinks(first.links, root).map(scrapePage))
+        const secondaryUrls = usefulInternalLinks(first.links, root)
+        const secondary = await Promise.allSettled(secondaryUrls.map(scrapePage))
         for (let i = 0; i < secondary.length; i += 1) {
           const result = secondary[i]
           if (result.status === 'fulfilled' && result.value.page.text) pages.push(result.value.page)
-          else failedUrls.push(usefulInternalLinks(first.links, root)[i])
+          else failedUrls.push(secondaryUrls[i])
         }
 
-        const allFacts = [
-          ...findFacts(pages, [
-            { pattern: /\bGermany\b|\bDeutschland\b/i, value: 'Germany' },
-            { pattern: /\bMittelstand\b|\bMittelständ\w*/i, value: 'Germany' },
-          ]),
-          ...findFacts(pages, [
-            { pattern: /\bmanaged security service provider\b/i, value: 'MSSP' },
-            { pattern: /\bmanaged service provider\b/i, value: 'MSP' },
-            { pattern: /\bMSSP\b/i, value: 'MSSP' },
-            { pattern: /\bMSP\b/i, value: 'MSP' },
-            { pattern: /\bsystem integrator\b/i, value: 'System Integrator' },
-            { pattern: /\bvalue[- ]added reseller\b/i, value: 'Value-added Reseller' },
-            { pattern: /\breseller\b/i, value: 'Reseller' },
-            { pattern: /\bdistributor\b/i, value: 'Distributor' },
-          ]),
-          ...findFacts(pages, [
-            { pattern: /\bcybersecurity\b|\bcyber security\b/i, value: 'Cybersecurity' },
-            { pattern: /\bcloud security\b/i, value: 'Cloud security' },
-            { pattern: /\bMicrosoft Azure\b/i, value: 'Microsoft Azure' },
-            { pattern: /\bAmazon Web Services\b|\bAWS\b/i, value: 'AWS' },
-            { pattern: /\bCisco\b/i, value: 'Cisco' },
-          ]),
-        ]
-
-        const partnerTypes = uniqueFacts(allFacts.filter((fact) => ['MSSP', 'MSP', 'System Integrator', 'Value-added Reseller', 'Reseller', 'Distributor'].includes(fact.value)))
-        const technologies = uniqueFacts(allFacts.filter((fact) => ['Cybersecurity', 'Cloud security', 'Microsoft Azure', 'AWS', 'Cisco'].includes(fact.value)))
-        const country = allFacts.find((fact) => fact.value === 'Germany')?.value
+        const countryFacts = findFacts(pages, [{ pattern: /\bGermany\b|\bDeutschland\b/i, value: 'Germany' }, { pattern: /\bMittelstand\b|\bMittelständ\w*/i, value: 'Germany' }])
+        const partnerTypeFacts = findFacts(pages, [
+          { pattern: /\bmanaged security service provider\b/i, value: 'MSSP' },
+          { pattern: /\bmanaged service provider\b/i, value: 'MSP' },
+          { pattern: /\bMSSP\b/i, value: 'MSSP' },
+          { pattern: /\bMSP\b/i, value: 'MSP' },
+          { pattern: /\bsystem integrator\b/i, value: 'System Integrator' },
+          { pattern: /\bvalue[- ]added reseller\b/i, value: 'Value-added Reseller' },
+          { pattern: /\breseller\b/i, value: 'Reseller' },
+          { pattern: /\bdistributor\b/i, value: 'Distributor' },
+        ])
+        const technologyFacts = findFacts(pages, [
+          { pattern: /\bcybersecurity\b|\bcyber security\b/i, value: 'Cybersecurity' },
+          { pattern: /\bcloud security\b/i, value: 'Cloud security' },
+          { pattern: /\bMicrosoft Azure\b/i, value: 'Microsoft Azure' },
+          { pattern: /\bAmazon Web Services\b|\bAWS\b/i, value: 'AWS' },
+          { pattern: /\bCisco\b/i, value: 'Cisco' },
+        ])
         const description = first.page.text.slice(0, 280).trim()
-        const evidenceItems = [
-          ...allFacts.map((fact) => fact.evidence),
-          ...(description ? [makeEvidence(first.page, description)] : []),
-        ]
-
+        const evidenceItems = [...countryFacts, ...partnerTypeFacts, ...technologyFacts].map((fact) => fact.evidence)
+        if (description) evidenceItems.push(makeEvidence(first.page, description))
         return {
           companyName: request.companyName,
           website: request.website,
           ...(description ? { description } : {}),
-          ...(country ? { country, locations: [country] } : {}),
-          partnerTypes: partnerTypes.map((fact) => fact.value),
-          technologies: technologies.map((fact) => fact.value),
-          evidence: uniqueFacts(evidenceItems.map((item) => ({ value: `${item.url}:${item.excerpt}`, evidence: item }))).map((fact) => fact.evidence),
-          confidence: Math.min(0.95, Math.max(0.35, 0.4 + allFacts.length * 0.05 - (failedUrls.length ? 0.08 : 0))),
+          ...(countryFacts[0]?.value ? { country: countryFacts[0].value, locations: [countryFacts[0].value] } : {}),
+          partnerTypes: partnerTypeFacts.map((fact) => fact.value),
+          technologies: technologyFacts.map((fact) => fact.value),
+          evidence: [...new Map(evidenceItems.map((item) => [`${item.url}:${item.excerpt}`, item])).values()],
+          confidence: Math.min(0.95, Math.max(0.35, 0.4 + (countryFacts.length + partnerTypeFacts.length + technologyFacts.length) * 0.05 - (failedUrls.length ? 0.08 : 0))),
           researchStatus: failedUrls.length ? 'partial' : 'researched',
           pagesFetched: pages.length,
           failedUrls,
