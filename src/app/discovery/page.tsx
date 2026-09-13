@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { FormEvent, useState } from 'react'
 
 type Candidate = {
+  candidateId: string | null
   candidate: {
     companyName: string
     website: string
@@ -42,12 +43,13 @@ export default function DiscoveryPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [report, setReport] = useState<Report | null>(null)
+  const [promoting, setPromoting] = useState<string | null>(null)
+  const [promoted, setPromoted] = useState<Record<string, boolean>>({})
 
   async function runDiscovery(event: FormEvent) {
     event.preventDefault()
     setLoading(true)
     setError('')
-
     try {
       const response = await fetch('/api/discovery', {
         method: 'POST',
@@ -60,15 +62,33 @@ export default function DiscoveryPage() {
           desiredCandidateCount: Number(count),
         }),
       })
-
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Discovery failed.')
-
       setReport(payload.report as Report)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Discovery failed.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function promote(candidateId: string | null) {
+    if (!candidateId) return
+    setPromoting(candidateId)
+    setError('')
+    try {
+      const response = await fetch('/api/discovery/promote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidateId }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'Could not save partner.')
+      setPromoted((current) => ({ ...current, [candidateId]: true }))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not save partner.')
+    } finally {
+      setPromoting(null)
     }
   }
 
@@ -105,23 +125,32 @@ export default function DiscoveryPage() {
               <Stat label="Queries" value={report.searchQueries.length} />
             </div>
             <div className="mt-6 space-y-4">
-              {report.finalRankedCandidates.map((item, index) => (
-                <article key={`${item.candidate.website}-${index}`} className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <div className="flex items-center gap-3"><span className="text-sm text-slate-500">#{index + 1}</span><h2 className="text-xl font-semibold">{item.candidate.companyName}</h2><span className="rounded-full border border-slate-700 px-2 py-1 text-xs text-slate-300">{item.qualification.status.replace('_', ' ')}</span></div>
-                      <a href={item.candidate.website} target="_blank" rel="noreferrer" className="mt-1 block text-sm text-blue-400 hover:text-blue-300">{item.candidate.website}</a>
+              {report.finalRankedCandidates.map((item, index) => {
+                const isPromoted = !!item.candidateId && promoted[item.candidateId]
+                return (
+                  <article key={`${item.candidate.website}-${index}`} className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <div className="flex items-center gap-3"><span className="text-sm text-slate-500">#{index + 1}</span><h2 className="text-xl font-semibold">{item.candidate.companyName}</h2><span className="rounded-full border border-slate-700 px-2 py-1 text-xs text-slate-300">{item.qualification.status.replace('_', ' ')}</span></div>
+                        <a href={item.candidate.website} target="_blank" rel="noreferrer" className="mt-1 block text-sm text-blue-400 hover:text-blue-300">{item.candidate.website}</a>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-center"><Score label="Fit" value={item.candidate.fitScore} /><Score label="Qualification" value={item.qualification.score} /><Score label="Confidence" value={Math.round((item.candidate.researchConfidence || 0) * 100)} /></div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-center"><Score label="Fit" value={item.candidate.fitScore} /><Score label="Qualification" value={item.qualification.score} /><Score label="Confidence" value={Math.round((item.candidate.researchConfidence || 0) * 100)} /></div>
-                  </div>
-                  <p className="mt-4 text-sm leading-6 text-slate-400">{item.candidate.description || 'No verified description available.'}</p>
-                  <div className="mt-4 grid gap-4 md:grid-cols-3 text-sm"><Fact label="Country" value={item.candidate.country || 'Unknown'} /><Fact label="Partner type" value={item.candidate.partnerTypes.join(', ') || 'Unknown'} /><Fact label="Customer segment" value={item.candidate.customerSegments.join(', ') || 'Unknown'} /></div>
-                  <div className="mt-5 grid gap-5 md:grid-cols-2">
-                    <div><h3 className="text-sm font-semibold text-slate-200">Why it matched</h3><ul className="mt-2 space-y-1 text-sm text-slate-400">{(item.qualification.reasons.length ? item.qualification.reasons : ['No additional reason recorded.']).map((reason) => <li key={reason}>• {reason}</li>)}</ul></div>
-                    <div><h3 className="text-sm font-semibold text-slate-200">Evidence</h3><ul className="mt-2 space-y-1 text-sm text-slate-400">{(item.evidenceUrls.length ? item.evidenceUrls : ['No evidence URL recorded.']).map((url) => <li key={url} className="truncate"><a href={url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300">{url}</a></li>)}</ul></div>
-                  </div>
-                </article>
-              ))}
+                    <p className="mt-4 text-sm leading-6 text-slate-400">{item.candidate.description || 'No verified description available.'}</p>
+                    <div className="mt-4 grid gap-4 md:grid-cols-3 text-sm"><Fact label="Country" value={item.candidate.country || 'Unknown'} /><Fact label="Partner type" value={item.candidate.partnerTypes.join(', ') || 'Unknown'} /><Fact label="Customer segment" value={item.candidate.customerSegments.join(', ') || 'Unknown'} /></div>
+                    <div className="mt-5 grid gap-5 md:grid-cols-2">
+                      <div><h3 className="text-sm font-semibold text-slate-200">Why it matched</h3><ul className="mt-2 space-y-1 text-sm text-slate-400">{(item.qualification.reasons.length ? item.qualification.reasons : ['No additional reason recorded.']).map((reason) => <li key={reason}>• {reason}</li>)}</ul></div>
+                      <div><h3 className="text-sm font-semibold text-slate-200">Evidence</h3><ul className="mt-2 space-y-1 text-sm text-slate-400">{(item.evidenceUrls.length ? item.evidenceUrls : ['No evidence URL recorded.']).map((url) => <li key={url} className="truncate"><a href={url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300">{url}</a></li>)}</ul></div>
+                    </div>
+                    <div className="mt-5 flex items-center justify-between border-t border-slate-800 pt-4">
+                      <span className="text-xs text-slate-500">Research status: {item.candidate.researchStatus}</span>
+                      <button onClick={() => promote(item.candidateId)} disabled={!item.candidateId || promoting === item.candidateId || isPromoted} className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:border-blue-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50">
+                        {isPromoted ? 'Saved to directory' : promoting === item.candidateId ? 'Saving...' : 'Save to partner directory'}
+                      </button>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
             {!!report.skippedResults.length && <details className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-5"><summary className="cursor-pointer text-sm font-medium text-slate-300">Skipped or failed results ({report.skippedResults.length})</summary><ul className="mt-3 space-y-1 text-sm text-slate-500">{report.skippedResults.map((item) => <li key={item}>• {item}</li>)}</ul></details>}
           </section>
