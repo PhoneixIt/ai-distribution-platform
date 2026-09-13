@@ -290,7 +290,7 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         ]
         const evidence = [...new Map(allFacts.map((fact) => [`${fact.evidence.url}:${fact.value}`, fact.evidence])).values()]
         const description = first.page.text.slice(0, 280).trim()
-        if (description) evidence.push(evidenceFor(first.page, description))
+        if (description) evidence.push(evidence(first.page, description))
         const inferredCountry = countryFacts[0]?.value
         const confidence = Math.min(0.95, Math.max(0.35, 0.4 + allFacts.length * 0.04 - (failedUrls.length ? 0.08 : 0)))
 
