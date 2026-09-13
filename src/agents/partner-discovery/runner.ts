@@ -97,7 +97,9 @@ export async function runPartnerDiscovery(
     )
   }
 
-  const finalRankedCandidates = reportCandidates.sort(rankCandidates)
+  const finalRankedCandidates = reportCandidates
+    .sort(rankCandidates)
+    .slice(0, request.desiredCandidateCount)
 
   return {
     request,
