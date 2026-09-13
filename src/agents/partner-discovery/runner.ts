@@ -35,6 +35,8 @@ export type PartnerDiscoveryRunnerDependencies = {
   companyResearch?: CompanyResearchProvider
 }
 
+const RESEARCH_CONCURRENCY = 8
+
 function rankCandidates(left: PartnerDiscoveryReportCandidate, right: PartnerDiscoveryReportCandidate) {
   const statusRank = {
     qualified: 3,
@@ -72,6 +74,44 @@ function markResearchFailure(candidate: PartnerCandidate, error: unknown) {
   }
 }
 
+async function researchCandidatesInParallel(
+  candidates: PartnerCandidate[],
+  agent: ReturnType<typeof createPartnerDiscoveryAgent>
+) {
+  const results: PartnerDiscoveryReportCandidate[] = new Array(candidates.length)
+  let nextIndex = 0
+
+  async function worker() {
+    while (true) {
+      const index = nextIndex++
+      if (index >= candidates.length) return
+
+      const preliminaryCandidate = candidates[index]
+      let researchedCandidate: PartnerCandidate
+
+      try {
+        researchedCandidate = await agent.researchCandidate(preliminaryCandidate)
+      } catch (error) {
+        researchedCandidate = markResearchFailure(preliminaryCandidate, error)
+      }
+
+      results[index] = reportCandidate(
+        researchedCandidate,
+        agent.qualifyCandidate(researchedCandidate, agent.request)
+      )
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(RESEARCH_CONCURRENCY, Math.max(candidates.length, 1)) },
+      () => worker()
+    )
+  )
+
+  return results
+}
+
 export async function runPartnerDiscovery(
   request: PartnerDiscoveryRequest,
   dependencies: PartnerDiscoveryRunnerDependencies = {}
@@ -81,21 +121,7 @@ export async function runPartnerDiscovery(
     companyResearch: dependencies.companyResearch || createLocalCompanyResearchProvider(),
   })
   const discovery = await agent.discoverFromWeb(request)
-  const reportCandidates: PartnerDiscoveryReportCandidate[] = []
-
-  for (const preliminaryCandidate of discovery.candidates) {
-    let researchedCandidate: PartnerCandidate
-
-    try {
-      researchedCandidate = await agent.researchCandidate(preliminaryCandidate)
-    } catch (error) {
-      researchedCandidate = markResearchFailure(preliminaryCandidate, error)
-    }
-
-    reportCandidates.push(
-      reportCandidate(researchedCandidate, agent.qualifyCandidate(researchedCandidate, request))
-    )
-  }
+  const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent)
 
   const finalRankedCandidates = reportCandidates
     .sort(rankCandidates)
