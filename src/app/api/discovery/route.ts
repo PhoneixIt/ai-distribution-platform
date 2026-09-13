@@ -26,7 +26,9 @@ function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDisco
 }
 
 export async function POST(request: Request) {
-  if (!process.env.EXA_API_KEY) return NextResponse.json({ error: 'EXA_API_KEY is not configured on the server.' }, { status: 503 })
+  if (!process.env.EXA_API_KEY && !process.env.FIRECRAWL_API_KEY) {
+    return NextResponse.json({ error: 'No web discovery provider is configured on the server.' }, { status: 503 })
+  }
 
   let input: Partial<PartnerDiscoveryRequest>
   try {
@@ -56,7 +58,7 @@ export async function POST(request: Request) {
 
   const { data: run, error: runError } = await supabase
     .from('discovery_runs')
-    .insert({ user_id: user.id, request: discoveryRequest, provider: 'exa', status: 'running' })
+    .insert({ user_id: user.id, request: discoveryRequest, provider: 'exa+firecrawl', status: 'running' })
     .select('id')
     .single()
 
