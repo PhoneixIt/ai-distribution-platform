@@ -8,6 +8,10 @@ import type {
   WebSearchResult,
 } from './types'
 
+const DISCOVERY_POOL_MINIMUM = 20
+const DISCOVERY_POOL_MULTIPLIER = 4
+const DISCOVERY_POOL_MAXIMUM = 50
+
 function titleCase(value: string) {
   return value.replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
@@ -83,9 +87,9 @@ export async function discoverPartnersFromWeb(
   provider: WebSearchProvider
 ): Promise<PartnerDiscoveryResult> {
   const searchQueries = buildPartnerDiscoveryQueries(request)
-  const maxResultsPerQuery = Math.max(
-    1,
-    Math.ceil(request.desiredCandidateCount / Math.max(searchQueries.length, 1))
+  const discoveryPoolSize = Math.min(
+    Math.max(request.desiredCandidateCount * DISCOVERY_POOL_MULTIPLIER, DISCOVERY_POOL_MINIMUM),
+    DISCOVERY_POOL_MAXIMUM
   )
   const candidates = new Map<string, PartnerCandidate>()
   const skippedResults: string[] = []
@@ -95,7 +99,7 @@ export async function discoverPartnersFromWeb(
     let results: WebSearchResult[]
 
     try {
-      results = await provider.search({ query, maxResults: maxResultsPerQuery })
+      results = await provider.search({ query, maxResults: 10 })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown search error.'
       skippedResults.push(`Query failed: ${query} (${message})`)
@@ -135,7 +139,7 @@ export async function discoverPartnersFromWeb(
     request,
     candidates: [...candidates.values()]
       .sort((left, right) => right.fitScore - left.fitScore)
-      .slice(0, request.desiredCandidateCount),
+      .slice(0, discoveryPoolSize),
     generatedAt: new Date().toISOString(),
     source: 'web-search',
     searchQueries,
