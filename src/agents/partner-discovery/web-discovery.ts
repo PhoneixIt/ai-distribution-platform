@@ -16,15 +16,29 @@ function titleCase(value: string) {
   return value.replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
-function companyNameFromResult(result: WebSearchResult) {
-  const title = result.title.trim()
-  const titleName = title.split(/\s+[|:-]\s+/)[0].trim()
-
-  if (titleName.length > 2) return titleName
-
+function companyNameFromDomain(result: WebSearchResult) {
   const hostname = new URL(result.url).hostname.replace(/^www\./, '')
   const domainName = hostname.split('.')[0].replace(/[-_]+/g, ' ')
   return titleCase(domainName)
+}
+
+function companyNameFromResult(result: WebSearchResult) {
+  const title = result.title.trim()
+  const domainName = companyNameFromDomain(result)
+  const normalizedTitle = title.toLowerCase()
+  const genericTitle = /^(?:home page|homepage|cybersecurity|cyber security|managed detection & response|managed detection and response|soc as a service|cybersecurity managed services|cybersecurity consulting|cyber security|leading it security company in germany|the state of it security|measures for more cybersecurity|cybersicherheit)$/i
+  const articleLike = /\b(?:study|studie|report|bericht|news|article|obligations|deadlines|measures|workforce|lagebild|state of)\b/i
+  const partnershipTitle = title.match(/^([A-Z][A-Za-z0-9&.\s-]{2,50})\s+(?:partnership|partners?)\b/i)
+
+  if (partnershipTitle?.[1]?.trim()) return partnershipTitle[1].trim()
+  if (genericTitle.test(title) || articleLike.test(title)) return domainName
+
+  const titleName = title.split(/\s+[|:-]\s+/)[0].trim()
+  const wordCount = titleName.split(/\s+/).filter(Boolean).length
+  const looksLikeSentence = /\b(?:für|for|and|with|services|beratung|consulting|selection|security workforce)\b/i.test(titleName)
+
+  if (titleName.length > 2 && wordCount <= 7 && !looksLikeSentence) return titleName
+  return domainName
 }
 
 function websiteFromResult(result: WebSearchResult) {
