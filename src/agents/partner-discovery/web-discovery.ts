@@ -8,9 +8,9 @@ import type {
   WebSearchResult,
 } from './types'
 
-const DISCOVERY_POOL_MINIMUM = 20
-const DISCOVERY_POOL_MULTIPLIER = 4
-const DISCOVERY_POOL_MAXIMUM = 50
+const DISCOVERY_POOL_MINIMUM = 30
+const DISCOVERY_POOL_MULTIPLIER = 3
+const DISCOVERY_POOL_MAXIMUM = 100
 
 function titleCase(value: string) {
   return value.replace(/\b\w/g, (letter) => letter.toUpperCase())
