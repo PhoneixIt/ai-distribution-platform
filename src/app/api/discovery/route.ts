@@ -3,7 +3,7 @@ import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 
-const MAX_CANDIDATES = 25
+const MAX_CANDIDATES = 100
 
 function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDiscoveryRequest {
   const partnerTypes = Array.isArray(input.partnerTypes)
