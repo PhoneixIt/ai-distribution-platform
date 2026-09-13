@@ -76,7 +76,8 @@ function markResearchFailure(candidate: PartnerCandidate, error: unknown) {
 
 async function researchCandidatesInParallel(
   candidates: PartnerCandidate[],
-  agent: ReturnType<typeof createPartnerDiscoveryAgent>
+  agent: ReturnType<typeof createPartnerDiscoveryAgent>,
+  request: PartnerDiscoveryRequest
 ) {
   const results: PartnerDiscoveryReportCandidate[] = new Array(candidates.length)
   let nextIndex = 0
@@ -97,7 +98,7 @@ async function researchCandidatesInParallel(
 
       results[index] = reportCandidate(
         researchedCandidate,
-        agent.qualifyCandidate(researchedCandidate, agent.request)
+        agent.qualifyCandidate(researchedCandidate, request)
       )
     }
   }
@@ -121,7 +122,7 @@ export async function runPartnerDiscovery(
     companyResearch: dependencies.companyResearch || createLocalCompanyResearchProvider(),
   })
   const discovery = await agent.discoverFromWeb(request)
-  const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent)
+  const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent, request)
 
   const finalRankedCandidates = reportCandidates
     .sort(rankCandidates)
