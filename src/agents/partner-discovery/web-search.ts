@@ -10,6 +10,7 @@ const DUCKDUCKGO_HTML_URL = 'https://html.duckduckgo.com/html/'
 const EXA_API_KEY_ENV = 'EXA_API_KEY'
 const DEFAULT_MAX_RESULTS = 10
 const MAX_RESULTS_LIMIT = 50
+const MAX_DISCOVERY_QUERIES = 8
 
 function decodeHtml(value: string) {
   return value
@@ -126,26 +127,52 @@ export function createLocalWebSearchProvider(): WebSearchProvider {
   }
 }
 
+function addQuery(queries: string[], value: string) {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+  if (!normalized || queries.includes(normalized) || queries.length >= MAX_DISCOVERY_QUERIES) {
+    return
+  }
+
+  queries.push(normalized)
+}
+
+/** Build complementary discovery queries for recall; detailed verification happens later. */
 export function buildPartnerDiscoveryQueries(request: PartnerDiscoveryRequest) {
   const country = request.country.trim()
   const technology = request.technologyFocus.trim()
+  const customerSegment = request.customerSegment?.trim()
+  const industry = request.industry?.trim()
+  const capability = request.serviceOrCapability?.trim()
+  const vendorPartnership = request.vendorPartnership?.trim()
+  const certification = request.certification?.trim()
+  const companySize = request.companySize?.trim()
+  const queries: string[] = []
 
-  return request.partnerTypes.map(
-    (partnerType) => `${technology} ${partnerType.trim()} ${country}`
-  )
+  for (const partnerType of request.partnerTypes) {
+    const type = partnerType.trim()
+    if (!type) continue
+
+    addQuery(queries, `${technology} ${type} ${country}`)
+    addQuery(queries, `${type} ${technology} services ${country}`)
+    addQuery(queries, [technology, type, customerSegment, industry, country].filter(Boolean).join(' '))
+  }
+
+  addQuery(queries, [technology, customerSegment, country, capability].filter(Boolean).join(' '))
+  addQuery(queries, [technology, country, industry, 'partners'].filter(Boolean).join(' '))
+  addQuery(queries, [technology, country, vendorPartnership, 'partner'].filter(Boolean).join(' '))
+  addQuery(queries, [technology, country, certification].filter(Boolean).join(' '))
+  addQuery(queries, [technology, country, companySize, 'IT services'].filter(Boolean).join(' '))
+
+  return queries
 }
 
 export async function searchForPartnerDiscovery(
   request: PartnerDiscoveryRequest,
   provider: WebSearchProvider
 ) {
-  const maxResultsPerQuery = Math.max(
-    1,
-    Math.ceil(request.desiredCandidateCount / Math.max(request.partnerTypes.length, 1))
-  )
   const queries = buildPartnerDiscoveryQueries(request)
   const results = await Promise.all(
-    queries.map((query) => provider.search({ query, maxResults: maxResultsPerQuery }))
+    queries.map((query) => provider.search({ query, maxResults: DEFAULT_MAX_RESULTS }))
   )
 
   return results.flat().filter((result, index, allResults) =>
