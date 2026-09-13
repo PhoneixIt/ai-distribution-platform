@@ -5,7 +5,6 @@ import type {
   PartnerEvidenceSource,
   WebSearchProvider,
   WebSearchRequest,
-  WebSearchResult,
 } from './types'
 
 const FIRECRAWL_API_URL = 'https://api.firecrawl.dev/v2'
@@ -33,12 +32,10 @@ async function firecrawlRequest<T>(path: string, body: unknown): Promise<T> {
       signal: controller.signal,
     })
 
-    const payload = (await response.json()) as T & { error?: string; warning?: string }
-    if (!response.ok) {
-      throw new Error(payload.error || `Firecrawl HTTP ${response.status}`)
-    }
-
-    return payload
+    const payload = (await response.json()) as { data?: T; error?: string }
+    if (!response.ok) throw new Error(payload.error || `Firecrawl HTTP ${response.status}`)
+    if (payload.data === undefined) throw new Error('Firecrawl returned no data.')
+    return payload.data
   } finally {
     clearTimeout(timeout)
   }
@@ -103,19 +100,10 @@ export function createResilientWebSearchProvider(
 type FirecrawlScrapeResponse = {
   markdown?: string
   links?: string[]
-  metadata?: {
-    title?: string
-    sourceURL?: string
-    url?: string
-    description?: string
-  }
+  metadata?: { title?: string; sourceURL?: string; url?: string }
 }
 
-type ResearchPage = {
-  url: string
-  title: string
-  text: string
-}
+type ResearchPage = { url: string; title: string; text: string }
 
 function cleanText(value: string) {
   return value
@@ -126,8 +114,7 @@ function cleanText(value: string) {
 }
 
 function excerpt(text: string, term: string) {
-  const lower = text.toLowerCase()
-  const index = lower.indexOf(term.toLowerCase())
+  const index = text.toLowerCase().indexOf(term.toLowerCase())
   if (index === -1) return text.slice(0, 260)
   return text.slice(Math.max(0, index - 110), Math.min(text.length, index + term.length + 150)).trim()
 }
@@ -147,19 +134,15 @@ function factsFor(
   context?: RegExp
 ) {
   const facts: Array<{ value: string; evidence: PartnerEvidenceSource }> = []
-
   for (const page of pages) {
     for (const item of patterns) {
       const match = page.text.match(item.pattern)
       if (!match) continue
       const source = evidence(page, match[0])
-      if (!context || context.test(source.excerpt || '')) {
-        facts.push({ value: item.value, evidence: source })
-      }
-      context?.lastIndex && (context.lastIndex = 0)
+      if (!context || context.test(source.excerpt || '')) facts.push({ value: item.value, evidence: source })
+      if (context) context.lastIndex = 0
     }
   }
-
   return [...new Map(facts.map((fact) => [fact.value.toLowerCase(), fact])).values()]
 }
 
@@ -184,7 +167,6 @@ async function scrapePage(url: string) {
     blockAds: true,
     storeInCache: true,
   })
-
   return {
     page: {
       url: result.metadata?.sourceURL || result.metadata?.url || url,
@@ -210,16 +192,13 @@ function failedResult(request: CompanyResearchRequest, error: unknown): CompanyR
 export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvider {
   return {
     async research(request) {
-      if (!process.env.FIRECRAWL_API_KEY) {
-        throw new Error('FIRECRAWL_API_KEY is not configured.')
-      }
+      if (!process.env.FIRECRAWL_API_KEY) throw new Error('FIRECRAWL_API_KEY is not configured.')
 
       try {
         const root = new URL(request.website)
         const first = await scrapePage(request.website)
         const pages: ResearchPage[] = [first.page]
         const failedUrls: string[] = []
-
         const candidateLinks = [...new Set(first.links)]
           .filter((url) => isUsefulInternalLink(url, root))
           .sort((left, right) => {
@@ -235,21 +214,13 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         const secondary = await Promise.allSettled(candidateLinks.map((url) => scrapePage(url)))
         for (let index = 0; index < secondary.length; index += 1) {
           const result = secondary[index]
-          if (result.status === 'fulfilled' && result.value.page.text) {
-            pages.push(result.value.page)
-          } else {
-            failedUrls.push(candidateLinks[index])
-          }
+          if (result.status === 'fulfilled' && result.value.page.text) pages.push(result.value.page)
+          else failedUrls.push(candidateLinks[index])
         }
 
         const countryPatterns = request.country
           ? [{ pattern: new RegExp(`\\b${request.country.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i'), value: request.country }]
-          : [
-              { pattern: /\bGermany\b|\bDeutschland\b/i, value: 'Germany' },
-              { pattern: /\bUnited States\b|\bUSA\b|\bUS\b/i, value: 'United States' },
-              { pattern: /\bUnited Kingdom\b|\bUK\b|\bEngland\b/i, value: 'United Kingdom' },
-            ]
-
+          : [{ pattern: /\bGermany\b|\bDeutschland\b/i, value: 'Germany' }]
         const countryFacts = factsFor(pages, countryPatterns)
         const partnerTypeFacts = factsFor(pages, [
           { pattern: /\bmanaged security service provider\b/i, value: 'MSSP' },
@@ -320,12 +291,8 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         const evidence = [...new Map(allFacts.map((fact) => [`${fact.evidence.url}:${fact.value}`, fact.evidence])).values()]
         const description = first.page.text.slice(0, 280).trim()
         if (description) evidence.push(evidenceFor(first.page, description))
-
         const inferredCountry = countryFacts[0]?.value
-        const confidence = Math.min(
-          0.95,
-          Math.max(0.35, 0.4 + allFacts.length * 0.04 - (failedUrls.length ? 0.08 : 0))
-        )
+        const confidence = Math.min(0.95, Math.max(0.35, 0.4 + allFacts.length * 0.04 - (failedUrls.length ? 0.08 : 0)))
 
         return {
           companyName: request.companyName,
