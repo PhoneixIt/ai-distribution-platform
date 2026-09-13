@@ -1,112 +1,33 @@
-'use client'
-
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { getAuthenticatedClient } from '@/lib/supabase/client'
+
+const pillars = [
+  ['01', 'Discover', 'Find vendors, distributors, partners and customers across the open market.'],
+  ['02', 'Understand', 'Turn public evidence into structured company intelligence you can inspect.'],
+  ['03', 'Match', 'Connect the right vendors, distributors and channel partners to each opportunity.'],
+  ['04', 'Operate', 'Keep opportunities, relationships and next actions in one workspace.'],
+]
 
 export default function Home() {
-  const [partnerCount, setPartnerCount] = useState<number | null>(null)
-  const [distributorCount, setDistributorCount] = useState<number | null>(null)
-  const [opportunityCount, setOpportunityCount] = useState<number | null>(null)
-  const [matchCount, setMatchCount] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function loadDashboard() {
-      const { supabase, error: authError } = await getAuthenticatedClient()
-
-      if (authError) {
-        setLoading(false)
-        return
-      }
-
-      const [partners, distributors, opportunities, matches] = await Promise.all([
-        supabase.from('partners').select('*', { count: 'exact', head: true }),
-        supabase.from('distributors').select('*', { count: 'exact', head: true }),
-        supabase.from('opportunities').select('*', { count: 'exact', head: true }),
-        supabase.from('partner_matches').select('*', { count: 'exact', head: true }),
-      ])
-
-      setPartnerCount(partners.count ?? 0)
-      setDistributorCount(distributors.count ?? 0)
-      setOpportunityCount(opportunities.count ?? 0)
-      setMatchCount(matches.count ?? 0)
-      setLoading(false)
-    }
-
-    loadDashboard()
-  }, [])
-
-  return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <header className="mb-10 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-blue-400">AI Distribution Platform</p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">Channel Dashboard</h1>
-            <p className="mt-2 text-slate-400">AI-powered discovery, intelligence and matching across the channel ecosystem.</p>
-          </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-300">MVP</div>
-        </header>
-
-        <section className="grid gap-4 md:grid-cols-4">
-          <Metric label="Channel Partners" value={partnerCount} hint="Registered partners" loading={loading} />
-          <Metric label="Distributors" value={distributorCount} hint="Distribution network" loading={loading} />
-          <Metric label="Opportunities" value={opportunityCount} hint="Channel opportunities" loading={loading} />
-          <Metric label="AI Matches" value={matchCount} hint="Partner recommendations" loading={loading} />
-        </section>
-
-        <section className="mt-8 grid gap-6 md:grid-cols-2">
-          <ActionCard
-            number="01"
-            title="AI Partner Discovery"
-            description="Search the open web broadly, research companies, preserve evidence and rank the strongest channel candidates."
-            href="/discovery"
-            action="Run Discovery"
-          />
-          <ActionCard
-            number="02"
-            title="Partner Directory"
-            description="Browse and manage the trusted partner layer used for matching and channel opportunities."
-            href="/partners"
-            action="Explore Partners"
-          />
-        </section>
-
-        <section className="mt-6 rounded-xl border border-blue-900/50 bg-blue-950/20 p-6">
-          <p className="text-sm font-medium text-blue-400">PLATFORM ENGINE</p>
-          <h2 className="mt-2 text-2xl font-semibold">Discovery → Research → Evidence → Qualification → Matching</h2>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-            The core platform is being built around evidence-backed channel intelligence instead of unsupported AI guesses. Every important company claim can carry a source, excerpt, confidence and verification status.
-          </p>
-          <div className="mt-6 grid gap-3 text-sm md:grid-cols-5">
-            {['Discovery', 'Research', 'Evidence', 'Qualification', 'Matching'].map((step) => (
-              <div key={step} className="rounded-lg border border-slate-800 bg-slate-900 p-4">{step}</div>
-            ))}
-          </div>
-        </section>
+  return <main className="min-h-screen bg-slate-950 text-white">
+    <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
+      <Link href="/" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-xs font-black">AI</span><span className="text-sm font-semibold">AI Distribution Platform</span></Link>
+      <div className="flex items-center gap-3"><Link href="/login" className="rounded-lg px-3 py-2 text-sm text-slate-300 hover:text-white">Sign in</Link><Link href="/signup" className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold hover:bg-blue-500">Get started</Link></div>
+    </nav>
+    <section className="mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-16 lg:grid-cols-[1.1fr_.9fr] lg:px-8 lg:pt-24">
+      <div>
+        <div className="inline-flex rounded-full border border-blue-900/70 bg-blue-950/30 px-3 py-1 text-xs font-medium text-blue-300">Evidence-backed channel intelligence</div>
+        <h1 className="mt-6 max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl">Build the right channel ecosystem, faster.</h1>
+        <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-400">Discover relevant companies, verify what they do, find the strongest partner relationships and move channel opportunities forward from one operating workspace.</p>
+        <div className="mt-8 flex flex-wrap gap-3"><Link href="/signup" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Create your workspace</Link><Link href="/login" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-600">Sign in</Link></div>
+        <p className="mt-5 text-xs text-slate-600">Built for vendors, distributors, resellers, MSPs, MSSPs, SIs and channel teams.</p>
       </div>
-    </main>
-  )
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-black/20">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5"><div className="flex items-center justify-between"><div><p className="text-xs uppercase tracking-widest text-slate-500">Market search</p><p className="mt-1 font-semibold">Germany · Cybersecurity · MSSP</p></div><span className="rounded-full bg-emerald-950 px-2.5 py-1 text-[11px] text-emerald-300">Live intelligence</span></div><div className="mt-5 grid grid-cols-3 gap-3"><Metric label="Companies" value="247" /><Metric label="Verified" value="181" /><Metric label="Matches" value="36" /></div><div className="mt-5 space-y-3">{['Bechtle Security', 'Computacenter Germany', 'Controlware'].map((name, i) => <div key={name} className="rounded-xl border border-slate-800 bg-slate-900 p-3"><div className="flex items-center justify-between"><span className="text-sm font-medium">{name}</span><span className="text-xs text-blue-300">{92-i*5}% match</span></div><div className="mt-2 h-1.5 rounded-full bg-slate-800"><div className="h-1.5 rounded-full bg-blue-500" style={{width:`${92-i*5}%`}} /></div></div>)}</div></div>
+      </div>
+    </section>
+    <section className="border-y border-slate-900 bg-slate-950/60"><div className="mx-auto grid max-w-7xl gap-4 px-5 py-10 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">{pillars.map(([num,title,copy]) => <div key={num} className="rounded-2xl border border-slate-900 bg-slate-900/40 p-5"><span className="text-xs font-semibold text-blue-400">{num}</span><h2 className="mt-3 font-semibold">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p></div>)}</div></section>
+    <footer className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-10 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between lg:px-8"><span>AI Distribution Platform</span><span>Discovery · Company intelligence · Channel matching · Opportunities</span></footer>
+  </main>
 }
 
-function Metric({ label, value, hint, loading }: { label: string; value: number | null; hint: string; loading: boolean }) {
-  return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-      <p className="text-sm text-slate-400">{label}</p>
-      <p className="mt-2 text-3xl font-bold">{loading ? '...' : value}</p>
-      <p className="mt-2 text-xs text-slate-500">{hint}</p>
-    </div>
-  )
-}
-
-function ActionCard({ number, title, description, href, action }: { number: string; title: string; description: string; href: string; action: string }) {
-  return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-      <p className="text-sm font-medium text-blue-400">{number}</p>
-      <h2 className="mt-2 text-xl font-semibold">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
-      <Link href={href} className="mt-5 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500">{action}</Link>
-    </div>
-  )
-}
+function Metric({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-slate-800 bg-slate-900 p-3"><p className="text-[11px] text-slate-500">{label}</p><p className="mt-1 text-xl font-semibold">{value}</p></div> }
