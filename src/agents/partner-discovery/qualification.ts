@@ -22,10 +22,10 @@ type CriterionState = 'matched' | 'unmet' | 'unknown'
 type EvaluatedCriterion = { state: CriterionState; criterion: QualificationCriterion }
 
 const EXCLUSION_RULES: Array<{ label: string; pattern: RegExp }> = [
-  { label: 'government/public authority', pattern: /\b(?:government|federal|state|municipal|ministry|parliament|bundesregierung|bundesamt|behörde|behoerde|authority)\b/i },
+  { label: 'government/public authority', pattern: /\b(?:government|federal|municipal|ministry|parliament|bundesregierung|bundesamt|behörde|behoerde)\b/i },
   { label: 'research/academic organization', pattern: /\b(?:university|universit(?:y|ät)|research institute|research center|forschungseinrichtung|institut für|wissenschaft)\b/i },
-  { label: 'media/news publisher', pattern: /\b(?:news|magazine|journal|journalist|media|press|publication|editorial|insiders?)\b/i },
-  { label: 'insurance company', pattern: /\b(?:insurance|versicherung|versicherer|insurer)\b/i },
+  { label: 'media/news publisher', pattern: /\b(?:news publisher|news outlet|magazine|journalist|media company|publication|editorial)\b/i },
+  { label: 'insurance company', pattern: /\b(?:insurance company|insurance provider|versicherung|versicherer|insurer)\b/i },
   { label: 'association/federation', pattern: /\b(?:association|federation|verband|verein|chamber|kammer)\b/i },
 ]
 
@@ -120,8 +120,8 @@ function formatEvidence(evidence: PartnerEvidenceSource[]) {
 }
 
 function exclusionFor(candidate: PartnerCandidate) {
-  const text = searchableCandidateText(candidate)
-  const matchedRule = EXCLUSION_RULES.find((rule) => rule.pattern.test(text))
+  const identityText = [candidate.companyName, candidate.description, ...candidate.evidence.filter((source) => source.sourceType === 'search-result').map((source) => `${source.title} ${source.excerpt || ''}`)].join(' ')
+  const matchedRule = EXCLUSION_RULES.find((rule) => rule.pattern.test(identityText))
   if (matchedRule) return matchedRule.label
   if (ARTICLE_TITLE_RULE.test(candidate.companyName) && !candidate.partnerTypes.length) return 'article/report/search-result page'
   return undefined
