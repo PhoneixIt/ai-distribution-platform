@@ -9,8 +9,8 @@ import type {
 const DUCKDUCKGO_HTML_URL = 'https://html.duckduckgo.com/html/'
 const EXA_API_KEY_ENV = 'EXA_API_KEY'
 const DEFAULT_MAX_RESULTS = 10
-const MAX_RESULTS_LIMIT = 50
-const MAX_DISCOVERY_QUERIES = 8
+const MAX_RESULTS_LIMIT = 100
+const MAX_DISCOVERY_QUERIES = 12
 
 function decodeHtml(value: string) {
   return value
@@ -155,6 +155,7 @@ export function buildPartnerDiscoveryQueries(request: PartnerDiscoveryRequest) {
     addQuery(queries, `${technology} ${type} ${country}`)
     addQuery(queries, `${type} ${technology} services ${country}`)
     addQuery(queries, [technology, type, customerSegment, industry, country].filter(Boolean).join(' '))
+    addQuery(queries, `${type} companies ${country}`)
   }
 
   addQuery(queries, [technology, customerSegment, country, capability].filter(Boolean).join(' '))
@@ -162,6 +163,8 @@ export function buildPartnerDiscoveryQueries(request: PartnerDiscoveryRequest) {
   addQuery(queries, [technology, country, vendorPartnership, 'partner'].filter(Boolean).join(' '))
   addQuery(queries, [technology, country, certification].filter(Boolean).join(' '))
   addQuery(queries, [technology, country, companySize, 'IT services'].filter(Boolean).join(' '))
+  addQuery(queries, `${technology} managed services ${country}`)
+  addQuery(queries, `${technology} security services ${country}`)
 
   return queries
 }
