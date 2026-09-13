@@ -1,0 +1,352 @@
+import type {
+  PartnerCandidate,
+  PartnerDiscoveryRequest,
+  PartnerEvidenceSource,
+  QualificationCriterion,
+  QualificationResult,
+} from './types'
+
+const QUALIFICATION_WEIGHTS = {
+  country: 25,
+  partnerType: 20,
+  technology: 20,
+  industry: 10,
+  customerSegment: 10,
+  serviceOrCapability: 5,
+  vendorPartnership: 5,
+  certification: 3,
+  companySize: 2,
+} as const
+
+type CriterionState = 'matched' | 'unmet' | 'unknown'
+
+type EvaluatedCriterion = {
+  state: CriterionState
+  criterion: QualificationCriterion
+}
+
+function normalize(value: string) {
+  return value.trim().toLowerCase()
+}
+
+function matchesRequestedValue(values: string[], requestedValue: string) {
+  const requested = normalize(requestedValue)
+  return values.some((value) => {
+    const normalized = normalize(value)
+    return (
+      normalized === requested ||
+      normalized.includes(requested) ||
+      requested.includes(normalized)
+    )
+  })
+}
+
+function searchableCandidateText(candidate: PartnerCandidate) {
+  return [
+    candidate.description,
+    ...candidate.evidence.map((source) => source.excerpt || source.title),
+  ]
+    .join(' ')
+    .toLowerCase()
+}
+
+function evidenceFor(
+  candidate: PartnerCandidate,
+  requestedValue: string,
+  values: string[]
+) {
+  const terms = [requestedValue, ...values].map(normalize).filter(Boolean)
+  return candidate.evidence.filter((source) => {
+    const text = normalize(`${source.title} ${source.excerpt || ''}`)
+    return terms.some((term) => text.includes(term))
+  })
+}
+
+function uniqueEvidence(evidence: PartnerEvidenceSource[]) {
+  return evidence.filter(
+    (source, index, sources) =>
+      sources.findIndex(
+        (other) => other.url === source.url && other.excerpt === source.excerpt
+      ) === index
+  )
+}
+
+function criterion(
+  key: QualificationCriterion['key'],
+  label: string,
+  requestedValue: string,
+  weight: number,
+  evidence: PartnerEvidenceSource[]
+): QualificationCriterion {
+  return { key, label, requestedValue, weight, evidence }
+}
+
+function evaluate(
+  item: QualificationCriterion,
+  explicitValues: string[],
+  searchableText = ''
+): EvaluatedCriterion {
+  if (matchesRequestedValue(explicitValues, item.requestedValue)) {
+    return { state: 'matched', criterion: item }
+  }
+
+  if (searchableText && normalize(searchableText).includes(normalize(item.requestedValue))) {
+    return { state: 'matched', criterion: item }
+  }
+
+  return {
+    state: explicitValues.length ? 'unmet' : 'unknown',
+    criterion: item,
+  }
+}
+
+function evaluateCountry(candidate: PartnerCandidate, request: PartnerDiscoveryRequest) {
+  const values = [candidate.country, ...candidate.locations].filter(Boolean)
+  return evaluate(
+    criterion(
+      'country',
+      'Country or market',
+      request.country,
+      QUALIFICATION_WEIGHTS.country,
+      evidenceFor(candidate, request.country, values)
+    ),
+    values
+  )
+}
+
+function evaluatePartnerType(
+  candidate: PartnerCandidate,
+  request: PartnerDiscoveryRequest
+): EvaluatedCriterion {
+  const requestedValue = request.partnerTypes.join(', ')
+  const item = criterion(
+    'partnerType',
+    'Partner type',
+    requestedValue,
+    QUALIFICATION_WEIGHTS.partnerType,
+    evidenceFor(candidate, requestedValue, candidate.partnerTypes)
+  )
+
+  if (!candidate.partnerTypes.length) return { state: 'unknown', criterion: item }
+
+  return {
+    state: request.partnerTypes.some((type) =>
+      matchesRequestedValue(candidate.partnerTypes, type)
+    )
+      ? 'matched'
+      : 'unmet',
+    criterion: item,
+  }
+}
+
+function evaluateTechnology(candidate: PartnerCandidate, request: PartnerDiscoveryRequest) {
+  const values = [...candidate.technologies, ...candidate.capabilities]
+  return evaluate(
+    criterion(
+      'technology',
+      'Technology focus',
+      request.technologyFocus,
+      QUALIFICATION_WEIGHTS.technology,
+      evidenceFor(candidate, request.technologyFocus, values)
+    ),
+    values,
+    searchableCandidateText(candidate)
+  )
+}
+
+function optionalCriterion(
+  candidate: PartnerCandidate,
+  key: QualificationCriterion['key'],
+  label: string,
+  requestedValue: string | undefined,
+  weight: number,
+  values: string[]
+) {
+  if (!requestedValue?.trim()) return undefined
+
+  return evaluate(
+    criterion(
+      key,
+      label,
+      requestedValue,
+      weight,
+      evidenceFor(candidate, requestedValue, values)
+    ),
+    values
+  )
+}
+
+function formatEvidence(evidence: PartnerEvidenceSource[]) {
+  return evidence.length
+    ? ` Sources: ${evidence.map((source) => source.url).join(', ')}`
+    : ''
+}
+
+export function qualifyCandidate(
+  candidate: PartnerCandidate,
+  request: PartnerDiscoveryRequest
+): QualificationResult {
+  const evaluated: EvaluatedCriterion[] = [
+    evaluateCountry(candidate, request),
+    ...(request.partnerTypes.length ? [evaluatePartnerType(candidate, request)] : []),
+    evaluateTechnology(candidate, request),
+  ]
+
+  const optionalCriteria = [
+    optionalCriterion(
+      candidate,
+      'industry',
+      'Industry',
+      request.industry,
+      QUALIFICATION_WEIGHTS.industry,
+      candidate.industries
+    ),
+    optionalCriterion(
+      candidate,
+      'customerSegment',
+      'Customer segment',
+      request.customerSegment,
+      QUALIFICATION_WEIGHTS.customerSegment,
+      candidate.customerSegments
+    ),
+    optionalCriterion(
+      candidate,
+      'serviceOrCapability',
+      'Service or capability',
+      request.serviceOrCapability,
+      QUALIFICATION_WEIGHTS.serviceOrCapability,
+      [...candidate.services, ...candidate.capabilities]
+    ),
+    optionalCriterion(
+      candidate,
+      'vendorPartnership',
+      'Vendor partnership',
+      request.vendorPartnership,
+      QUALIFICATION_WEIGHTS.vendorPartnership,
+      candidate.vendorPartnerships
+    ),
+    optionalCriterion(
+      candidate,
+      'certification',
+      'Certification',
+      request.certification,
+      QUALIFICATION_WEIGHTS.certification,
+      candidate.certifications
+    ),
+    optionalCriterion(
+      candidate,
+      'companySize',
+      'Company size',
+      request.companySize,
+      QUALIFICATION_WEIGHTS.companySize,
+      candidate.companySize ? [candidate.companySize] : []
+    ),
+  ]
+
+  evaluated.push(...optionalCriteria.filter((item): item is EvaluatedCriterion => Boolean(item)))
+
+  const totalWeight = evaluated.reduce((total, item) => total + item.criterion.weight, 0)
+  const matchedWeight = evaluated
+    .filter((item) => item.state === 'matched')
+    .reduce((total, item) => total + item.criterion.weight, 0)
+  const score = totalWeight ? Math.round((matchedWeight / totalWeight) * 100) : 0
+  const matchedCriteria = evaluated
+    .filter((item) => item.state === 'matched')
+    .map((item) => item.criterion)
+  const unmetCriteria = evaluated
+    .filter((item) => item.state === 'unmet')
+    .map((item) => item.criterion)
+  const unknownCriteria = evaluated
+    .filter((item) => item.state === 'unknown')
+    .map((item) => item.criterion)
+  const evidence = uniqueEvidence(
+    evaluated.flatMap((item) => item.criterion.evidence)
+  )
+  const reasons = matchedCriteria.map(
+    (item) => `${item.label} matched: ${item.requestedValue}.${formatEvidence(item.evidence)}`
+  )
+  const concerns = [
+    ...unmetCriteria.map(
+      (item) => `${item.label} does not meet the request: ${item.requestedValue}.${formatEvidence(item.evidence)}`
+    ),
+    ...unknownCriteria.map(
+      (item) => `${item.label} is unknown from the available evidence: ${item.requestedValue}.`
+    ),
+  ]
+  const status = unmetCriteria.length
+    ? 'not_qualified'
+    : unknownCriteria.length
+      ? 'needs_review'
+      : 'qualified'
+  const confidence = Math.round(
+    ((matchedCriteria.length + unmetCriteria.length) / evaluated.length) * 100
+  ) / 100
+
+  return {
+    status,
+    score,
+    reasons,
+    concerns,
+    matchedCriteria,
+    unmetCriteria,
+    unknownCriteria,
+    evidence,
+    confidence,
+  }
+}
+
+export function runQualificationDemoScenarios() {
+  const evidence: PartnerEvidenceSource[] = [
+    {
+      title: 'Security services',
+      url: 'https://northstar.example.com/services',
+      sourceType: 'company-website',
+      excerpt: 'Managed security service provider for mid-market customers in Germany.',
+    },
+  ]
+  const baseCandidate: PartnerCandidate = {
+    companyName: 'Northstar Cyber Systems',
+    website: 'https://northstar.example.com',
+    country: 'Germany',
+    description: 'Managed security service provider for mid-market customers.',
+    partnerTypes: ['MSSP'],
+    capabilities: ['Cybersecurity'],
+    industries: [],
+    customerSegments: ['Mid-market'],
+    locations: ['Germany'],
+    services: ['Managed security services'],
+    technologies: ['Cybersecurity'],
+    vendorPartnerships: [],
+    certifications: [],
+    evidence,
+    fitScore: 80,
+    qualificationReasons: [],
+    concerns: [],
+    verificationStatus: 'preliminary',
+    researchStatus: 'researched',
+    researchSources: evidence,
+  }
+  const strongRequest: PartnerDiscoveryRequest = {
+    country: 'Germany',
+    partnerTypes: ['MSSP'],
+    technologyFocus: 'Cybersecurity',
+    customerSegment: 'Mid-market',
+    desiredCandidateCount: 1,
+  }
+  const partialRequest: PartnerDiscoveryRequest = {
+    ...strongRequest,
+    partnerTypes: ['MSP'],
+  }
+  const mismatchCandidate = { ...baseCandidate, country: 'France', locations: ['France'] }
+  const certificationRequest = { ...strongRequest, certification: 'ISO 27001' }
+
+  return {
+    strongMatch: qualifyCandidate(baseCandidate, strongRequest),
+    partialEvidence: qualifyCandidate(
+      { ...baseCandidate, partnerTypes: [], customerSegments: [] },
+      partialRequest
+    ),
+    explicitMismatch: qualifyCandidate(mismatchCandidate, strongRequest),
+    unsupportedCertification: qualifyCandidate(baseCandidate, certificationRequest),
+  }
+}
