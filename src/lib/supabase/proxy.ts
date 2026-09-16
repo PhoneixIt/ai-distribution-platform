@@ -1,6 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+function copyCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach(({ name, value, ...options }) => {
+    to.cookies.set(name, value, options)
+  })
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -34,14 +40,18 @@ export async function updateSession(request: NextRequest) {
   if (claims && !claims.is_anonymous && (pathname === '/' || pathname === '/login' || pathname === '/signup')) {
     const url = request.nextUrl.clone()
     url.pathname = '/app'
-    return NextResponse.redirect(url, { headers: supabaseResponse.headers })
+    const redirectResponse = NextResponse.redirect(url)
+    copyCookies(supabaseResponse, redirectResponse)
+    return redirectResponse
   }
 
   if (!claims && pathname.startsWith('/app')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('error', 'Please sign in to access your workspace.')
-    return NextResponse.redirect(url, { headers: supabaseResponse.headers })
+    const redirectResponse = NextResponse.redirect(url)
+    copyCookies(supabaseResponse, redirectResponse)
+    return redirectResponse
   }
 
   return supabaseResponse
