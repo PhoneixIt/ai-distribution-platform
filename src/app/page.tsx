@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 
 const pillars = [
   ['01', 'Discover', 'Find vendors, distributors, partners and customers across the open market.'],
@@ -7,10 +9,14 @@ const pillars = [
   ['04', 'Operate', 'Keep opportunities, relationships and next actions in one workspace.'],
 ]
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user && !user.is_anonymous) redirect('/app')
+
   return <main className="min-h-screen bg-slate-950 text-white">
     <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
-      <Link href="/" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-xs font-black">AI</span><span className="text-sm font-semibold">AI Distribution Platform</span></Link>
+      <Link href="/" className="flex items-center gap-3"><span className="grid h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xs font-black">AI</span><span className="text-sm font-semibold">AI Distribution Platform</span></Link>
       <div className="flex items-center gap-3"><Link href="/login" className="rounded-lg px-3 py-2 text-sm text-slate-300 hover:text-white">Sign in</Link><Link href="/signup" className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold hover:bg-blue-500">Get started</Link></div>
     </nav>
     <section className="mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-16 lg:grid-cols-[1.1fr_.9fr] lg:px-8 lg:pt-24">
