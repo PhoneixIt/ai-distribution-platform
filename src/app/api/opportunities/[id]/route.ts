@@ -8,11 +8,13 @@ import type { NextRequest } from 'next/server'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  void request
   try {
     const supabase = createClient()
-    const opportunity = await getOpportunityById(supabase, params.id)
+    const { id } = await params
+    const opportunity = await getOpportunityById(supabase, id)
 
     return Response.json({
       success: true,
@@ -36,13 +38,14 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient()
+    const { id } = await params
     const body = await request.json()
 
-    const opportunity = await updateOpportunity(supabase, params.id, body)
+    const opportunity = await updateOpportunity(supabase, id, body)
 
     return Response.json({
       success: true,
@@ -66,11 +69,13 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  void request
   try {
     const supabase = createClient()
-    await deleteOpportunity(supabase, params.id)
+    const { id } = await params
+    await deleteOpportunity(supabase, id)
 
     return Response.json({
       success: true,
