@@ -12,35 +12,36 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet, headers) {
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options)
-          })
-          Object.entries(headers).forEach(([key, value]) => {
-            supabaseResponse.headers.set(key, value)
           })
         },
       },
     },
   )
 
-  const { data } = await supabase.auth.getClaims()
+  const { data, error } = await supabase.auth.getClaims()
   const claims = data?.claims
   const pathname = request.nextUrl.pathname
+
+  if (error) {
+    console.error('[supabase-proxy] getClaims failed:', error.message)
+  }
 
   if (claims && !claims.is_anonymous && (pathname === '/' || pathname === '/login' || pathname === '/signup')) {
     const url = request.nextUrl.clone()
     url.pathname = '/app'
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(url, { headers: supabaseResponse.headers })
   }
 
   if (!claims && pathname.startsWith('/app')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('error', 'Please sign in to access your workspace.')
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(url, { headers: supabaseResponse.headers })
   }
 
   return supabaseResponse
