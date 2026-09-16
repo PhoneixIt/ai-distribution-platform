@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-function safeNext(value: string | null) {
-  return value && value.startsWith('/') && !value.startsWith('//') ? value : '/app'
-}
-
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = safeNext(requestUrl.searchParams.get('next'))
   const error = requestUrl.searchParams.get('error')
   const errorDescription = requestUrl.searchParams.get('error_description')
 
@@ -27,6 +22,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Always finish OAuth inside the authenticated product, not on the marketing site.
-  return NextResponse.redirect(new URL(next, requestUrl.origin))
+  // OAuth must always finish inside the authenticated product.
+  // Do not trust a provider-supplied next value here: Google sign-in for this
+  // application is intentionally a one-way entry into the Command Center.
+  return NextResponse.redirect(new URL('/app', requestUrl.origin))
 }
