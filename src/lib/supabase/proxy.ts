@@ -37,18 +37,14 @@ export async function updateSession(request: NextRequest) {
     console.error('[supabase-proxy] getClaims failed:', error.message)
   }
 
+  // Keep the marketing/auth pages from being shown to an already-authenticated
+  // visitor, but do not server-redirect protected workspace routes. OAuth is
+  // completed in the browser and the workspace shell validates that same browser
+  // session; duplicating that decision here can create a redirect loop immediately
+  // after the PKCE code exchange.
   if (claims && !claims.is_anonymous && (pathname === '/' || pathname === '/login' || pathname === '/signup')) {
     const url = request.nextUrl.clone()
     url.pathname = '/app'
-    const redirectResponse = NextResponse.redirect(url)
-    copyCookies(supabaseResponse, redirectResponse)
-    return redirectResponse
-  }
-
-  if (!claims && pathname.startsWith('/app')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('error', 'Please sign in to access your workspace.')
     const redirectResponse = NextResponse.redirect(url)
     copyCookies(supabaseResponse, redirectResponse)
     return redirectResponse
