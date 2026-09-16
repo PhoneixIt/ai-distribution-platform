@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const pillars = [
   ['01', 'Discover', 'Find vendors, distributors, partners and customers across the open market.'],
   ['02', 'Understand', 'Turn public evidence into structured company intelligence you can inspect.'],
