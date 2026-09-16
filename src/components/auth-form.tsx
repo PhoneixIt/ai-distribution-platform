@@ -36,8 +36,11 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
 
     try {
       const supabase = createClient()
-      const redirectTo = `${window.location.origin}/auth/callback?next=/app`
-      const { error: authError } = await supabase.auth.signInWithOAuth({
+      // The callback is deliberately kept on the same origin as the page that
+      // started OAuth. The callback route then writes the exchanged session
+      // cookies onto its redirect response before entering /app.
+      const redirectTo = `${window.location.origin}/auth/callback`
+      const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
@@ -45,6 +48,8 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
         },
       })
       if (authError) throw authError
+      if (!data.url) throw new Error('Could not start social sign-in.')
+      window.location.assign(data.url)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not start social sign-in.')
       setSocialLoading(null)
@@ -97,36 +102,10 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
 
       {showSocial && <>
         <div className="mt-7 space-y-3">
-          {primaryProviders.map(({ provider, label, icon }) => <button
-            key={provider}
-            type="button"
-            disabled={loading || socialLoading !== null}
-            onClick={() => signInWithProvider(provider)}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >{icon}<span>{socialLoading === provider ? 'Connecting…' : `Continue with ${label}`}</span></button>)}
+          {primaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">{socialLoading === provider ? 'Connecting…' : <>{icon}<span>Continue with {label}</span></>}</button>)}
         </div>
-
-        <button
-          type="button"
-          onClick={() => setShowMoreProviders(value => !value)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
-        >
-          <span>{showMoreProviders ? 'Hide other sign-in options' : 'More sign-in options'}</span>
-          <svg className={`h-4 w-4 transition-transform ${showMoreProviders ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" /></svg>
-        </button>
-
-        {showMoreProviders && <div className="grid grid-cols-3 gap-2 pt-1">
-          {secondaryProviders.map(({ provider, label, icon }) => <button
-            key={provider}
-            type="button"
-            disabled={loading || socialLoading !== null}
-            onClick={() => signInWithProvider(provider)}
-            aria-label={`Continue with ${label}`}
-            title={`Continue with ${label}`}
-            className="flex items-center justify-center rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >{icon}</button>)}
-        </div>}
-
+        <button type="button" onClick={() => setShowMoreProviders(value => !value)} className="mt-3 w-full text-xs text-slate-500 hover:text-slate-300">{showMoreProviders ? 'Hide other sign-in options' : 'More sign-in options'}</button>
+        {showMoreProviders && <div className="mt-3 grid grid-cols-3 gap-3">{secondaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} aria-label={`Continue with ${label}`} title={`Continue with ${label}`} className="flex items-center justify-center rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50">{icon}</button>)}</div>}
         <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>Or continue with email</span><span className="h-px flex-1 bg-slate-800" /></div>
       </>}
 
@@ -150,7 +129,6 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
 
 const input = 'mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-sm font-medium text-slate-300">{label}{children}</label> }
-
 function GoogleIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.35 12.23c0-.72-.06-1.42-.18-2.09H12v3.95h5.23a4.47 4.47 0 0 1-1.94 2.93v2.43h3.14c1.84-1.69 2.92-4.18 2.92-7.22Z"/><path fill="#34A853" d="M12 21.7c2.63 0 4.84-.87 6.45-2.35l-3.14-2.43c-.87.58-1.98.93-3.31.93-2.54 0-4.7-1.72-5.47-4.04H3.29v2.5A9.74 9.74 0 0 0 12 21.7Z"/><path fill="#FBBC05" d="M6.53 13.81A5.85 5.85 0 0 1 6.23 12c0-.63.11-1.24.3-1.81v-2.5H3.29A9.73 9.73 0 0 0 2.25 12c0 1.57.38 3.05 1.04 4.31l3.24-2.5Z"/><path fill="#EA4335" d="M12 6.15c1.43 0 2.72.49 3.74 1.46l2.8-2.8C16.84 3.25 14.63 2.3 12 2.3a9.74 9.74 0 0 0-8.71 5.39l3.24 2.5C7.3 7.87 9.46 6.15 12 6.15Z"/></svg> }
 function MicrosoftIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f35325" d="M2 2h9.5v9.5H2z"/><path fill="#81bc06" d="M12.5 2H22v9.5h-9.5z"/><path fill="#05a6f0" d="M2 12.5h9.5V22H2z"/><path fill="#ffba08" d="M12.5 12.5H22V22h-9.5z"/></svg> }
 function GitHubIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.17c-3.2.7-3.88-1.36-3.88-1.36-.53-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.67 1.25 3.32.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.16 1.18a10.96 10.96 0 0 1 5.75 0c2.2-1.49 3.16-1.18 3.16-1.18.62 1.59.23 2.77.11 3.06.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.77 1.05.77 2.12v3.14c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg> }
