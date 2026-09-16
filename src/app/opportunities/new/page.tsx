@@ -2,46 +2,46 @@ import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { ButtonPrimary, Card } from '@/components/ui'
 
 export const metadata = {
-  title: 'Add Partner | AI Distribution Platform',
-  description: 'Create a new partner record in your directory',
+  title: 'Create Opportunity | AI Distribution Platform',
+  description: 'Define a new sales opportunity for partner matching',
 }
 
-export default function AddPartnerPage() {
+export default function CreateOpportunityPage() {
   return (
     <AuthenticatedLayout>
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">Add Partner</h1>
+          <h1 className="text-3xl font-bold">Create Opportunity</h1>
           <p className="mt-1 text-slate-400">
-            Create a new partner record in your directory.
+            Define a new sales opportunity. AI will find the best channel partners to match.
           </p>
         </div>
 
         {/* Form */}
         <Card className="max-w-2xl">
           <form className="space-y-5">
-            {/* Company Name */}
+            {/* Title */}
             <div>
               <label className="block text-sm font-medium text-slate-300">
-                Company Name *
+                Opportunity Title *
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g., Northstar Cyber Systems"
+                placeholder="e.g., Enterprise Cybersecurity Implementation"
                 className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
 
-            {/* Website */}
+            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-slate-300">
-                Website
+                Description
               </label>
-              <input
-                type="url"
-                placeholder="https://example.com"
+              <textarea
+                placeholder="Describe the opportunity, customer needs, and requirements..."
+                rows={4}
                 className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -59,46 +59,63 @@ export default function AddPartnerPage() {
               />
             </div>
 
-            {/* Description */}
+            {/* Technology Focus */}
             <div>
               <label className="block text-sm font-medium text-slate-300">
-                Description
+                Technology Focus *
               </label>
-              <textarea
-                placeholder="Brief description of the partner and their capabilities..."
-                rows={4}
+              <input
+                type="text"
+                required
+                placeholder="e.g., Cybersecurity"
                 className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
 
-            {/* Partner Types */}
+            {/* Industry */}
             <div>
               <label className="block text-sm font-medium text-slate-300">
-                Partner Types (comma-separated)
+                Industry
               </label>
               <input
                 type="text"
-                placeholder="e.g., MSP, Reseller, System Integrator"
+                placeholder="e.g., Enterprise, Financial Services"
                 className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
 
-            {/* Technologies */}
+            {/* Customer Segment */}
             <div>
               <label className="block text-sm font-medium text-slate-300">
-                Technologies (comma-separated)
+                Customer Segment
+              </label>
+              <select className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-white focus:border-blue-500 focus:outline-none">
+                <option value="">Select a segment...</option>
+                <option value="SMB">Small/Medium Business</option>
+                <option value="Mid-market">Mid-market</option>
+                <option value="Enterprise">Enterprise</option>
+              </select>
+            </div>
+
+            {/* Opportunity Value */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300">
+                Estimated Opportunity Value
               </label>
               <input
-                type="text"
-                placeholder="e.g., Cybersecurity, Cloud Infrastructure"
+                type="number"
+                placeholder="e.g., 250000"
                 className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">
-              <ButtonPrimary type="submit">Create Partner</ButtonPrimary>
-              <ButtonPrimary href="/partners" className="bg-slate-700 hover:bg-slate-600">
+              <ButtonPrimary type="submit">Create Opportunity</ButtonPrimary>
+              <ButtonPrimary
+                href="/opportunities"
+                className="bg-slate-700 hover:bg-slate-600"
+              >
                 Cancel
               </ButtonPrimary>
             </div>
