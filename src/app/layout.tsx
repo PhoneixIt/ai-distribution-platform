@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import { validateEnvironment } from '@/lib/env'
 import './globals.css'
 
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
     >
       <body className="flex min-h-full flex-col bg-slate-950 text-white">
         {children}
+        <Analytics />
       </body>
     </html>
   )
