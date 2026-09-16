@@ -16,6 +16,7 @@ const nav = [
   { href: '/distributors', label: 'Distributors' },
   { href: '/customers', label: 'Customers' },
   { href: '/opportunities', label: 'Opportunities' },
+  { href: '/engagements', label: 'Engagements' },
   { href: '/workforce', label: 'AI Workforce' },
   { href: '/settings', label: 'Settings' },
 ]
