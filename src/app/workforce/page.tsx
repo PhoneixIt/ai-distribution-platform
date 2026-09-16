@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import AppShell from '@/components/app-shell'
-import { createClient } from '@/lib/supabase/client'
+import { ensureWorkspace } from '@/lib/supabase/workspace'
 
 const agents = [
   ['Research Agent', 'Find and verify company intelligence from approved sources.', 'research'],
@@ -23,13 +23,17 @@ export default function WorkforcePage() {
   useEffect(() => {
     let active = true
     const load = async () => {
-      const supabase = createClient()
-      const [{ count: runs }, { count: tasks }, { count: pending }] = await Promise.all([
-        supabase.from('agent_runs').select('*', { count: 'exact', head: true }),
-        supabase.from('agent_tasks').select('*', { count: 'exact', head: true }),
-        supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).in('status', ['pending', 'queued', 'running']),
-      ])
-      if (active) { setStats({ runs: runs || 0, tasks: tasks || 0, pending: pending || 0 }); setLoading(false) }
+      try {
+        const { supabase, orgId } = await ensureWorkspace()
+        const [{ count: runs }, { count: tasks }, { count: pending }] = await Promise.all([
+          supabase.from('agent_runs').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+          supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+          supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).eq('org_id', orgId).in('status', ['pending', 'queued', 'running']),
+        ])
+        if (active) setStats({ runs: runs || 0, tasks: tasks || 0, pending: pending || 0 })
+      } finally {
+        if (active) setLoading(false)
+      }
     }
     void load()
     return () => { active = false }
