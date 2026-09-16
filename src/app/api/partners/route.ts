@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
 
-    // Get optional filters from query params
     const { searchParams } = new URL(request.url)
     const country = searchParams.get('country') || undefined
     const partnerType = searchParams.get('type') || undefined
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const parsedLimit = Number.parseInt(searchParams.get('limit') || '100', 10)
+    const limit = Number.isFinite(parsedLimit) ? parsedLimit : 100
 
     const partners = await getPartners(supabase, {
       country,
@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
     const supabase = createClient()
     const body = await request.json()
 
-    // Validate required fields
     if (!body.name) {
       return Response.json(
         { success: false, error: 'Partner name is required' },
@@ -74,7 +73,6 @@ export async function POST(request: NextRequest) {
       customer_segments: body.customer_segments,
       services: body.services,
       certifications: body.certifications,
-      locations: body.locations,
       vendor_partnerships: body.vendor_partnerships,
       company_size: body.company_size,
     })
