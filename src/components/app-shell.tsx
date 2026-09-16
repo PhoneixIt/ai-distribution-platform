@@ -31,18 +31,25 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
   useEffect(() => {
     const supabase = createClient()
     let mounted = true
-    void supabase.auth.getUser().then(({ data }) => {
+
+    void supabase.auth.getUser().then(({ data, error }) => {
       if (!mounted) return
-      if (!data.user || data.user.is_anonymous) {
+      if (error || !data.user || data.user.is_anonymous) {
         router.replace(`/login?next=${encodeURIComponent(pathname || '/app')}`)
         return
       }
       setEmail(data.user.email ?? data.user.user_metadata?.full_name ?? null)
       setLoading(false)
     })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user || session.user.is_anonymous) router.replace(`/login?next=${encodeURIComponent(pathname || '/app')}`)
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      // Do not treat an initial/null auth event as a signed-out state. The
+      // initial session can still be loading while this protected shell mounts.
+      if (event === 'SIGNED_OUT') {
+        router.replace(`/login?next=${encodeURIComponent(pathname || '/app')}`)
+      }
     })
+
     return () => {
       mounted = false
       listener.subscription.unsubscribe()
