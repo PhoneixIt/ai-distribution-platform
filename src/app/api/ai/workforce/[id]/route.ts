@@ -1,4 +1,4 @@
-import { createWorkforceRun, getWorkforceRun } from '@/lib/agents/workforce'
+import { getWorkforceRun } from '@/lib/agents/workforce'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 
 type RouteContext = {
