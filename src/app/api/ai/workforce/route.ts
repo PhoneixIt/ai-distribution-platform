@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
         instructions:
           'Coordinate research, verification, channel-fit analysis, contact research, and approved outreach. Use evidence, preserve uncertainty, and return structured findings suitable for Supabase persistence.',
         priority: 100,
-        requiresApproval: true,
+        // Internal orchestration does not require approval. External outreach will.
+        requiresApproval: false,
       }
     )
 
