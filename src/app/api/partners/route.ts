@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
       customer_segments: body.customer_segments,
       services: body.services,
       certifications: body.certifications,
-      vendor_partnerships: body.vendor_partnerships,
       company_size: body.company_size,
     })
 
