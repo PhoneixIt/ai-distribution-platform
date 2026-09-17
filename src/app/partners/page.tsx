@@ -2,6 +2,7 @@ import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { PartnerDirectory } from '@/components/partners/PartnerDirectory'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 import { getPartners } from '@/lib/supabase/services'
+import type { PartnerRecord } from '@/lib/supabase/services'
 
 export const metadata = {
   title: 'Partners | AI Distribution Platform',
@@ -10,7 +11,7 @@ export const metadata = {
 
 export default async function PartnersPage() {
   const { supabase, user, error: authError } = await getAuthenticatedServerClient()
-  let partners = []
+  let partners: PartnerRecord[] = []
   let loadError = authError?.message || (!user ? 'Authentication required.' : '')
 
   if (user && !authError) {
