@@ -77,6 +77,8 @@ export default function OpportunityDetailPage() {
     }
   }
 
+  // Data-fetching effect: the async callback owns the state updates after the request resolves.
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { void load() }, [opportunityId])
 
   async function runMatching() {
