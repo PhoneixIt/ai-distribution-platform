@@ -16,7 +16,7 @@ type Opportunity = {
   preferred_region: string | null
   requirements: string[]
   technology_categories: string[]
-  customers?: { company_name: string; industry: string | null; customer_segment: string | null } | null
+  customers?: { company_name: string; industry: string | null; company_size: string | null } | null
 }
 
 type Match = {
@@ -54,7 +54,7 @@ export default function OpportunityDetailPage() {
       const [{ data: opportunityData, error: opportunityError }, { data: matchData, error: matchError }] = await Promise.all([
         supabase
           .from('opportunities')
-          .select('id,title,description,status,stage,estimated_value,probability,preferred_region,requirements,technology_categories,customers(company_name,industry,customer_segment)')
+          .select('id,title,description,status,stage,estimated_value,probability,preferred_region,requirements,technology_categories,customers(company_name,industry,company_size)')
           .eq('id', opportunityId)
           .eq('org_id', orgId)
           .single(),
