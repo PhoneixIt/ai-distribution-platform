@@ -10,27 +10,20 @@ export const metadata = {
 
 export default async function PartnersPage() {
   const { supabase, user, error: authError } = await getAuthenticatedServerClient()
+  let partners = []
+  let loadError = authError?.message || (!user ? 'Authentication required.' : '')
 
-  if (authError || !user) {
-    return (
-      <AuthenticatedLayout>
-        <PartnerDirectory error={authError?.message || 'Authentication required.'} />
-      </AuthenticatedLayout>
-    )
+  if (user && !authError) {
+    try {
+      partners = await getPartners(supabase, { limit: 500 })
+    } catch (error) {
+      loadError = error instanceof Error ? error.message : 'Could not load partners.'
+    }
   }
 
-  try {
-    const partners = await getPartners(supabase, { limit: 500 })
-    return (
-      <AuthenticatedLayout>
-        <PartnerDirectory initialPartners={partners} />
-      </AuthenticatedLayout>
-    )
-  } catch (error) {
-    return (
-      <AuthenticatedLayout>
-        <PartnerDirectory error={error instanceof Error ? error.message : 'Could not load partners.'} />
-      </AuthenticatedLayout>
-    )
-  }
+  return (
+    <AuthenticatedLayout>
+      <PartnerDirectory initialPartners={loadError ? [] : partners} error={loadError || undefined} />
+    </AuthenticatedLayout>
+  )
 }
