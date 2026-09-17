@@ -37,6 +37,8 @@ export default function EngagementsPage() {
     } finally { setLoading(false) }
   }
 
+  // Data-fetching effect: the async callback owns the state updates after the request resolves.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load() }, [])
 
   async function updateStatus(id: string, status: string) {
