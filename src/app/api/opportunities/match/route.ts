@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   const orgId = membership.org_id
   const { data: opportunity, error: opportunityError } = await supabase
     .from('opportunities')
-    .select('id,org_id,title,description,preferred_region,requirements,technology_categories,customer_id,customers(company_name,industry,customer_segment)')
+    .select('id,org_id,title,description,preferred_region,requirements,technology_categories,customer_id,customers(company_name,industry,company_size)')
     .eq('id', opportunityId)
     .eq('org_id', orgId)
     .single()
@@ -51,7 +51,6 @@ export async function POST(request: Request) {
   const descriptionTerms = String(opportunity.description || '').toLowerCase().split(/[^a-z0-9]+/).filter((value) => value.length > 3).slice(0, 20)
   const capabilityNeeds = [...new Set([...technologyTerms, ...requirementTerms])]
   const industryNeeds = normalize(customer?.industry)
-  const segmentNeeds = normalize(customer?.customer_segment)
   const geographyNeed = String(opportunity.preferred_region || '').trim().toLowerCase()
 
   const { data: partners, error: partnersError } = await supabase
@@ -76,14 +75,12 @@ export async function POST(request: Request) {
       ...normalize(partner.sales_regions),
     ])
     const industries = normalize(partner.industries)
-    const segments = normalize(partner.customer_segments)
 
     const capabilityFit = overlapScore(capabilityNeeds, capabilities)
     const geographyFit = geographyNeed ? overlapScore([geographyNeed], geography) : 50
     const industryFit = industryNeeds.length ? overlapScore(industryNeeds, industries) : 50
-    const segmentFit = segmentNeeds.length ? overlapScore(segmentNeeds, segments) : 50
     const verificationFit = partner.is_verified || partner.verification_status === 'verified' ? 100 : 50
-    const customerFit = Math.round((industryFit + segmentFit) / 2)
+    const customerFit = industryFit
     const matchScore = Math.round(capabilityFit * 0.45 + geographyFit * 0.25 + customerFit * 0.20 + verificationFit * 0.10)
 
     const strengths: string[] = []
@@ -94,7 +91,6 @@ export async function POST(request: Request) {
     if (geographyFit >= 70) strengths.push('Good geographic coverage')
     else if (geographyNeed) risks.push('Geographic coverage needs verification')
     if (industryFit >= 70) strengths.push('Relevant industry experience')
-    if (segmentFit >= 70) strengths.push('Relevant customer segment')
     if (partner.is_verified) strengths.push('Verified partner profile')
     else risks.push('Partner profile is not verified')
 
@@ -102,7 +98,6 @@ export async function POST(request: Request) {
     const reason = strengths.length ? strengths.slice(0, 3).join('; ') : 'Limited structured data match; review the evidence before engagement.'
     const recommendedAction = matchScore >= 75 ? 'Review and contact this partner.' : matchScore >= 55 ? 'Verify capabilities before outreach.' : 'Keep as a lower-priority candidate.'
 
-    // Description terms are intentionally only a weak signal for explainability; the core score stays deterministic.
     if (descriptionTerms.some((term) => capabilities.some((value) => value.includes(term)))) strengths.push('Opportunity description contains relevant capability terms')
 
     return {
