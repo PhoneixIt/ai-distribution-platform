@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Distribution Platform
 
-## Getting Started
+**AI-native operating platform for software distribution**
 
-First, run the development server:
+The AI Distribution Platform is being built to connect and coordinate the software distribution ecosystem — vendors, distributors, resellers, MSPs, partners, and customers — through one AI-powered workspace.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Vision
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Traditional distribution operations are spread across CRMs, spreadsheets, email, meetings, and manual follow-ups. This project explores an AI-native alternative where specialized agents can help research, coordinate, communicate, and execute repetitive commercial workflows while humans remain in control of important decisions.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What we're building
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The platform is designed to support workflows across:
 
-## Learn More
+- Vendor and product management
+- Partner and reseller management
+- Partner recruitment and activation
+- Customer and opportunity management
+- Sales outreach and follow-ups
+- Pipeline and activity management
+- Meetings and commercial workflows
+- AI-assisted research and decision support
+- Coordination between specialized AI agents
 
-To learn more about Next.js, take a look at the following resources:
+## Current status
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Stage:** Prototype / Pre-seed
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The product is actively being developed as a web-based SaaS platform. The current focus is establishing the core platform, authentication, data architecture, and AI-agent foundation before expanding into deeper distribution workflows.
 
-## Deploy on Vercel
+## Founder
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Built by **Samer Merhi**, a B2B SaaS and channel sales professional with 7+ years of commercial experience and direct experience managing software reseller and partner ecosystems across EMEA.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The product is being developed from first-hand experience with the operational challenges of software distribution and channel sales.
+
+## Product
+
+Live prototype: https://ai-distribution-platform-3vmebpfyk-eco-da45.vercel.app/
+
+## Technology
+
+Built with modern web and AI technologies, including Next.js, TypeScript, Supabase, Vercel, and AI services.
+
+## Status
+
+This repository contains an active prototype and is evolving rapidly. Architecture and functionality may change as the product is validated and developed.
