@@ -1,14 +1,11 @@
-import { createClient } from '@/lib/supabase/client'
+import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 import { getPartners, createPartner } from '@/lib/supabase/services'
 import type { NextRequest } from 'next/server'
 
-/**
- * GET /api/partners
- * Fetch all partners with optional filters
- */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const { supabase, user, error: authError } = await getAuthenticatedServerClient()
+    if (authError || !user) return Response.json({ success: false, error: authError?.message || 'Authentication required.' }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const country = searchParams.get('country') || undefined
@@ -16,51 +13,22 @@ export async function GET(request: NextRequest) {
     const parsedLimit = Number.parseInt(searchParams.get('limit') || '100', 10)
     const limit = Number.isFinite(parsedLimit) ? parsedLimit : 100
 
-    const partners = await getPartners(supabase, {
-      country,
-      partnerType,
-      limit,
-    })
-
-    return Response.json({
-      success: true,
-      data: partners,
-      count: partners.length,
-    })
+    const partners = await getPartners(supabase, { country, partnerType, limit })
+    return Response.json({ success: true, data: partners, count: partners.length })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
-    return Response.json(
-      {
-        success: false,
-        error: message,
-      },
-      { status: 500 }
-    )
+    return Response.json({ success: false, error: message }, { status: 500 })
   }
 }
 
-/**
- * POST /api/partners
- * Create a new partner
- */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const { supabase, user, error: authError } = await getAuthenticatedServerClient()
+    if (authError || !user) return Response.json({ success: false, error: authError?.message || 'Authentication required.' }, { status: 401 })
+
     const body = await request.json()
-
-    if (!body.name) {
-      return Response.json(
-        { success: false, error: 'Partner name is required' },
-        { status: 400 }
-      )
-    }
-
-    if (!body.country) {
-      return Response.json(
-        { success: false, error: 'Country is required' },
-        { status: 400 }
-      )
-    }
+    if (!body.name) return Response.json({ success: false, error: 'Partner name is required' }, { status: 400 })
+    if (!body.country) return Response.json({ success: false, error: 'Country is required' }, { status: 400 })
 
     const partner = await createPartner(supabase, {
       name: body.name,
@@ -76,21 +44,9 @@ export async function POST(request: NextRequest) {
       company_size: body.company_size,
     })
 
-    return Response.json(
-      {
-        success: true,
-        data: partner,
-      },
-      { status: 201 }
-    )
+    return Response.json({ success: true, data: partner }, { status: 201 })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
-    return Response.json(
-      {
-        success: false,
-        error: message,
-      },
-      { status: 500 }
-    )
+    return Response.json({ success: false, error: message }, { status: 500 })
   }
 }
