@@ -5,7 +5,7 @@ export const AGENT_KEYS = ['ceo_orchestrator','vendor_manager','partner_manager'
 export type AgentKey = typeof AGENT_KEYS[number]
 
 type Context = { supabase: SupabaseClient; orgId: string; userId: string; runId: string; taskId?: string; agentKey: AgentKey }
-type Output = { summary: string; confidence: number; facts: any[]; inferences: any[]; recommendations: any[]; actions: any[]; approvals: any[]; gaps: string[] }
+type Output = { summary: string; confidence: number; facts: { statement: string; source_type: string; source_ref: string }[]; inferences: { statement: string; confidence: number }[]; recommendations: { title: string; rationale: string; priority: number; entity_type: string | null; entity_id: string | null; next_action: string; requires_approval: boolean }[]; actions: { title: string; description: string; priority: number; due_in_days: number; entity_type: string | null; entity_id: string | null }[]; approvals: { action_type: string; summary: string; entity_type: string | null; entity_id: string | null }[]; gaps: string[] }
 type Plan = { selected_agents: { agent_key: AgentKey; objective: string; priority: number }[]; rationale: string }
 type Tool = { description: string; parameters: Record<string, unknown>; classification: string; requiresApproval?: boolean; execute: (args: Record<string, unknown>, context: Context) => Promise<unknown> }
 
@@ -410,9 +410,9 @@ function routeObjective(objective: string): Plan {
 }
 
 function fallback(agentKey: AgentKey, objective: string, data: Record<string, unknown>): Output {
-  const facts: any[] = []
-  const recommendations: any[] = []
-  const actions: any[] = []
+  const facts: Output['facts'] = []
+  const recommendations: Output['recommendations'] = []
+  const actions: Output['actions'] = []
   const gaps: string[] = []
   const partners = Array.isArray(data.partners) ? data.partners as Record<string, unknown>[] : []
   const opportunities = Array.isArray(data.opportunities) ? data.opportunities as Record<string, unknown>[] : []
