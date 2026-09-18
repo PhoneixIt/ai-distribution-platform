@@ -501,7 +501,7 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
         planSchema,
         'agent_plan'
       ) as Plan
-      plan = { selected_agents: planned.selected_agents.filter((item) => item.agent_key !== 'ceo_orchestrator' && AGENT_KEYS.includes(item.agent_key)).slice(0, 4), rationale: planned.rationale }
+      plan = { selected_agents: planned.selected_agents.filter((item) => item.agent_key !== 'ceo_orchestrator' && AGENT_KEYS.includes(item.agent_key as AgentKey)).slice(0, 4), rationale: planned.rationale }
     }
 
     const selected = plan.selected_agents.length ? plan.selected_agents : routeObjective(clean).selected_agents
