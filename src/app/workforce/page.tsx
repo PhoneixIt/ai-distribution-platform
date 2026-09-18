@@ -101,7 +101,7 @@ export default function WorkforcePage() {
             {prompts.map((prompt) => <button key={prompt} type="button" onClick={() => setObjective(prompt)} className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-blue-500 hover:text-white">{prompt}</button>)}
           </div>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button disabled={running || !objective.trim()} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">{running ? 'Running agents…' : 'Run operating analysis'}</button>
+            <button disabled={running || !objective.trim()} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">{running ? 'Working…' : 'Run workforce'}</button>
             <span className="text-xs text-slate-500">The workforce can create internal tasks and recommendations. External actions require the appropriate approval.</span>
           </div>
         </form>
@@ -112,17 +112,17 @@ export default function WorkforcePage() {
       {run ? <RunResult run={run} /> : null}
 
       <section className="mt-6 grid gap-4 sm:grid-cols-3">
-        <Metric label="Agent runs" value={stats.runs} />
-        <Metric label="Agent tasks" value={stats.tasks} />
+        <Metric label="Workforce runs" value={stats.runs} />
+        <Metric label="Internal tasks" value={stats.tasks} />
         <Metric label="Pending approvals" value={stats.approvals} />
       </section>
 
       <section className="mt-8">
-        <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Agent team</p><h2 className="mt-1 text-xl font-semibold">Smallest useful operating team</h2></div>
+        <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Specialist team</p><h2 className="mt-1 text-xl font-semibold">Specialists available to the workforce</h2></div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {agents.map(([name, key, description], index) => (
             <article key={key} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="flex items-center justify-between"><span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-950 text-xs font-bold text-blue-300">0{index + 1}</span><span className="rounded-full border border-slate-800 px-2.5 py-1 text-[11px] text-slate-500">{key}</span></div>
+              <div className="flex items-center justify-between"><span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-950 text-xs font-bold text-blue-300">0{index + 1}</span><span className="rounded-full border border-slate-800 px-2.5 py-1 text-[11px] text-slate-500">Available</span></div>
               <h3 className="mt-5 font-semibold">{name}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
             </article>
@@ -151,7 +151,7 @@ function RunResult({ run }: { run: Run }) {
       {run.final.gaps.length ? <Evidence title="Information gaps" items={run.final.gaps} /> : null}
 
       <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
-        <p className="text-xs uppercase tracking-wider text-slate-500">Delegation trace</p>
+        <p className="text-xs uppercase tracking-wider text-slate-500">Work coordination</p>
         <div className="mt-3 space-y-2">{run.results.map((item) => <div key={item.agentKey} className="flex flex-col gap-1 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-sm font-medium">{agentLabel(item.agentKey)}</span><span className="text-xs text-slate-500">{item.error || (item.output ? Math.round(item.output.confidence * 100) + '% confidence' : 'completed')}</span></div>)}</div>
       </div>
     </section>
