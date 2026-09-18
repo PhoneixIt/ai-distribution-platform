@@ -2,6 +2,70 @@ import Link from 'next/link'
 import MarketingNav from '@/components/marketing-nav'
 import MarketingFooter from '@/components/marketing-footer'
 
-const solutions=[['Software distributors','Operate vendors, partners, customers, opportunities and commercial workflows from one connected workspace.','Vendor discovery • partner activation • pipeline • commercial operations'],['Software vendors','Build an indirect growth engine around products, channel relationships, market context and partner opportunities.','Channel expansion • partner intelligence • product fit • opportunity visibility'],['Channel & partnerships teams','Increase operating capacity across recruitment, activation, reactivation, relationship management and partner-led revenue.','Partner health • recruitment • engagement • next actions'],['Sales teams','Move from research to qualified conversations with one connected view of people, accounts, opportunities and partner context.','Discovery • qualification • outreach • meetings • follow-up'],['Commercial teams','Bring economics into the same context as the opportunity instead of treating pricing and margin as a separate spreadsheet exercise.','Pricing • margin • discount analysis • commercial risk'],['Operations teams','Coordinate the work that keeps the business moving: tasks, approvals, missing information, follow-up and bottlenecks.','Workflow • approvals • execution • visibility']]
+const solutions = [
+  ['Software distributors', 'Operate vendors, partners, customers, opportunities and commercial workflows from one connected workspace.', 'Vendor discovery • partner activation • pipeline • commercial operations'],
+  ['Software vendors', 'Build an indirect growth engine around products, channel relationships, market context and partner opportunities.', 'Channel expansion • partner intelligence • product fit • opportunity visibility'],
+  ['Channel & partnerships teams', 'Increase operating capacity across recruitment, activation, reactivation, relationship management and partner-led revenue.', 'Partner health • recruitment • engagement • next actions'],
+  ['Sales teams', 'Move from research to qualified conversations with one connected view of people, accounts, opportunities and partner context.', 'Discovery • qualification • outreach • meetings • follow-up'],
+  ['Commercial teams', 'Bring economics into the same context as the opportunity instead of treating pricing and margin as a separate spreadsheet exercise.', 'Pricing • margin • discount analysis • commercial risk'],
+  ['Operations teams', 'Coordinate the work that keeps the business moving: tasks, approvals, missing information, follow-up and bottlenecks.', 'Workflow • approvals • execution • visibility'],
+]
 
-export default function SolutionsPage(){return <main className="min-h-screen bg-slate-950 text-white"><MarketingNav/><section className="mx-auto max-w-7xl px-5 pb-20 pt-20 lg:px-8 lg:pt-28"><p className="text-sm font-medium text-blue-400">Solutions</p><h1 className="mt-4 max-w-5xl text-5xl font-semibold tracking-tight sm:text-6xl">One operating model for every team that moves distribution forward.</h1><p className="mt-7 max-w-3xl text-lg leading-8 text-slate-400">Different teams need different views and workflows. The platform keeps the underlying context connected so work does not disappear between departments.</p></section><section className="border-y border-slate-900 bg-slate-950/70"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8"><div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{solutions.map(([title,copy,tags])=><div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-7"><h2 className="text-lg font-semibold">{title}</h2><p className="mt-3 text-sm leading-6 text-slate-500">{copy}</p><p className="mt-5 text-xs leading-5 text-slate-600">{tags}</p></div>)}</div></div></section><section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24"><div className="grid gap-10 lg:grid-cols-2"><div><p className="text-xs uppercase tracking-widest text-blue-400">Why distribution is different</p><h2 className="mt-3 text-3xl font-semibold">The business is an ecosystem, not a single pipeline.</h2></div><div className="space-y-5 text-sm leading-7 text-slate-400"><p>Software distribution depends on relationships between vendors, distributors, resellers, MSPs, partners and customers. The same product can move through several commercial relationships before revenue is realized.</p><p>That means partner health, product fit, market signals, opportunity context and commercial economics need to connect rather than live in separate tools.</p></div></div></section><section className="border-y border-slate-900 bg-slate-900/30"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8"><div className="rounded-3xl border border-slate-800 bg-slate-950 p-8 lg:p-12"><h2 className="text-3xl font-semibold">Start with the business you have today.</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500">The platform is being built progressively. The website communicates the full destination; the product grows toward it without pretending future capabilities already exist.</p><Link href="/signup" className="mt-8 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold">Create your workspace</Link></div></div></section><MarketingFooter/></main>
+export default function SolutionsPage() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-white">
+      <MarketingNav />
+      <section className="mx-auto max-w-7xl px-5 pb-20 pt-20 lg:px-8 lg:pt-28">
+        <p className="text-sm font-medium text-blue-400">Solutions</p>
+        <h1 className="mt-4 max-w-5xl text-5xl font-semibold tracking-tight sm:text-6xl">
+          One operating model for every team that moves distribution forward.
+        </h1>
+        <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-400">
+          Different teams need different views and workflows. The platform keeps the underlying context connected so work does not disappear between departments.
+        </p>
+      </section>
+
+      <section className="border-y border-slate-900 bg-slate-950/70">
+        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {solutions.map(([title, copy, tags]) => (
+              <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-7">
+                <h2 className="text-lg font-semibold">{title}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-500">{copy}</p>
+                <p className="mt-5 text-xs leading-5 text-slate-600">{tags}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
+        <div className="grid gap-10 lg:grid-cols-2">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-blue-400">Why distribution is different</p>
+            <h2 className="mt-3 text-3xl font-semibold">The business is an ecosystem, not a single pipeline.</h2>
+          </div>
+          <div className="space-y-5 text-sm leading-7 text-slate-400">
+            <p>Software distribution depends on relationships between vendors, distributors, resellers, MSPs, partners and customers. The same product can move through several commercial relationships before revenue is realized.</p>
+            <p>That means partner health, product fit, market signals, opportunity context and commercial economics need to connect rather than live in separate tools.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-slate-900 bg-slate-900/30">
+        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+          <div className="rounded-3xl border border-slate-800 bg-slate-950 p-8 lg:p-12">
+            <h2 className="text-3xl font-semibold">Start with the business you have today.</h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500">
+              The platform is being built progressively. The website communicates the full destination; the product grows toward it without pretending future capabilities already exist.
+            </p>
+            <Link href="/signup" className="mt-8 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold">
+              Create your workspace
+            </Link>
+          </div>
+        </div>
+      </section>
+      <MarketingFooter />
+    </main>
+  )
+}
