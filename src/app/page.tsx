@@ -66,12 +66,13 @@ export default async function Home() {
             <span className="text-sm font-semibold">AI Distribution Platform</span>
           </Link>
           <div className="hidden items-center gap-6 text-sm text-slate-400 lg:flex">
-            <a href="#platform" className="hover:text-white">Platform</a>
-            <a href="#workforce" className="hover:text-white">AI Workforce</a>
-            <a href="#workflow" className="hover:text-white">How it works</a>
-            <a href="#solutions" className="hover:text-white">Solutions</a>
-            <a href="#partners" className="hover:text-white">Partners</a>
-            <a href="#about" className="hover:text-white">About</a>
+            <Link href="/platform" className="hover:text-white">Platform</Link>
+            <Link href="/ai-workforce" className="hover:text-white">AI Workforce</Link>
+            <Link href="/how-it-works" className="hover:text-white">How it works</Link>
+            <Link href="/solutions" className="hover:text-white">Solutions</Link>
+            <Link href="/partners" className="hover:text-white">Partners</Link>
+            <Link href="/resources" className="hover:text-white">Resources</Link>
+            <Link href="/about" className="hover:text-white">About</Link>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/login" className="rounded-lg px-3 py-2 text-sm text-slate-300 hover:text-white">Sign in</Link>
@@ -92,7 +93,7 @@ export default async function Home() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href="/signup" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Create your workspace</Link>
-              <a href="#platform" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-600">Explore the platform</a>
+              <Link href="/platform" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-600">Explore the platform</Link>
             </div>
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500">
               <span>Business system</span>
@@ -214,7 +215,7 @@ export default async function Home() {
             <p className="mt-5 text-base leading-7 text-slate-400">
               Give the workforce an objective. The orchestrator can coordinate specialist roles across business data and external intelligence, then progressively move from research and qualification toward authorized communication, meetings, sales support and operational follow-through.
             </p>
-            <Link href="/workforce" className="mt-7 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Explore AI Workforce</Link>
+            <Link href="/ai-workforce" className="mt-7 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Explore AI Workforce</Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {workforce.map(([title, copy]) => (
@@ -377,20 +378,20 @@ export default async function Home() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Platform</p>
               <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <a href="#platform" className="block hover:text-slate-300">Platform layers</a>
-                <a href="#workflow" className="block hover:text-slate-300">How it works</a>
-                <a href="#example" className="block hover:text-slate-300">Business example</a>
-                <a href="#workforce" className="block hover:text-slate-300">AI Workforce</a>
-                <a href="#trust" className="block hover:text-slate-300">Control & governance</a>
+                <Link href="/platform" className="block hover:text-slate-300">Platform layers</Link>
+                <Link href="/how-it-works" className="block hover:text-slate-300">How it works</Link>
+                <Link href="/ai-workforce" className="block hover:text-slate-300">Business example</Link>
+                <Link href="/ai-workforce" className="block hover:text-slate-300">AI Workforce</Link>
+                <Link href="/how-it-works" className="block hover:text-slate-300">Control & governance</Link>
               </div>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Company</p>
               <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <a href="#about" className="block hover:text-slate-300">About us</a>
-                <a href="#partners" className="block hover:text-slate-300">Partners</a>
-                <a href="#solutions" className="block hover:text-slate-300">Solutions</a>
-                <a href="#ecosystem" className="block hover:text-slate-300">Ecosystem</a>
+                <Link href="/about" className="block hover:text-slate-300">About us</Link>
+                <Link href="/partners" className="block hover:text-slate-300">Partners</Link>
+                <Link href="/solutions" className="block hover:text-slate-300">Solutions</Link>
+                <Link href="/platform" className="block hover:text-slate-300">Ecosystem</Link>
               </div>
             </div>
             <div>
