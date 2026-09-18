@@ -583,10 +583,3 @@ export async function getOperatingRun(supabase: SupabaseClient, runId: string) {
   if (approvals.error) throw approvals.error
   return run.data ? { run: run.data, tasks: tasks.data ?? [], toolCalls: calls.data ?? [], approvals: approvals.data ?? [] } : null
 }
-
-async function definition(supabase: SupabaseClient, agentKey: AgentKey) {
-  const result = await supabase.from('agent_definitions').select('*').eq('agent_key', agentKey).eq('enabled', true).maybeSingle()
-  if (result.error) throw result.error
-  if (!result.data) throw new Error('Agent definition unavailable.')
-  return result.data
-}
