@@ -24,23 +24,32 @@ const workforce = [
   ['Market Intelligence', 'Researches markets, competitors, products and external signals.'],
   ['Commercial Agent', 'Analyzes pricing, margins, discounts and commercial risk.'],
   ['Operations Agent', 'Finds overdue work, missing information and workflow bottlenecks.'],
-  ['Future specialist workforce', 'Research, verification, channel fit, contact research, outreach and response specialists can extend the operating model as the platform grows.'],
+  ['Future specialist workforce', 'Research, verification, channel fit, contact research, outreach, response and meeting coordination specialists can extend the operating model as the platform grows.'],
 ]
 
 const workflow = [
-  ['Discover', 'Find relevant companies, vendors, products and market signals.'],
-  ['Research & Verify', 'Build evidence and understand whether an opportunity is real and relevant.'],
-  ['Qualify & Match', 'Connect vendors, products, partners, customers and channel fit.'],
-  ['Engage & Sell', 'Prepare and coordinate outreach, meetings, opportunities and commercial work.'],
-  ['Operate', 'Manage tasks, follow-ups, approvals and activity across the business.'],
-  ['Learn', 'Use outcomes and business activity to improve future decisions.'],
+  ['Discover', 'Find vendors, products, partners, customers, prospects and market opportunities.'],
+  ['Research', 'Understand companies, people, products, technologies, markets and commercial context.'],
+  ['Verify', 'Separate evidence and known facts from inference, assumptions and missing information.'],
+  ['Qualify', 'Determine channel fit, partner fit, vendor fit, customer relevance and opportunity priority.'],
+  ['Match', 'Connect vendors, products, distributors, partners, customers and opportunities.'],
+  ['Contact', 'Identify relevant people and prepare the right context for engagement.'],
+  ['Outreach', 'Prepare and, when authorized, execute personalized outreach, recruitment and follow-ups.'],
+  ['Respond', 'Understand replies, objections and intent, then determine the next action or escalation.'],
+  ['Meet', 'Support meeting preparation, scheduling, invitations, briefs, outcomes and follow-up.'],
+  ['Sell', 'Support qualification, proposals, pricing, margins, negotiation preparation and opportunity progression.'],
+  ['Operate', 'Handle authorized tasks, updates, workflows, approvals, reminders and operational bottlenecks.'],
+  ['Follow Up', 'Keep relationships and opportunities moving across every stage of the operating cycle.'],
+  ['Learn', 'Use outcomes, activity and decisions to improve future recommendations and actions.'],
 ]
 
 const principles = [
   ['People manage the business', 'Your team owns relationships, commitments, commercial decisions and important actions.'],
-  ['AI operates the work', 'AI can research, analyze, coordinate and prepare work without replacing business ownership.'],
-  ['Evidence before action', 'The operating layer should distinguish facts, inferences, recommendations, actions and approvals.'],
-  ['One connected business context', 'The value comes from connecting vendors, partners, customers, opportunities, intelligence and operations.'],
+  ['AI operates the work', 'AI progressively takes on research, coordination, communication and authorized operational work.'],
+  ['Evidence before action', 'Facts, evidence, inference, recommendations, actions and approvals remain distinguishable.'],
+  ['Permission-aware execution', 'AI works within defined permissions, boundaries and approval gates.'],
+  ['Full visibility', 'Actions, recommendations, approvals, outcomes and workflow status remain visible.'],
+  ['One connected context', 'Business data, intelligence and AI work operate from the same business context.'],
 ]
 
 export default async function Home() {
@@ -60,6 +69,7 @@ export default async function Home() {
             <a href="#platform" className="hover:text-white">Platform</a>
             <a href="#workforce" className="hover:text-white">AI Workforce</a>
             <a href="#workflow" className="hover:text-white">How it works</a>
+            <a href="#solutions" className="hover:text-white">Solutions</a>
             <a href="#partners" className="hover:text-white">Partners</a>
             <a href="#about" className="hover:text-white">About</a>
           </div>
@@ -78,7 +88,7 @@ export default async function Home() {
               Run the distribution business. Let AI operate the work.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-400">
-              Connect vendors, distributors, partners, customers, opportunities, market intelligence and commercial operations in one platform. Then give an AI workforce the context to research, prioritize and coordinate the work while people remain in control.
+              Connect the business system, external intelligence and AI workforce in one operating platform. AI can progressively discover, research, verify, qualify, match, contact, reach out, respond, coordinate meetings, support sales, operate workflows and follow up — while people remain in control of important decisions and commitments.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href="/signup" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Create your workspace</Link>
@@ -97,7 +107,7 @@ export default async function Home() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Business objective</p>
-                  <p className="mt-1 text-sm font-medium text-slate-200">Which partners should I reactivate this week?</p>
+                  <p className="mt-1 text-sm font-medium text-slate-200">Find cybersecurity vendors for our EMEA channel, qualify the best ones and prepare the next outreach.</p>
                 </div>
                 <span className="rounded-full border border-slate-700 px-3 py-1 text-[11px] text-slate-400">Controlled</span>
               </div>
@@ -105,10 +115,10 @@ export default async function Home() {
             <div className="my-3 flex justify-center text-xs text-slate-600">↓</div>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                ['01', 'Understand context', 'Partner activity · opportunities · history'],
-                ['02', 'Coordinate specialists', 'Partner · sales · market intelligence'],
-                ['03', 'Produce a recommendation', 'Priorities · evidence · next actions'],
-                ['04', 'Keep people in control', 'Approval · action · audit'],
+                ['01', 'Discover & research', 'Companies · products · people · markets'],
+                ['02', 'Verify & qualify', 'Evidence · fit · priority · gaps'],
+                ['03', 'Contact & engage', 'Contacts · outreach · responses · meetings'],
+                ['04', 'Sell & operate', 'Opportunities · commercial work · follow-up'],
               ].map(([number, title, copy]) => (
                 <div key={number} className="rounded-xl border border-slate-800 bg-slate-950 p-4">
                   <span className="text-[11px] font-semibold text-blue-400">{number}</span>
@@ -167,21 +177,31 @@ export default async function Home() {
 
       <section id="workflow" className="scroll-mt-20 border-y border-slate-900 bg-slate-950/70">
         <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-          <div className="max-w-3xl">
+          <div className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-400">How it works</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">From discovery to execution, one connected workflow.</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">From discovery to execution, the AI workforce follows the work.</h2>
             <p className="mt-5 text-base leading-7 text-slate-400">
-              The platform follows the work of a real distribution organization instead of forcing every problem into a generic dashboard.
+              The platform is designed around the complete commercial operating cycle — not just recommendations. As capabilities and integrations expand, authorized AI workflows can move from finding an opportunity to researching it, communicating with people, coordinating meetings, supporting sales and keeping the work moving.
             </p>
           </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {workflow.map(([title, copy], index) => (
-              <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-                <span className="text-xs font-semibold text-blue-400">0{index + 1}</span>
+              <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+                <span className="text-xs font-semibold text-blue-400">{String(index + 1).padStart(2, '0')}</span>
                 <h3 className="mt-3 font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p>
               </div>
             ))}
+          </div>
+          <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+            <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-300">
+              {workflow.map(([title], index) => (
+                <span key={title} className="flex items-center gap-2">
+                  <span>{title}</span>{index < workflow.length - 1 && <span className="text-slate-700">→</span>}
+                </span>
+              ))}
+            </div>
+            <p className="mt-4 text-xs leading-5 text-slate-500">AI execution remains permission-aware. Important decisions, commercial commitments and external actions can stay behind human approval.</p>
           </div>
         </div>
       </section>
@@ -192,13 +212,38 @@ export default async function Home() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-400">AI Workforce</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">A coordinated team of AI specialists around the business.</h2>
             <p className="mt-5 text-base leading-7 text-slate-400">
-              Give the workforce an objective. The operating layer can coordinate the relevant specialist roles, use business context and return recommendations for your team to review.
+              Give the workforce an objective. The orchestrator can coordinate specialist roles across business data and external intelligence, then progressively move from research and qualification toward authorized communication, meetings, sales support and operational follow-through.
             </p>
             <Link href="/workforce" className="mt-7 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Explore AI Workforce</Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {workforce.map(([title, copy]) => (
               <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+                <h3 className="font-semibold">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="solutions" className="scroll-mt-20 border-y border-slate-900 bg-slate-950/70">
+        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-400">Solutions</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">One operating model. Different teams, one connected context.</h2>
+            <p className="mt-5 text-base leading-7 text-slate-400">The platform is designed for the organizations and teams that make software distribution work — without forcing every role into the same workflow.</p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              ['For distributors', 'Operate vendors, partners, customers, opportunities and commercial workflows from one connected workspace.'],
+              ['For vendors', 'Build and operate indirect sales channels with partner, product, market and opportunity context.'],
+              ['For channel teams', 'Discover, recruit, activate, engage and grow partner ecosystems with AI-assisted operating capacity.'],
+              ['For sales teams', 'Discover prospects, qualify opportunities, prepare engagement and keep follow-ups moving.'],
+              ['For commercial teams', 'Bring pricing, margins, discounts, proposals and commercial risk into the operating context.'],
+              ['For operations teams', 'Coordinate tasks, approvals, missing information, workflow bottlenecks and execution across the business.'],
+            ].map(([title, copy]) => (
+              <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
                 <h3 className="font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p>
               </div>
@@ -231,12 +276,53 @@ export default async function Home() {
         </div>
       </section>
 
+      <section id="example" className="scroll-mt-20 mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
+        <div className="grid gap-12 lg:grid-cols-[.7fr_1.3fr] lg:items-start">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-400">A real business objective</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Give the workforce a goal. Let it coordinate the work.</h2>
+            <p className="mt-5 text-base leading-7 text-slate-400">An illustrative workflow — not a claim that every step is available today.</p>
+          </div>
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 lg:p-8">
+            <p className="text-sm font-semibold text-slate-200">Objective</p>
+            <p className="mt-2 text-lg font-medium leading-7 text-slate-100">“Find and build relationships with cybersecurity vendors that fit our EMEA distribution business.”</p>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              {[
+                'Discover vendors',
+                'Research companies',
+                'Verify information',
+                'Evaluate channel fit',
+                'Identify decision makers',
+                'Prepare outreach',
+                'Send authorized outreach',
+                'Track responses',
+                'Book meetings',
+                'Prepare meeting brief',
+                'Evaluate commercial opportunity',
+                'Follow up',
+                'Onboard vendor',
+                'Match products to partners',
+                'Create opportunities',
+                'Track performance',
+                'Learn from outcomes',
+              ].map((item, index) => (
+                <div key={item} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
+                  <span className="text-[11px] font-semibold text-blue-400">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="text-sm text-slate-300">{item}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-xs leading-5 text-slate-500">External communication and commercial commitments remain subject to the permissions, integrations and approval boundaries defined by the business.</p>
+          </div>
+        </div>
+      </section>
+
       <section id="trust" className="scroll-mt-20 mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-400">Built for control</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">AI should increase operating capacity without taking ownership away from people.</h2>
         </div>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {principles.map(([title, copy]) => (
             <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
               <h3 className="font-semibold">{title}</h3>
@@ -293,6 +379,7 @@ export default async function Home() {
               <div className="mt-4 space-y-2 text-sm text-slate-600">
                 <a href="#platform" className="block hover:text-slate-300">Platform layers</a>
                 <a href="#workflow" className="block hover:text-slate-300">How it works</a>
+                <a href="#example" className="block hover:text-slate-300">Business example</a>
                 <a href="#workforce" className="block hover:text-slate-300">AI Workforce</a>
                 <a href="#trust" className="block hover:text-slate-300">Control & governance</a>
               </div>
@@ -302,6 +389,7 @@ export default async function Home() {
               <div className="mt-4 space-y-2 text-sm text-slate-600">
                 <a href="#about" className="block hover:text-slate-300">About us</a>
                 <a href="#partners" className="block hover:text-slate-300">Partners</a>
+                <a href="#solutions" className="block hover:text-slate-300">Solutions</a>
                 <a href="#ecosystem" className="block hover:text-slate-300">Ecosystem</a>
               </div>
             </div>
