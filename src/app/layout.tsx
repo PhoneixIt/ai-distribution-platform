@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { validateEnvironment } from '@/lib/env'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -20,20 +19,13 @@ type RootLayoutProps = Readonly<{ children: React.ReactNode }>
 
 /**
  * Root layout
- * Validates environment on startup and sets up global styles
+ * Provides global styles and application metadata.
+ *
+ * Environment validation belongs at the runtime boundary where the relevant
+ * service is used. Running it here makes a production build depend on local
+ * or CI-only secrets/public environment configuration.
  */
 export default function RootLayout({ children }: RootLayoutProps) {
-  // Validate environment variables on startup
-  try {
-    validateEnvironment()
-  } catch (error) {
-    console.error('Environment validation failed:', error)
-    // In development, allow to continue; in production, this should fail hard
-    if (process.env.NODE_ENV === 'production') {
-      throw error
-    }
-  }
-
   return (
     <html
       lang="en"
