@@ -91,18 +91,18 @@ export default function WorkforcePage() {
   }
 
   return (
-    <AppShell title="AI operating workspace" subtitle="One orchestrator, six specialist agents, shared business state, controlled tools and approval gates.">
+    <AppShell title="AI operating workspace" subtitle="Give the AI workforce a real business objective. It researches the workspace, coordinates specialist work and returns recommendations your team can review.">
       <section className="rounded-2xl border border-blue-900/50 bg-blue-950/15 p-6">
-        <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Ask the operating system</p>
-        <h2 className="mt-2 text-xl font-semibold">What should the distribution team work on?</h2>
+        <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">AI workforce</p>
+        <h2 className="mt-2 text-xl font-semibold">What do you want the AI workforce to work on?</h2>
         <form onSubmit={submit} className="mt-5">
-          <textarea value={objective} onChange={(event) => setObjective(event.target.value)} rows={4} placeholder="Example: Which partners should I reactivate this week, and what should I do next?" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 outline-none focus:border-blue-500" />
+          <textarea value={objective} onChange={(event) => setObjective(event.target.value)} rows={4} placeholder="Example: Which partners should I reactivate this week?" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 outline-none focus:border-blue-500" />
           <div className="mt-3 flex flex-wrap gap-2">
             {prompts.map((prompt) => <button key={prompt} type="button" onClick={() => setObjective(prompt)} className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-blue-500 hover:text-white">{prompt}</button>)}
           </div>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <button disabled={running || !objective.trim()} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">{running ? 'Running agents…' : 'Run operating analysis'}</button>
-            <span className="text-xs text-slate-500">Internal tasks and recommendations may be created. External actions are not sent.</span>
+            <span className="text-xs text-slate-500">The workforce can create internal tasks and recommendations. External actions require the appropriate approval.</span>
           </div>
         </form>
       </section>
@@ -137,7 +137,7 @@ function RunResult({ run }: { run: Run }) {
   return (
     <section className="mt-6 space-y-4">
       <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-wider text-slate-500">Run {run.runId.slice(0, 8)}</p><h2 className="mt-1 text-lg font-semibold">{run.final.summary}</h2></div><span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">{run.provider}</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-wider text-slate-500">Run {run.runId.slice(0, 8)}</p><h2 className="mt-1 text-lg font-semibold">{run.final.summary}</h2></div><span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">{formatProvider(run.provider)}</span></div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3"><Mini label="Confidence" value={Math.round(run.final.confidence * 100) + '%'} /><Mini label="Agents selected" value={String(run.plan.selected_agents.length)} /><Mini label="Approval items" value={String(run.final.approvals.length)} /></div>
       </div>
 
@@ -152,7 +152,7 @@ function RunResult({ run }: { run: Run }) {
 
       <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
         <p className="text-xs uppercase tracking-wider text-slate-500">Delegation trace</p>
-        <div className="mt-3 space-y-2">{run.results.map((item) => <div key={item.agentKey} className="flex flex-col gap-1 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-sm font-medium">{item.agentKey}</span><span className="text-xs text-slate-500">{item.error || (item.output ? Math.round(item.output.confidence * 100) + '% confidence' : 'completed')}</span></div>)}</div>
+        <div className="mt-3 space-y-2">{run.results.map((item) => <div key={item.agentKey} className="flex flex-col gap-1 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-sm font-medium">{agentLabel(item.agentKey)}</span><span className="text-xs text-slate-500">{item.error || (item.output ? Math.round(item.output.confidence * 100) + '% confidence' : 'completed')}</span></div>)}</div>
       </div>
     </section>
   )
@@ -164,3 +164,15 @@ function Evidence({ title, items }: { title: string; items: string[] }) {
 
 function Metric({ label, value }: { label: string; value: number }) { return <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5"><p className="text-xs text-slate-500">{label}</p><p className="mt-2 text-3xl font-semibold">{value}</p></div> }
 function Mini({ label, value }: { label: string; value: string }) { return <div className="rounded-xl bg-slate-950 p-3"><p className="text-[11px] text-slate-500">{label}</p><p className="mt-1 text-sm font-semibold text-slate-200">{value}</p></div> }
+
+
+function formatProvider(provider: string) {
+  if (provider.startsWith('openai')) return 'OpenAI'
+  if (provider === 'rules_fallback') return 'Built-in operating rules'
+  return 'Configured AI provider'
+}
+
+function agentLabel(key: string) {
+  const match = agents.find(([, agentKey]) => agentKey === key)
+  return match?.[0] || key.replaceAll('_', ' ')
+}
