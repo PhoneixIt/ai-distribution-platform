@@ -10,9 +10,20 @@ function copyCookies(from: NextResponse, to: NextResponse) {
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+  if (!supabaseUrl || !supabasePublishableKey) {
+    console.error('[supabase-proxy] Missing Supabase public environment variables at runtime', {
+      hasUrl: Boolean(supabaseUrl),
+      hasPublishableKey: Boolean(supabasePublishableKey),
+    })
+    return supabaseResponse
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    supabaseUrl,
+    supabasePublishableKey,
     {
       cookies: {
         getAll() {
