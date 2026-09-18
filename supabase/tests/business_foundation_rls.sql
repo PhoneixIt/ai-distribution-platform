@@ -6,12 +6,13 @@
 
 -- Required tables:
 -- org_vendors, vendor_contacts, distributor_partners, activities, meetings,
--- tasks, pricing_records, partner_performance, business_notes
+-- tasks, pricing_records, partner_performance, business_notes, opportunity_products
 
 -- Required properties:
 -- * RLS enabled on every table.
 -- * authenticated-only grants.
 -- * org member SELECT/INSERT/UPDATE.
 -- * owner/admin DELETE.
--- * non-member reads/writes denied.
+-- * anonymous and non-member reads/writes denied.
 -- * business changes produce audit_log rows.
+-- * opportunity_products provides the structured Product -> Opportunity/Deal -> Revenue bridge.
