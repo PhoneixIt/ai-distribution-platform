@@ -11,6 +11,7 @@ export const BUSINESS_ENTITIES = [
   'partner_performance',
   'business_notes',
   'recommendations',
+  'opportunity_products',
 ] as const
 
 export type BusinessEntity = (typeof BUSINESS_ENTITIES)[number]
