@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import AppShell from '@/components/app-shell'
 import { createClient } from '@/lib/supabase/client'
 
-type Product = { id:string; vendor_id:string|null; name:string; category_name:string|null; description:string|null; core_capabilities:string[]|null; pricing_model:string|null; is_active:boolean; vendors?:{name:string}|{name:string}[]|null }
+type Product = { id:string; vendor_id:string|null; name:string; category_name:string|null; description:string|null; core_capabilities:string[]|null; pricing_model:string|null; is_active:boolean; vendors?:{name:string}|null }
 
 export default function ProductsPage() {
   const [items,setItems]=useState<Product[]>([]), [q,setQ]=useState(''), [loading,setLoading]=useState(true), [error,setError]=useState('')
