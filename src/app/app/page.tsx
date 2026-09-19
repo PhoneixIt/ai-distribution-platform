@@ -26,7 +26,7 @@ export default function AppDashboard() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         {[
-          ['Partners', stats.partners, '/partners'], ['Vendors', stats.vendors, '/vendors'], ['Distributors', stats.distributors, '/distributors'],
+          ['Network partners', stats.partners, '/partners'], ['Network vendors', stats.vendors, '/vendors'], ['Network distributors', stats.distributors, '/distributors'],
           ['Customers', stats.customers, '/customers'], ['Opportunities', stats.opportunities, '/opportunities'], ['AI Matches', stats.matches, '/opportunities'],
         ].map(([label, value, href]) => (
           <Link key={String(label)} href={String(href)} className="rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-slate-700 hover:bg-slate-900/80">
