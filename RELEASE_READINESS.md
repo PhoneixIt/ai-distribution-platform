@@ -30,7 +30,7 @@ These are configuration/integration dependencies, not hidden product functionali
 
 1. Supabase Auth still has anonymous sign-ins enabled. The application and database explicitly reject anonymous access, but the project-level Auth setting should be disabled when anonymous sign-in is not a product requirement.
 2. Supabase Auth leaked-password protection is still disabled and should be enabled when the project plan supports it.
-3. The deployed AI runtime needs a valid `OPENAI_API_KEY` and approved model configuration for live model inference; otherwise the deterministic rules fallback remains the safe behavior.
+3. The deployed AI runtime uses the Vercel Connect OpenAI connector for runtime credentials. The connector must be linked to the project/environment and have a valid OpenAI credential; `OPENAI_AGENT_MODEL` is optional and defaults to `gpt-5.6-luna`.
 4. External action execution is not yet connected to an email/calendar/CRM provider. Approved actions are durably queued with provider `unconfigured`; they are not silently sent or executed.
 5. The repository does not contain the full historical 2026-07/2026-08 Quentra-era migration chain that existed in the current live Supabase project. The live environment is healthy, but a brand-new Supabase environment cannot currently be reproduced from repository migrations alone.
 6. Supabase performance advisor still reports informational unindexed-foreign-key and unused-index findings. These are optimization items and should be revisited after the database has real workload rather than removed blindly from an empty workspace.
