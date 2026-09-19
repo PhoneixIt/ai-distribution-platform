@@ -69,6 +69,7 @@ export default function WorkforcePage() {
   const [stats, setStats] = useState({ runs: 0, tasks: 0, approvals: 0 })
   const [pendingApprovals, setPendingApprovals] = useState<Approval[]>([])
   const [approvalError, setApprovalError] = useState('')
+  const [approvalNotice, setApprovalNotice] = useState('')
   const [runHistory, setRunHistory] = useState<RunHistoryItem[]>([])
   const [selectedHistoryRun, setSelectedHistoryRun] = useState<RunHistoryItem | null>(null)
 
@@ -111,6 +112,7 @@ export default function WorkforcePage() {
 
   async function handleApproval(id: string, action: 'approve' | 'reject') {
     setApprovalError('')
+    setApprovalNotice('')
     try {
       const response = await fetch(`/api/ai/workforce/approvals/${id}`, {
         method: 'POST',
@@ -119,6 +121,7 @@ export default function WorkforcePage() {
       })
       const payload = await response.json()
       if (!response.ok || !payload.success) throw new Error(payload.error || 'Approval update failed.')
+      if (payload.execution?.message) setApprovalNotice(payload.execution.message)
       await refreshWorkspaceMetrics()
     } catch (cause) {
       setApprovalError(cause instanceof Error ? cause.message : 'Approval update failed.')
@@ -174,7 +177,7 @@ export default function WorkforcePage() {
 
       {run ? <RunResult run={run} /> : null}
 
-      {pendingApprovals.length ? <ApprovalQueue approvals={pendingApprovals} error={approvalError} onDecision={handleApproval} /> : null}
+      {pendingApprovals.length ? <ApprovalQueue approvals={pendingApprovals} error={approvalError} notice={approvalNotice} onDecision={handleApproval} /> : null}
 
       <section className="mt-6 grid gap-4 sm:grid-cols-3">
         <Metric label="Workforce runs" value={stats.runs} />
@@ -223,10 +226,11 @@ export default function WorkforcePage() {
   )
 }
 
-function ApprovalQueue({ approvals, error, onDecision }: { approvals: Approval[]; error: string; onDecision: (id: string, action: 'approve' | 'reject') => void }) {
+function ApprovalQueue({ approvals, error, notice, onDecision }: { approvals: Approval[]; error: string; notice: string; onDecision: (id: string, action: 'approve' | 'reject') => void }) {
   return <section className="mt-6 rounded-2xl border border-amber-900/50 bg-amber-950/10 p-5">
     <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-semibold uppercase tracking-wider text-amber-400">Human approval</p><h2 className="mt-1 text-lg font-semibold">Actions waiting for a workspace admin</h2></div><span className="rounded-full border border-amber-900 px-2.5 py-1 text-xs text-amber-300">{approvals.length} pending</span></div>
     <div className="mt-4 space-y-3">{approvals.map((approval) => <div key={approval.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs uppercase tracking-wider text-slate-500">{approval.action_type.replaceAll('_', ' ')}</p><p className="mt-1 text-sm text-slate-200">{approval.summary}</p><p className="mt-1 text-xs text-slate-600">Requested {new Date(approval.requested_at).toLocaleString()}</p></div><div className="flex gap-2"><button type="button" onClick={() => onDecision(approval.id, 'reject')} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-red-700">Reject</button><button type="button" onClick={() => onDecision(approval.id, 'approve')} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold">Approve</button></div></div></div>)}</div>
+    {notice ? <p className="mt-3 text-xs text-amber-300">{notice}</p> : null}
     {error ? <p className="mt-3 text-xs text-red-300">{error}</p> : null}
   </section>
 }
