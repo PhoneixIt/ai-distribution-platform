@@ -30,6 +30,18 @@ type Approval = {
   requested_at: string
 }
 
+type RunHistoryItem = {
+  id: string
+  objective: string
+  status: string
+  provider: string
+  model: string | null
+  confidence: number | null
+  created_at: string
+  completed_at: string | null
+  summary: Run['final'] | null
+}
+
 type Run = {
   runId: string
   status: string
@@ -57,20 +69,24 @@ export default function WorkforcePage() {
   const [stats, setStats] = useState({ runs: 0, tasks: 0, approvals: 0 })
   const [pendingApprovals, setPendingApprovals] = useState<Approval[]>([])
   const [approvalError, setApprovalError] = useState('')
+  const [runHistory, setRunHistory] = useState<RunHistoryItem[]>([])
+  const [selectedHistoryRun, setSelectedHistoryRun] = useState<RunHistoryItem | null>(null)
 
   useEffect(() => {
     let active = true
     const load = async () => {
       try {
         const { supabase, orgId } = await ensureWorkspace()
-        const [{ count: runs }, { count: tasks }, { count: approvals, data: approvalRows }] = await Promise.all([
+        const [{ count: runs }, { count: tasks }, { count: approvals, data: approvalRows }, { data: recentRuns }] = await Promise.all([
           supabase.from('agent_runs').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
           supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
           supabase.from('agent_approvals').select('id,action_type,summary,status,requested_at', { count: 'exact' }).eq('org_id', orgId).eq('status', 'pending').order('requested_at', { ascending: false }).limit(20),
+          supabase.from('agent_runs').select('id,objective,status,provider,model,confidence,created_at,completed_at,summary').eq('org_id', orgId).order('created_at', { ascending: false }).limit(12),
         ])
         if (active) {
           setStats({ runs: runs || 0, tasks: tasks || 0, approvals: approvals || 0 })
           setPendingApprovals((approvalRows || []) as Approval[])
+          setRunHistory((recentRuns || []) as RunHistoryItem[])
         }
       } catch {
         // The protected shell still renders if the metrics query is unavailable.
@@ -82,13 +98,15 @@ export default function WorkforcePage() {
 
   async function refreshWorkspaceMetrics() {
     const { supabase, orgId } = await ensureWorkspace()
-    const [{ count: runs }, { count: tasks }, { count: approvals, data: approvalRows }] = await Promise.all([
+    const [{ count: runs }, { count: tasks }, { count: approvals, data: approvalRows }, { data: recentRuns }] = await Promise.all([
       supabase.from('agent_runs').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
       supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
       supabase.from('agent_approvals').select('id,action_type,summary,status,requested_at', { count: 'exact' }).eq('org_id', orgId).eq('status', 'pending').order('requested_at', { ascending: false }).limit(20),
+      supabase.from('agent_runs').select('id,objective,status,provider,model,confidence,created_at,completed_at,summary').eq('org_id', orgId).order('created_at', { ascending: false }).limit(12),
     ])
     setStats({ runs: runs || 0, tasks: tasks || 0, approvals: approvals || 0 })
     setPendingApprovals((approvalRows || []) as Approval[])
+    setRunHistory((recentRuns || []) as RunHistoryItem[])
   }
 
   async function handleApproval(id: string, action: 'approve' | 'reject') {
@@ -163,6 +181,31 @@ export default function WorkforcePage() {
         <Metric label="Internal tasks" value={stats.tasks} />
         <Metric label="Pending approvals" value={stats.approvals} />
       </section>
+
+      {runHistory.length ? <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Run history</p><h2 className="mt-1 text-xl font-semibold">Recent workforce objectives</h2></div>
+          <span className="text-xs text-slate-600">Last {runHistory.length}</span>
+        </div>
+        <div className="mt-4 space-y-2">
+          {runHistory.map((item) => {
+            const active = selectedHistoryRun?.id === item.id
+            const summary = item.summary?.summary || item.objective
+            return <div key={item.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+              <button type="button" onClick={() => setSelectedHistoryRun(active ? null : item)} className="w-full text-left">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0"><p className="truncate text-sm font-medium text-slate-200">{item.objective}</p><p className="mt-1 text-xs text-slate-600">{new Date(item.created_at).toLocaleString()} · {formatProvider(item.provider)}</p></div>
+                  <div className="flex items-center gap-3"><span className="rounded-full border border-slate-700 px-2.5 py-1 text-[11px] text-slate-400">{item.status.replaceAll('_', ' ')}</span><span className="text-xs text-slate-500">{item.confidence == null ? '—' : Math.round(Number(item.confidence) * 100) + '%'}</span></div>
+                </div>
+              </button>
+              {active ? <div className="mt-4 border-t border-slate-800 pt-4">
+                <p className="text-sm leading-6 text-slate-300">{summary}</p>
+                {item.summary?.gaps?.length ? <p className="mt-3 text-xs text-slate-500">Gaps: {item.summary.gaps.slice(0, 3).join(' · ')}</p> : null}
+              </div> : null}
+            </div>
+          })}
+        </div>
+      </section> : null}
 
       <section className="mt-8">
         <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Specialist team</p><h2 className="mt-1 text-xl font-semibold">Specialists available to the workforce</h2></div>
