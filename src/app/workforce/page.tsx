@@ -63,10 +63,10 @@ export default function WorkforcePage() {
     const load = async () => {
       try {
         const { supabase, orgId } = await ensureWorkspace()
-        const [{ count: runs }, { count: tasks }, { count: approvals }, { data: approvalRows }] = await Promise.all([
+        const [{ count: runs }, { count: tasks }, { count: approvals, data: approvalRows }] = await Promise.all([
           supabase.from('agent_runs').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
           supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
-          supabase.from('agent_approvals').select('id,action_type,summary,status,requested_at').eq('org_id', orgId).eq('status', 'pending').order('requested_at', { ascending: false }).limit(20),
+          supabase.from('agent_approvals').select('id,action_type,summary,status,requested_at', { count: 'exact' }).eq('org_id', orgId).eq('status', 'pending').order('requested_at', { ascending: false }).limit(20),
         ])
         if (active) {
           setStats({ runs: runs || 0, tasks: tasks || 0, approvals: approvals || 0 })
@@ -82,11 +82,10 @@ export default function WorkforcePage() {
 
   async function refreshWorkspaceMetrics() {
     const { supabase, orgId } = await ensureWorkspace()
-    const [{ count: runs }, { count: tasks }, { count: approvals }, { data: approvalRows }] = await Promise.all([
+    const [{ count: runs }, { count: tasks }, { count: approvals, data: approvalRows }] = await Promise.all([
       supabase.from('agent_runs').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
       supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
-      supabase.from('agent_approvals').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'pending'),
-      supabase.from('agent_approvals').select('id,action_type,summary,status,requested_at').eq('org_id', orgId).eq('status', 'pending').order('requested_at', { ascending: false }).limit(20),
+      supabase.from('agent_approvals').select('id,action_type,summary,status,requested_at', { count: 'exact' }).eq('org_id', orgId).eq('status', 'pending').order('requested_at', { ascending: false }).limit(20),
     ])
     setStats({ runs: runs || 0, tasks: tasks || 0, approvals: approvals || 0 })
     setPendingApprovals((approvalRows || []) as Approval[])
