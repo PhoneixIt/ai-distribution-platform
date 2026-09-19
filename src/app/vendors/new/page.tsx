@@ -1,9 +1,9 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import AppShell from '@/components/app-shell'
-import { createClient, getAuthenticatedClient } from '@/lib/supabase/client'
+import { getAuthenticatedClient } from '@/lib/supabase/client'
 import { ensureWorkspace } from '@/lib/supabase/workspace'
 
 const input = 'mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500'
@@ -45,7 +45,7 @@ export default function NewVendorPage() {
 
       if (vendorError || !vendor) throw vendorError || new Error('Could not create vendor.')
 
-      const { data: userResult } = await createClient().auth.getUser()
+      const { data: userResult } = await supabase.auth.getUser()
       if (!userResult.user) throw new Error('Authentication is unavailable.')
 
       const { error: relationshipError } = await supabase
@@ -89,6 +89,6 @@ export default function NewVendorPage() {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return <label className="block text-sm font-medium text-slate-300">{label}{children}</label>
 }
