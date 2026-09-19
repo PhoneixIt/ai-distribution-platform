@@ -209,10 +209,10 @@ The current implementation uses the OpenAI Agents API directly through server-si
 
 Configuration:
 
-- `OPENAI_API_KEY` — server-side only
-- `OPENAI_AGENT_MODEL` — optional; defaults to `gpt-6-astra`
+- `CONNECTOR_OPENAI` — optional connector identifier; the current Vercel Connect connector is used by default
+- `OPENAI_AGENT_MODEL` — optional; defaults to `gpt-5.6-luna`
 
-The session is configured for multi-agent execution with up to three concurrent subagents.
+OpenAI credentials are requested server-side through Vercel Connect. The workforce no longer uses the legacy `/v1/agents/sessions` endpoint.
 
 The current session uses `environment.type = none`. Hosted sandboxes and additional MCP tools are a later step and should only be added when the corresponding production integration is actually configured.
 
