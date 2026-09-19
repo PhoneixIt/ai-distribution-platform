@@ -285,6 +285,7 @@ const tools: Record<string, Tool> = {
         created_by: userId,
         entity_type: text(args.entity_type) || null,
         entity_id: text(args.entity_id) || null,
+        category_id: 'ai-operating-layer',
         category_name: 'AI Operating Layer',
         category_type: 'agent_recommendation',
         score: priority * 20,
