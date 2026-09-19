@@ -28,7 +28,7 @@ export default function PricingPage(){
    setForm(f=>({...f,vendor_id:f.vendor_id||vr.data?.[0]?.id||''}))
   }catch(cause){setError(cause instanceof Error?cause.message:'Could not load pricing workspace.')}finally{setLoading(false)}
  }
- useEffect(()=>{let active=true;const timer=window.setTimeout(()=>{void load()},0);return()=>{active=false;window.clearTimeout(timer)}},[])
+ useEffect(()=>{const timer=window.setTimeout(()=>{void load()},0);return()=>window.clearTimeout(timer)},[])
  async function submit(e:FormEvent){e.preventDefault();setError('');if(!form.vendor_id){setError('Select a vendor.');return}if(!form.unit_price||Number(form.unit_price)<0){setError('Enter a valid non-negative unit price.');return}setSaving(true)
   try{
    const {supabase,orgId}=await ensureWorkspace()
