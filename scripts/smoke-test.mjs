@@ -1,22 +1,22 @@
 const baseUrl = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 const checks = [
-  ['dashboard', '/'],
-  ['discovery page', '/discovery'],
-  ['partners page', '/partners'],
-  ['new partner page', '/partners/new'],
-  ['discovery API', '/api/discovery'],
-  ['AI workforce page', '/workforce'],
-  ['AI workforce API', '/api/ai/workforce'],
+  ['dashboard', '/', [200]],
+  ['discovery page', '/discovery', [200]],
+  ['partners page', '/partners', [200]],
+  ['new partner page', '/partners/new', [200]],
+  ['discovery API protection', '/api/discovery', [401, 503]],
+  ['AI workforce page', '/workforce', [200]],
+  ['AI workforce API protection', '/api/ai/workforce', [401]],
 ]
 
 let failed = 0
 
-for (const [name, path] of checks) {
+for (const [name, path, expected] of checks) {
   try {
     const response = await fetch(`${baseUrl}${path}`)
-    const ok = response.status < 500
-    console.log(`${ok ? 'PASS' : 'FAIL'} ${name}: HTTP ${response.status}`)
+    const ok = expected.includes(response.status)
+    console.log(`${ok ? 'PASS' : 'FAIL'} ${name}: HTTP ${response.status} (expected ${expected.join(' or ')})`)
     if (!ok) failed += 1
   } catch (error) {
     console.log(`FAIL ${name}: ${error instanceof Error ? error.message : String(error)}`)
