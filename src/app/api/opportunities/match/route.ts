@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 
 function normalize(values: unknown): string[] {
-  if (!Array.isArray(values)) return []
-  return values.map((value) => String(value).trim().toLowerCase()).filter(Boolean)
+  if (Array.isArray(values)) return values.flatMap((value) => normalize(value))
+  if (typeof values === 'string') return values.split(',').map((value) => value.trim().toLowerCase()).filter(Boolean)
+  return []
 }
 
 function overlapScore(needles: string[], haystack: string[]) {
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
   const descriptionTerms = String(opportunity.description || '').toLowerCase().split(/[^a-z0-9]+/).filter((value) => value.length > 3).slice(0, 20)
   const capabilityNeeds = [...new Set([...technologyTerms, ...requirementTerms])]
   const industryNeeds = normalize(customer?.industry)
+  const companySizeNeeds = normalize(customer?.company_size)
   const geographyNeed = String(opportunity.preferred_region || '').trim().toLowerCase()
 
   const { data: partners, error: partnersError } = await supabase
@@ -79,9 +81,10 @@ export async function POST(request: Request) {
     const capabilityFit = overlapScore(capabilityNeeds, capabilities)
     const geographyFit = geographyNeed ? overlapScore([geographyNeed], geography) : 50
     const industryFit = industryNeeds.length ? overlapScore(industryNeeds, industries) : 50
+    const partnerSizes = normalize([partner.company_size, partner.employee_range])
+    const companySizeFit = companySizeNeeds.length ? overlapScore(companySizeNeeds, partnerSizes) : 50
     const verificationFit = partner.is_verified || partner.verification_status === 'verified' ? 100 : 50
-    const customerFit = industryFit
-    const matchScore = Math.round(capabilityFit * 0.45 + geographyFit * 0.25 + customerFit * 0.20 + verificationFit * 0.10)
+    const matchScore = Math.round(capabilityFit * 0.40 + geographyFit * 0.25 + industryFit * 0.20 + companySizeFit * 0.05 + verificationFit * 0.10)
 
     const strengths: string[] = []
     const risks: string[] = []
@@ -91,6 +94,7 @@ export async function POST(request: Request) {
     if (geographyFit >= 70) strengths.push('Good geographic coverage')
     else if (geographyNeed) risks.push('Geographic coverage needs verification')
     if (industryFit >= 70) strengths.push('Relevant industry experience')
+    if (companySizeFit >= 70) strengths.push('Customer-size alignment')
     if (partner.is_verified) strengths.push('Verified partner profile')
     else risks.push('Partner profile is not verified')
 
@@ -106,7 +110,7 @@ export async function POST(request: Request) {
       capabilityFit,
       industryFit,
       geographyFit,
-      customerFit,
+      companySizeFit,
       strengths,
       risks,
       missingCapabilities,
@@ -116,6 +120,13 @@ export async function POST(request: Request) {
   }).sort((a, b) => b.matchScore - a.matchScore)
 
   const top = scored.slice(0, 25)
+  const { error: clearError } = await supabase
+    .from('partner_matches')
+    .delete()
+    .eq('org_id', orgId)
+    .eq('opportunity_id', opportunityId)
+  if (clearError) return NextResponse.json({ error: clearError.message }, { status: 500 })
+
   if (top.length) {
     const rows = top.map((item, index) => ({
       org_id: orgId,
@@ -125,7 +136,7 @@ export async function POST(request: Request) {
       capability_fit_score: item.capabilityFit,
       industry_fit_score: item.industryFit,
       geography_fit_score: item.geographyFit,
-      company_size_fit_score: item.customerFit,
+      company_size_fit_score: item.companySizeFit,
       vendor_fit_score: null,
       match_reason: item.reason,
       strengths: item.strengths,

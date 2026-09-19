@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { FormEvent, useState } from 'react'
+import AppShell from '@/components/app-shell'
 
 type Candidate = {
   candidateId: string | null
@@ -99,11 +100,11 @@ export default function DiscoveryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-8">
+    <AppShell title="AI Partner Discovery" subtitle="Find, research, verify and rank companies with evidence before adding them to the shared network.">
+      <div className="mx-auto max-w-7xl px-0 py-0">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <Link href="/" className="text-sm text-blue-400 hover:text-blue-300">← Dashboard</Link>
+            <Link href="/app" className="text-sm text-blue-400 hover:text-blue-300">← Workspace overview</Link>
             <h1 className="mt-3 text-3xl font-bold">AI Partner Discovery</h1>
             <p className="mt-2 max-w-3xl text-slate-400">Find relevant companies broadly, verify them with evidence, and rank the best channel opportunities.</p>
           </div>
@@ -145,7 +146,7 @@ export default function DiscoveryPage() {
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">Best matches</h2>
-                  <p className="mt-1 text-sm text-slate-400">The strongest candidates are ranked first. Open a result for the evidence and research details.</p>
+                  <p className="mt-1 text-sm text-slate-400">The strongest candidates are ranked first. Open a result for the evidence and research details before adding a company to the shared network.</p>
                 </div>
                 <span className="text-sm text-slate-500">{report.finalRankedCandidates.length} results</span>
               </div>
@@ -224,7 +225,7 @@ export default function DiscoveryPage() {
                         <div className="flex items-center gap-3">
                           <a href={item.candidate.website} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:border-blue-500 hover:text-white">Visit website</a>
                           <button onClick={() => promote(item.candidateId)} disabled={!item.candidateId || promoting === item.candidateId || isPromoted} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">
-                            {isPromoted ? 'Saved to directory' : promoting === item.candidateId ? 'Saving...' : 'Save partner'}
+                            {isPromoted ? 'Added to network' : promoting === item.candidateId ? 'Saving...' : 'Add to network'}
                           </button>
                         </div>
                       </div>
@@ -238,7 +239,7 @@ export default function DiscoveryPage() {
           </section>
         )}
       </div>
-    </main>
+    </AppShell>
   )
 }
 

@@ -103,7 +103,7 @@ export async function getPartnerById(supabase: SupabaseClient, id: string): Prom
 
 export async function createPartner(supabase: SupabaseClient, input: PartnerInput): Promise<PartnerRecord> {
   const slug = input.slug || input.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-  const { data, error } = await supabase.from('partners').insert({ ...input, slug }).select('*').single()
+  const { data, error } = await supabase.from('partners').insert({ ...input, slug, source_type: 'manual', is_verified: false, verification_status: 'pending' }).select('*').single()
   if (error) throw error
   return data as PartnerRecord
 }

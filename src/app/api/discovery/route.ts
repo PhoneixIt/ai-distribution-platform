@@ -26,6 +26,11 @@ function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDisco
 }
 
 export async function POST(request: Request) {
+  const { supabase, user, error: authError } = await getAuthenticatedServerClient()
+  if (authError || !user || user.is_anonymous) {
+    return NextResponse.json({ error: authError?.message || 'Authentication is unavailable.' }, { status: 401 })
+  }
+
   if (!process.env.EXA_API_KEY && !process.env.FIRECRAWL_API_KEY) {
     return NextResponse.json({ error: 'No web discovery provider is configured on the server.' }, { status: 503 })
   }
@@ -40,9 +45,6 @@ export async function POST(request: Request) {
   const discoveryRequest = normalizeRequest(input)
   if (!discoveryRequest.country || !discoveryRequest.technologyFocus) return NextResponse.json({ error: 'Country and technology focus are required.' }, { status: 400 })
   if (!discoveryRequest.partnerTypes.length) return NextResponse.json({ error: 'At least one partner type is required.' }, { status: 400 })
-
-  const { supabase, user, error: authError } = await getAuthenticatedServerClient()
-  if (authError || !user) return NextResponse.json({ error: authError?.message || 'Authentication is unavailable.' }, { status: 401 })
 
   const { data: recentRun } = await supabase
     .from('discovery_runs')

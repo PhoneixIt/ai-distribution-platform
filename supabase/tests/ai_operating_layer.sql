@@ -1,0 +1,11 @@
+-- AI operating layer contract checks.
+-- The live project has a longer migration history than the repo, so this file documents
+-- the expected security contract rather than pretending it is a clean-db pgTAP suite.
+
+-- agent_definitions: authenticated users can read; anonymous users cannot.
+-- agent_tool_calls: workspace members can read/append; no delete/update path is granted.
+-- agent_approvals: workspace members can read/request; only org admins can decide.
+-- agent_memories: workspace members can read/write only within their org.
+-- agent_runs/agent_tasks: existing workforce policies plus restrictive anonymous denial.
+-- Sensitive actions must create agent_approvals and remain pending until a human decides.
+-- Business writes must flow through explicit server tools, not arbitrary model SQL.
