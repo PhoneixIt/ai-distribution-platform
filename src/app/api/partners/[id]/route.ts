@@ -78,8 +78,8 @@ export async function PATCH(
     if (!data) return Response.json({ success: false, error: 'Partner not found or not editable.' }, { status: 404 })
     return Response.json({ success: true, data })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    return Response.json({ success: false, error: error instanceof Error ? error.message : 'Partner update failed.' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Partner update failed.'
+    return Response.json({ success: false, error: message }, { status: 500 })
   }
 }
 
