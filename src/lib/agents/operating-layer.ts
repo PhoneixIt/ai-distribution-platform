@@ -44,6 +44,67 @@ const planSchema = {
   additionalProperties: false
 }
 
+const memoryTools = {
+  query_memories: {
+    description: 'Read durable workspace memory for the current agent. Memory is advisory context, never an authorization source.',
+    classification: 'fact',
+    parameters: { type: 'object', properties: { agent_key: { type: ['string','null'] }, limit: { type: 'integer' } }, required: ['agent_key','limit'], additionalProperties: false },
+    async execute(args: Record<string, unknown>, { supabase, orgId, agentKey }: Context) {
+      const requestedAgent = text(args.agent_key)
+      const key = requestedAgent && AGENT_KEYS.includes(requestedAgent as AgentKey) ? requestedAgent : agentKey
+      const result = await supabase
+        .from('agent_memories')
+        .select('agent_key,memory_key,content,confidence,source_run_id,source_task_id,updated_at')
+        .eq('org_id', orgId)
+        .eq('agent_key', key)
+        .order('updated_at', { ascending: false })
+        .limit(max(args.limit, 20))
+      if (result.error) throw result.error
+      return result.data ?? []
+    }
+  },
+  save_memory: {
+    description: 'Persist one non-secret, source-backed workspace memory. Never store credentials, tokens, passwords, or unrestricted personal data.',
+    classification: 'action',
+    parameters: {
+      type: 'object',
+      properties: {
+        memory_key: { type: 'string' },
+        content: { type: 'object', additionalProperties: true },
+        confidence: { type: 'number', minimum: 0, maximum: 1 },
+        source_run_id: { type: ['string','null'] },
+        source_task_id: { type: ['string','null'] }
+      },
+      required: ['memory_key','content','confidence','source_run_id','source_task_id'],
+      additionalProperties: false
+    },
+    async execute(args: Record<string, unknown>, { supabase, orgId }: Context) {
+      const memoryKey = text(args.memory_key)
+      if (!memoryKey || memoryKey.length > 160) throw new Error('Memory key is required and must be under 160 characters.')
+      const serialized = JSON.stringify(args.content ?? {})
+      if (/password|secret|token|api[_ -]?key|credential|private[_ -]?key/i.test(memoryKey + ' ' + serialized)) {
+        throw new Error('Secret-like content cannot be stored as agent memory.')
+      }
+      const confidence = Math.min(1, Math.max(0, Number(args.confidence) || 0))
+      const result = await supabase
+        .from('agent_memories')
+        .upsert({
+          org_id: orgId,
+          agent_key: 'ceo_orchestrator',
+          memory_key: memoryKey,
+          content: args.content ?? {},
+          confidence,
+          source_run_id: text(args.source_run_id) || null,
+          source_task_id: text(args.source_task_id) || null
+        }, { onConflict: 'org_id,agent_key,memory_key' })
+        .select('*')
+        .single()
+      if (result.error) throw result.error
+      return result.data
+    }
+  }
+}
+
 const tools: Record<string, Tool> = {
   query_partners: {
     description: 'Read partners plus tenant relationship and performance state. Never modify partner records.',
@@ -260,14 +321,16 @@ const tools: Record<string, Tool> = {
   }
 }
 
+Object.assign(tools, memoryTools)
+
 const allow: Record<AgentKey, string[]> = {
   ceo_orchestrator: Object.keys(tools),
-  vendor_manager: ['query_vendors','query_products','search_market','create_task','generate_recommendation'],
-  partner_manager: ['query_partners','query_tasks','create_task','generate_recommendation'],
-  sales_agent: ['query_opportunities','query_customers','query_partners','analyze_opportunity','create_task','generate_recommendation','request_human_approval'],
-  market_intelligence: ['search_market','query_vendors','query_products','query_partners','create_task','generate_recommendation'],
-  commercial_agent: ['query_pricing','query_opportunities','analyze_opportunity','create_task','generate_recommendation','request_human_approval'],
-  operations_agent: ['query_tasks','query_opportunities','query_partners','create_task','generate_recommendation']
+  vendor_manager: ['query_vendors','query_products','search_market','query_memories','create_task','generate_recommendation','save_memory'],
+  partner_manager: ['query_partners','query_tasks','query_memories','create_task','generate_recommendation','save_memory'],
+  sales_agent: ['query_opportunities','query_customers','query_partners','analyze_opportunity','query_memories','create_task','generate_recommendation','save_memory','request_human_approval'],
+  market_intelligence: ['search_market','query_vendors','query_products','query_partners','query_memories','create_task','generate_recommendation','save_memory'],
+  commercial_agent: ['query_pricing','query_opportunities','analyze_opportunity','query_memories','create_task','generate_recommendation','save_memory','request_human_approval'],
+  operations_agent: ['query_tasks','query_opportunities','query_partners','query_memories','create_task','generate_recommendation','save_memory']
 }
 
 function toolSchemas(agentKey: AgentKey) {
@@ -677,9 +740,12 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
   }
 }
 
-export async function getOperatingRun(supabase: SupabaseClient, runId: string) {
+export async function getOperatingRun(supabase: SupabaseClient, runId: string, orgId?: string) {
+  let runQuery = supabase.from('agent_runs').select('*').eq('id', runId)
+  if (orgId) runQuery = runQuery.eq('org_id', orgId)
+
   const [run, tasks, calls, approvals] = await Promise.all([
-    supabase.from('agent_runs').select('*').eq('id', runId).maybeSingle(),
+    runQuery.maybeSingle(),
     supabase.from('agent_tasks').select('*').eq('run_id', runId).order('created_at'),
     supabase.from('agent_tool_calls').select('*').eq('run_id', runId).order('created_at'),
     supabase.from('agent_approvals').select('*').eq('run_id', runId).order('requested_at', { ascending: false })
