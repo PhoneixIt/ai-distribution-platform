@@ -7,5 +7,7 @@ export function getOpenAIConnector() {
 }
 
 export async function getOpenAIToken() {
-  return getToken(getOpenAIConnector())
+  return getToken(getOpenAIConnector(), {
+    subject: { type: 'app' },
+  })
 }
