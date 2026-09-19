@@ -62,8 +62,9 @@ The server forces the active workspace ID and relies on Supabase RLS as the fina
 
 The runtime supports:
 
-- OPENAI_API_KEY + OPENAI_AGENT_MODEL for real model orchestration.
-- A deterministic rules fallback when no model key is configured. The fallback is intentionally labeled rules_fallback; it is not presented as autonomous AI.
+- Vercel Connect OpenAI credentials via `CONNECTOR_OPENAI` (the current connector ID is used as the default).
+- `OPENAI_AGENT_MODEL` as an optional model override; the default is `gpt-5.6-luna`.
+- Deterministic rules for routing and other safe fallback behavior where explicitly implemented.
 
 The first production model integration uses the OpenAI Responses API with structured outputs and controlled function tools. The architecture keeps the domain tool registry independent so it can move to the OpenAI Agents SDK without changing the business database contract.
 
