@@ -24,6 +24,7 @@ const groups = [
       { href: '/distributors', label: 'Distributors' },
       { href: '/customers', label: 'Customers' },
       { href: '/opportunities', label: 'Opportunities' },
+      { href: '/matches', label: 'AI Matches' },
       { href: '/engagements', label: 'Engagements' },
     ],
   },
