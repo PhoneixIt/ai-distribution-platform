@@ -9,9 +9,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   try {
     const { id } = await context.params
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return Response.json({ success: false, error: 'Invalid approval ID.' }, { status: 400 })
+
     const body = await request.json()
     const action = body.action === 'approve' ? 'approved' : body.action === 'reject' ? 'rejected' : null
     if (!action) return Response.json({ success: false, error: 'Action must be approve or reject.' }, { status: 400 })
+    if (typeof body.notes === 'string' && body.notes.length > 2000) return Response.json({ success: false, error: 'Approval notes are too long.' }, { status: 400 })
 
     const membership = await supabase.from('org_members').select('org_id,role').eq('user_id', user.id).eq('status', 'active').limit(1).maybeSingle()
     if (membership.error) throw membership.error
@@ -75,13 +78,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
         .eq('org_id', membership.data.org_id)
     }
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       data: result.data,
       execution: action === 'approved'
         ? { status: 'awaiting_execution', message: 'Approval recorded. The approved action remains pending execution by a connected external action provider.' }
         : { status: 'rejected' }
-    })
+    }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Approval update failed.'
     return Response.json({ success: false, error: message }, { status: 500 })
