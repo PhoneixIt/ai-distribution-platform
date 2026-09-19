@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { FormEvent, useState } from 'react'
+import AppShell from '@/components/app-shell'
 
 type Candidate = {
   candidateId: string | null
