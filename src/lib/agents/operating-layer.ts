@@ -478,9 +478,14 @@ function fallback(agentKey: AgentKey, objective: string, data: Record<string, un
   }
 }
 
-async function persist(context: Context, output: Output) {
+async function persist(context: Context, output: Output, createApprovals: boolean) {
   for (const recommendation of output.recommendations.slice(0, 12)) await tools.generate_recommendation.execute(recommendation, context)
   for (const action of output.actions.slice(0, 12)) await tools.create_task.execute(action, context)
+  if (createApprovals) {
+    for (const approval of output.approvals.slice(0, 12)) {
+      await tools.request_human_approval.execute(approval, context)
+    }
+  }
 }
 
 export async function runOperatingLayer(supabase: SupabaseClient, orgId: string, userId: string, objective: string) {
@@ -528,8 +533,15 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
         } else {
           output = fallback(item.agent_key, item.objective, data)
         }
-        await persist(context, output)
-        await supabase.from('agent_tasks').update({ status: 'completed', output, confidence: output.confidence, completed_at: new Date().toISOString() }).eq('id', task.data.id)
+        await persist(context, output, !process.env.OPENAI_API_KEY)
+        await supabase.from('agent_tasks').update({
+          status: output.approvals.length ? 'waiting' : 'completed',
+          output,
+          confidence: output.confidence,
+          requires_approval: output.approvals.length > 0,
+          approval_status: output.approvals.length ? 'pending' : 'not_required',
+          completed_at: output.approvals.length ? null : new Date().toISOString()
+        }).eq('id', task.data.id)
         return { agentKey: item.agent_key, output }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Specialist failed.'
@@ -560,7 +572,14 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
       }
     }
 
-    await supabase.from('agent_tasks').update({ status: 'completed', output: final, confidence: final.confidence, completed_at: new Date().toISOString() }).eq('id', rootTask.id)
+    await supabase.from('agent_tasks').update({
+      status: final.approvals.length ? 'waiting' : 'completed',
+      output: final,
+      confidence: final.confidence,
+      requires_approval: final.approvals.length > 0,
+      approval_status: final.approvals.length ? 'pending' : 'not_required',
+      completed_at: final.approvals.length ? null : new Date().toISOString()
+    }).eq('id', rootTask.id)
     await supabase.from('agent_runs').update({ status: final.approvals.length ? 'waiting_approval' : 'completed', summary: final, confidence: final.confidence, completed_at: new Date().toISOString() }).eq('id', run.id)
     return { runId: run.id, status: final.approvals.length ? 'waiting_approval' : 'completed', provider: process.env.OPENAI_API_KEY ? 'openai_responses' : 'rules_fallback', model: process.env.OPENAI_AGENT_MODEL || null, plan, results, final }
   } catch (error) {
