@@ -34,9 +34,6 @@ export default function AddPartnerPage() {
         description: description.trim() || null,
         partner_types: partnerTypes.split(',').map((value) => value.trim()).filter(Boolean),
         technologies: technologies.split(',').map((value) => value.trim()).filter(Boolean),
-        source_type: 'manual',
-        is_verified: false,
-        verification_status: 'pending',
       })
 
       router.replace(`/partners/${partner.id}`)
