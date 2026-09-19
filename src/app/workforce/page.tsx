@@ -22,6 +22,14 @@ const prompts = [
   'Build a partner activation plan.',
 ]
 
+type Approval = {
+  id: string
+  action_type: string
+  summary: string
+  status: string
+  requested_at: string
+}
+
 type Run = {
   runId: string
   status: string
@@ -47,18 +55,23 @@ export default function WorkforcePage() {
   const [error, setError] = useState('')
   const [run, setRun] = useState<Run | null>(null)
   const [stats, setStats] = useState({ runs: 0, tasks: 0, approvals: 0 })
+  const [pendingApprovals, setPendingApprovals] = useState<Approval[]>([])
+  const [approvalError, setApprovalError] = useState('')
 
   useEffect(() => {
     let active = true
     const load = async () => {
       try {
         const { supabase, orgId } = await ensureWorkspace()
-        const [{ count: runs }, { count: tasks }, { count: approvals }] = await Promise.all([
+        const [{ count: runs }, { count: tasks }, { count: approvals }, { data: approvalRows }] = await Promise.all([
           supabase.from('agent_runs').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
           supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
-          supabase.from('agent_approvals').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'pending'),
+          supabase.from('agent_approvals').select('id,action_type,summary,status,requested_at').eq('org_id', orgId).eq('status', 'pending').order('requested_at', { ascending: false }).limit(20),
         ])
-        if (active) setStats({ runs: runs || 0, tasks: tasks || 0, approvals: approvals || 0 })
+        if (active) {
+          setStats({ runs: runs || 0, tasks: tasks || 0, approvals: approvals || 0 })
+          setPendingApprovals((approvalRows || []) as Approval[])
+        }
       } catch {
         // The protected shell still renders if the metrics query is unavailable.
       }
@@ -67,9 +80,38 @@ export default function WorkforcePage() {
     return () => { active = false }
   }, [])
 
+  async function refreshWorkspaceMetrics() {
+    const { supabase, orgId } = await ensureWorkspace()
+    const [{ count: runs }, { count: tasks }, { count: approvals }, { data: approvalRows }] = await Promise.all([
+      supabase.from('agent_runs').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+      supabase.from('agent_tasks').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+      supabase.from('agent_approvals').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'pending'),
+      supabase.from('agent_approvals').select('id,action_type,summary,status,requested_at').eq('org_id', orgId).eq('status', 'pending').order('requested_at', { ascending: false }).limit(20),
+    ])
+    setStats({ runs: runs || 0, tasks: tasks || 0, approvals: approvals || 0 })
+    setPendingApprovals((approvalRows || []) as Approval[])
+  }
+
+  async function handleApproval(id: string, action: 'approve' | 'reject') {
+    setApprovalError('')
+    try {
+      const response = await fetch(`/api/ai/workforce/approvals/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const payload = await response.json()
+      if (!response.ok || !payload.success) throw new Error(payload.error || 'Approval update failed.')
+      await refreshWorkspaceMetrics()
+    } catch (cause) {
+      setApprovalError(cause instanceof Error ? cause.message : 'Approval update failed.')
+    }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault()
-    if (!objective.trim()) return
+    const cleanObjective = objective.trim()
+    if (!cleanObjective || cleanObjective.length > 1000) return
     setRunning(true)
     setError('')
     setRun(null)
@@ -77,12 +119,15 @@ export default function WorkforcePage() {
       const response = await fetch('/api/ai/workforce', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ objective }),
+        body: JSON.stringify({ objective: cleanObjective }),
+        signal: AbortSignal.timeout(120000),
       })
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) throw new Error(`AI workforce returned an unexpected response (${response.status}).`)
       const payload = await response.json()
       if (!response.ok || !payload.success) throw new Error(payload.error || 'AI operating run failed.')
       setRun(payload.data)
-      setStats((current) => ({ ...current, runs: current.runs + 1 }))
+      await refreshWorkspaceMetrics()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'AI operating run failed.')
     } finally {
@@ -96,7 +141,8 @@ export default function WorkforcePage() {
         <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">AI workforce</p>
         <h2 className="mt-2 text-xl font-semibold">What do you want the AI workforce to work on?</h2>
         <form onSubmit={submit} className="mt-5">
-          <textarea value={objective} onChange={(event) => setObjective(event.target.value)} rows={4} placeholder="Example: Which partners should I reactivate this week?" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 outline-none focus:border-blue-500" />
+          <textarea maxLength={1000} value={objective} onChange={(event) => setObjective(event.target.value)} rows={4} placeholder="Example: Which partners should I reactivate this week?" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 outline-none focus:border-blue-500" />
+          <div className="mt-2 flex justify-end text-[11px] text-slate-600">{objective.length}/1000</div>
           <div className="mt-3 flex flex-wrap gap-2">
             {prompts.map((prompt) => <button key={prompt} type="button" onClick={() => setObjective(prompt)} className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-blue-500 hover:text-white">{prompt}</button>)}
           </div>
@@ -110,6 +156,8 @@ export default function WorkforcePage() {
       {error ? <div className="mt-5 rounded-xl border border-red-900 bg-red-950/20 p-4 text-sm text-red-300">{error}</div> : null}
 
       {run ? <RunResult run={run} /> : null}
+
+      {pendingApprovals.length ? <ApprovalQueue approvals={pendingApprovals} error={approvalError} onDecision={handleApproval} /> : null}
 
       <section className="mt-6 grid gap-4 sm:grid-cols-3">
         <Metric label="Workforce runs" value={stats.runs} />
@@ -131,6 +179,14 @@ export default function WorkforcePage() {
       </section>
     </AppShell>
   )
+}
+
+function ApprovalQueue({ approvals, error, onDecision }: { approvals: Approval[]; error: string; onDecision: (id: string, action: 'approve' | 'reject') => void }) {
+  return <section className="mt-6 rounded-2xl border border-amber-900/50 bg-amber-950/10 p-5">
+    <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-semibold uppercase tracking-wider text-amber-400">Human approval</p><h2 className="mt-1 text-lg font-semibold">Actions waiting for a workspace admin</h2></div><span className="rounded-full border border-amber-900 px-2.5 py-1 text-xs text-amber-300">{approvals.length} pending</span></div>
+    <div className="mt-4 space-y-3">{approvals.map((approval) => <div key={approval.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs uppercase tracking-wider text-slate-500">{approval.action_type.replaceAll('_', ' ')}</p><p className="mt-1 text-sm text-slate-200">{approval.summary}</p><p className="mt-1 text-xs text-slate-600">Requested {new Date(approval.requested_at).toLocaleString()}</p></div><div className="flex gap-2"><button type="button" onClick={() => onDecision(approval.id, 'reject')} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-red-700">Reject</button><button type="button" onClick={() => onDecision(approval.id, 'approve')} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold">Approve</button></div></div></div>)}</div>
+    {error ? <p className="mt-3 text-xs text-red-300">{error}</p> : null}
+  </section>
 }
 
 function RunResult({ run }: { run: Run }) {
