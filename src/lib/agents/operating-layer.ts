@@ -78,7 +78,7 @@ const memoryTools = {
       required: ['memory_key','content','confidence','source_run_id','source_task_id'],
       additionalProperties: false
     },
-    async execute(args: Record<string, unknown>, { supabase, orgId }: Context) {
+    async execute(args: Record<string, unknown>, { supabase, orgId, agentKey }: Context) {
       const memoryKey = text(args.memory_key)
       if (!memoryKey || memoryKey.length > 160) throw new Error('Memory key is required and must be under 160 characters.')
       const serialized = JSON.stringify(args.content ?? {})
@@ -90,7 +90,7 @@ const memoryTools = {
         .from('agent_memories')
         .upsert({
           org_id: orgId,
-          agent_key: 'ceo_orchestrator',
+          agent_key: agentKey,
           memory_key: memoryKey,
           content: args.content ?? {},
           confidence,
@@ -337,7 +337,15 @@ function toolSchemas(agentKey: AgentKey) {
   return allow[agentKey].map((name) => ({ type: 'function', name, description: tools[name].description, parameters: tools[name].parameters, strict: true }))
 }
 
-async function logTool(context: Context, name: string, input: Record<string, unknown>, output: unknown, status: string, requiresApproval = false) {
+async function logTool(
+  context: Context,
+  name: string,
+  input: Record<string, unknown>,
+  output: unknown,
+  status: string,
+  requiresApproval = false,
+  approvalId?: string,
+) {
   await context.supabase.from('agent_tool_calls').insert({
     org_id: context.orgId,
     run_id: context.runId,
@@ -348,7 +356,8 @@ async function logTool(context: Context, name: string, input: Record<string, unk
     input,
     output: output ?? {},
     status,
-    requires_approval: requiresApproval
+    requires_approval: requiresApproval,
+    approval_id: approvalId || null,
   })
 }
 
