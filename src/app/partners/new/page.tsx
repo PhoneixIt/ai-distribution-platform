@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { ButtonPrimary, Card } from '@/components/ui'
-import { createClient, getAuthenticatedClient } from '@/lib/supabase/client'
+import { getAuthenticatedClient } from '@/lib/supabase/client'
 import { createPartner } from '@/lib/supabase/services'
 
 export default function AddPartnerPage() {
@@ -34,9 +34,11 @@ export default function AddPartnerPage() {
         description: description.trim() || null,
         partner_types: partnerTypes.split(',').map((value) => value.trim()).filter(Boolean),
         technologies: technologies.split(',').map((value) => value.trim()).filter(Boolean),
+        source_type: 'manual',
+        is_verified: false,
+        verification_status: 'pending',
       })
 
-      void createClient
       router.replace(`/partners/${partner.id}`)
       router.refresh()
     } catch (caught) {
