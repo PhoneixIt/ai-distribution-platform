@@ -36,6 +36,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
 
       - name: Start production server
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
         run: |
           nohup npm start -- -p 3000 > /tmp/ai-distribution-platform.log 2>&1 &
           echo $! > /tmp/ai-distribution-platform.pid
