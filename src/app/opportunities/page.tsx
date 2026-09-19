@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
+import AppShell from '@/components/app-shell'
 import { ensureWorkspace } from '@/lib/supabase/workspace'
 
 type Customer = {
@@ -44,6 +44,9 @@ type FormState = {
   status: string
   preferred_region: string
   requirements: string
+  technology_categories: string
+  timeline: string
+  expected_close_date: string
 }
 
 const initialForm: FormState = {
@@ -56,6 +59,9 @@ const initialForm: FormState = {
   status: 'open',
   preferred_region: '',
   requirements: '',
+  technology_categories: '',
+  timeline: '',
+  expected_close_date: '',
 }
 
 export default function OpportunitiesPage() {
@@ -161,6 +167,12 @@ export default function OpportunitiesPage() {
             .split(',')
             .map((value) => value.trim())
             .filter(Boolean),
+          technology_categories: form.technology_categories
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean),
+          timeline: form.timeline || null,
+          expected_close_date: form.expected_close_date || null,
         })
         .select('id,title,status,stage,estimated_value,probability,customer_id,created_at')
         .single()
@@ -194,6 +206,7 @@ export default function OpportunitiesPage() {
       const { supabase } = await ensureWorkspace()
       const status = stage === 'won' ? 'won' : stage === 'lost' ? 'lost' : 'open'
       const probability = status === 'won' ? 100 : status === 'lost' ? 0 : undefined
+      const now = new Date().toISOString()
 
       const { error: updateError } = await supabase
         .from('opportunities')
@@ -201,6 +214,9 @@ export default function OpportunitiesPage() {
           stage,
           status,
           ...(probability === undefined ? {} : { probability }),
+          won_at: status === 'won' ? now : null,
+          lost_at: status === 'lost' ? now : null,
+          ...(status !== 'lost' ? { lost_reason: null } : {}),
         })
         .eq('id', id)
         .eq('org_id', orgId)
@@ -227,7 +243,7 @@ export default function OpportunitiesPage() {
   }
 
   return (
-    <AuthenticatedLayout>
+    <AppShell title="Opportunities" subtitle="Track customer demand, commercial value and channel partner routing in one workspace.">
       <div className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -299,10 +315,29 @@ export default function OpportunitiesPage() {
                 }
               />
               <Input
+                label="Technology categories (comma separated)"
+                value={form.technology_categories}
+                onChange={(value) => setForm({ ...form, technology_categories: value })}
+              />
+              <Input
                 label="Requirements (comma separated)"
                 value={form.requirements}
                 onChange={(value) => setForm({ ...form, requirements: value })}
               />
+              <Input
+                label="Timeline"
+                value={form.timeline}
+                onChange={(value) => setForm({ ...form, timeline: value })}
+              />
+              <label className="text-sm text-slate-300">
+                Expected close date
+                <input
+                  type="date"
+                  value={form.expected_close_date}
+                  onChange={(event) => setForm({ ...form, expected_close_date: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                />
+              </label>
               <label className="text-sm text-slate-300 md:col-span-2">
                 Description
                 <textarea
@@ -369,7 +404,9 @@ export default function OpportunitiesPage() {
                       · {opportunity.probability}% probability
                     </p>
                   </div>
-                  <select
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href={`/opportunities/${opportunity.id}`} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-blue-500">Open</Link>
+                    <select
                     value={opportunity.stage}
                     onChange={(event) => void updateStage(opportunity.id, event.target.value)}
                     className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm capitalize text-slate-200"
@@ -379,7 +416,8 @@ export default function OpportunitiesPage() {
                         {stage.replaceAll('_', ' ')}
                       </option>
                     ))}
-                  </select>
+                    </select>
+                  </div>
                 </div>
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
                   <div
@@ -394,7 +432,7 @@ export default function OpportunitiesPage() {
           </div>
         )}
       </div>
-    </AuthenticatedLayout>
+    </AppShell>
   )
 }
 
