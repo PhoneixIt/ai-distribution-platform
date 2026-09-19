@@ -6,6 +6,8 @@ const checks = [
   ['partners page', '/partners'],
   ['new partner page', '/partners/new'],
   ['discovery API', '/api/discovery'],
+  ['AI workforce page', '/workforce'],
+  ['AI workforce API', '/api/ai/workforce'],
 ]
 
 let failed = 0
