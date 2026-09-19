@@ -18,6 +18,8 @@ jobs:
           node-version: 24
           cache: npm
 
+      # Regenerate the lockfile from package.json so CI stays valid when dependency ranges change.
+      - run: npm install --package-lock-only
       - run: npm ci
 
       - name: Dependency audit
