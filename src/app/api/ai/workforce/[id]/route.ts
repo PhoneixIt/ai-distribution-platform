@@ -11,16 +11,18 @@ export async function GET(_request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return Response.json({ success: false, error: 'Invalid workforce run ID.' }, { status: 400 })
+
     const membership = await supabase.from('org_members').select('org_id').eq('user_id', user.id).eq('status', 'active').limit(1).maybeSingle()
     if (membership.error) throw membership.error
     if (!membership.data?.org_id) throw new Error('No active workspace is available for this account.')
 
-    const run = await getOperatingRun(supabase, id)
+    const run = await getOperatingRun(supabase, id, membership.data.org_id)
     if (!run || run.run.org_id !== membership.data.org_id) {
       return Response.json({ success: false, error: 'Workforce run not found.' }, { status: 404 })
     }
 
-    return Response.json({ success: true, data: run })
+    return new Response(JSON.stringify({ success: true, data: run }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown workforce error.'
     return Response.json({ success: false, error: message }, { status: 500 })
