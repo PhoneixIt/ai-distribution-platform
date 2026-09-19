@@ -49,6 +49,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (result.error) throw result.error
 
+    if (action === 'approved') {
+      const payload = pending.data.payload && typeof pending.data.payload === 'object' ? pending.data.payload : {}
+      const queueResult = await supabase.from('agent_action_queue').insert({
+        org_id: membership.data.org_id,
+        approval_id: id,
+        run_id: pending.data.run_id,
+        task_id: pending.data.task_id || null,
+        action_type: pending.data.action_type,
+        payload,
+        provider: 'unconfigured',
+        status: 'queued',
+        idempotency_key: 'approval:' + id,
+      }).select('id,status,provider').single()
+
+      if (queueResult.error && queueResult.error.code !== '23505') throw queueResult.error
+    }
+
     if (pending.data.task_id) {
       const taskUpdate = await supabase
         .from('agent_tasks')
