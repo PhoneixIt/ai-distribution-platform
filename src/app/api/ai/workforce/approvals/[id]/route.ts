@@ -19,15 +19,69 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return Response.json({ success: false, error: 'Workspace admin approval is required.' }, { status: 403 })
     }
 
-    const result = await supabase.from('agent_approvals').update({
-      status: action,
-      decided_by: user.id,
-      decided_at: new Date().toISOString(),
-      notes: typeof body.notes === 'string' ? body.notes.trim() : null
-    }).eq('id', id).eq('org_id', membership.data.org_id).eq('status', 'pending').select('*').single()
+    const pending = await supabase
+      .from('agent_approvals')
+      .select('*')
+      .eq('id', id)
+      .eq('org_id', membership.data.org_id)
+      .eq('status', 'pending')
+      .maybeSingle()
+
+    if (pending.error) throw pending.error
+    if (!pending.data) return Response.json({ success: false, error: 'Pending approval not found.' }, { status: 404 })
+
+    const result = await supabase
+      .from('agent_approvals')
+      .update({
+        status: action,
+        decided_by: user.id,
+        decided_at: new Date().toISOString(),
+        notes: typeof body.notes === 'string' ? body.notes.trim() : null
+      })
+      .eq('id', id)
+      .eq('org_id', membership.data.org_id)
+      .eq('status', 'pending')
+      .select('*')
+      .single()
 
     if (result.error) throw result.error
-    return Response.json({ success: true, data: result.data })
+
+    if (pending.data.task_id) {
+      const taskUpdate = await supabase
+        .from('agent_tasks')
+        .update({
+          approval_status: action,
+          status: action === 'rejected' ? 'completed' : 'waiting',
+          completed_at: action === 'rejected' ? new Date().toISOString() : null,
+          error_message: action === 'rejected' ? 'Human approval rejected.' : null
+        })
+        .eq('id', pending.data.task_id)
+        .eq('org_id', membership.data.org_id)
+      if (taskUpdate.error) throw taskUpdate.error
+    }
+
+    const { data: remaining } = await supabase
+      .from('agent_approvals')
+      .select('id')
+      .eq('run_id', pending.data.run_id)
+      .eq('org_id', membership.data.org_id)
+      .eq('status', 'pending')
+
+    if (!remaining?.length) {
+      await supabase
+        .from('agent_runs')
+        .update({ status: action === 'approved' ? 'partial' : 'completed' })
+        .eq('id', pending.data.run_id)
+        .eq('org_id', membership.data.org_id)
+    }
+
+    return Response.json({
+      success: true,
+      data: result.data,
+      execution: action === 'approved'
+        ? { status: 'awaiting_execution', message: 'Approval recorded. The approved action remains pending execution by a connected external action provider.' }
+        : { status: 'rejected' }
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Approval update failed.'
     return Response.json({ success: false, error: message }, { status: 500 })
