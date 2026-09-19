@@ -494,6 +494,26 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
   const { run, rootTask } = await createRun(supabase, orgId, userId, clean)
   const data = await snapshot(supabase, orgId)
 
+  await supabase.from('agent_tool_calls').insert({
+    org_id: orgId,
+    run_id: run.id,
+    task_id: rootTask.id,
+    agent_key: 'ceo_orchestrator',
+    tool_name: 'workspace_snapshot',
+    classification: 'fact',
+    input: { scope: 'workspace_operating_data' },
+    output: {
+      partners: Array.isArray(data.partners) ? data.partners.length : 0,
+      vendors: Array.isArray(data.vendors) ? data.vendors.length : 0,
+      customers: Array.isArray(data.customers) ? data.customers.length : 0,
+      opportunities: Array.isArray(data.opportunities) ? data.opportunities.length : 0,
+      tasks: Array.isArray(data.tasks) ? data.tasks.length : 0,
+      pricing: Array.isArray(data.pricing) ? data.pricing.length : 0
+    },
+    status: 'completed',
+    requires_approval: false
+  })
+
   try {
     let plan = routeObjective(clean)
 
@@ -584,7 +604,11 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
     return { runId: run.id, status: final.approvals.length ? 'waiting_approval' : 'completed', provider: process.env.OPENAI_API_KEY ? 'openai_responses' : 'rules_fallback', model: process.env.OPENAI_AGENT_MODEL || null, plan, results, final }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'AI operating layer failed.'
-    await supabase.from('agent_runs').update({ status: 'failed', error_message: message, completed_at: new Date().toISOString() }).eq('id', run.id)
+    const completedAt = new Date().toISOString()
+    await Promise.all([
+      supabase.from('agent_runs').update({ status: 'failed', error_message: message, completed_at: completedAt }).eq('id', run.id),
+      supabase.from('agent_tasks').update({ status: 'failed', error_message: message, completed_at: completedAt }).eq('id', rootTask.id)
+    ])
     throw error
   }
 }
