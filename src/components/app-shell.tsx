@@ -21,6 +21,7 @@ const groups = [
     items: [
       { href: '/partners', label: 'Partners' },
       { href: '/vendors', label: 'Vendors' },
+      { href: '/products', label: 'Products' },
       { href: '/distributors', label: 'Distributors' },
       { href: '/customers', label: 'Customers' },
       { href: '/opportunities', label: 'Opportunities' },
