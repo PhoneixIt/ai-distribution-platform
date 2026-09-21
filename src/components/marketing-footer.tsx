@@ -7,8 +7,8 @@ export default function MarketingFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Link href="/" className="flex items-center gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black">AI</span>
-              <span className="text-sm font-semibold">AI Distribution Platform</span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black">P</span>
+              <span className="text-sm font-semibold">PortAi</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-7 text-slate-500">An AI-native ecosystem for technology distribution — connecting supply, channel capability, customer demand and intelligent execution.</p>
           </div>
@@ -39,7 +39,7 @@ export default function MarketingFooter() {
           </div>
         </div>
         <div className="mt-12 flex flex-col gap-2 border-t border-slate-900 pt-6 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>AI Distribution Platform</span>
+          <span>PortAi</span>
           <span>People manage the business. AI helps operate the work.</span>
         </div>
       </div>
