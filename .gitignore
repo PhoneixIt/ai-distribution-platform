@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local secrets and credentials
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+secrets.json
+service-account*.json
+
+# local database/data exports
+*.sql.gz
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+/data/
+/backups/
