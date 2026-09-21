@@ -89,9 +89,9 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileOpen(v => !v)} className="rounded-lg border border-slate-800 p-2 text-slate-300 lg:hidden" aria-label="Toggle navigation">☰</button>
             <Link href="/app" className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-sm font-black">AI</span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-sm font-black">P</span>
               <span>
-                <span className="block text-sm font-semibold">AI Distribution Platform</span>
+                <span className="block text-sm font-semibold">PortAi</span>
                 <span className="hidden text-[11px] text-slate-500 sm:block">AI operating workspace</span>
               </span>
             </Link>
