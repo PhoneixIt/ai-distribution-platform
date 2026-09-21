@@ -2,7 +2,7 @@
 
 ## Release objective
 
-AI Distribution Platform is a production SaaS foundation for software-distribution operations where humans define objectives, permissions and approvals while AI coordinates authorized work.
+PortAi is a production SaaS foundation for software-distribution operations where humans define objectives, permissions and approvals while AI coordinates authorized work.
 
 ## Verified
 
