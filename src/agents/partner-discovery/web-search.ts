@@ -113,7 +113,7 @@ export function createLocalWebSearchProvider(): WebSearchProvider {
         {
           headers: {
             Accept: 'text/html',
-            'User-Agent': 'AI Distribution Platform local development search',
+            'User-Agent': 'PortAi local development search',
           },
         }
       )
