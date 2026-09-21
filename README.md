@@ -1,8 +1,8 @@
-# AI Distribution Platform
+# PortAi
 
 **AI-native operating platform for software distribution**
 
-The AI Distribution Platform is being built to connect and coordinate the software distribution ecosystem — vendors, distributors, resellers, MSPs, partners, and customers — through one AI-powered workspace.
+The PortAi is being built to connect and coordinate the software distribution ecosystem — vendors, distributors, resellers, MSPs, partners, and customers — through one AI-powered workspace.
 
 ## Vision
 
