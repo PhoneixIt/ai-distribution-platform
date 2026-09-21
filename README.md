@@ -36,7 +36,7 @@ The product is being developed from first-hand experience with the operational c
 
 ## Product
 
-Live prototype: https://ai-distribution-platform-3vmebpfyk-eco-da45.vercel.app/
+Live prototype: https://ai-distribution-platform-eco-da45.vercel.app
 
 ## Technology
 
