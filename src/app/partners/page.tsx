@@ -5,7 +5,7 @@ import { getPartners } from '@/lib/supabase/services'
 import type { PartnerRecord } from '@/lib/supabase/services'
 
 export const metadata = {
-  title: 'Partners | AI Distribution Platform',
+  title: 'Partners | PortAi',
   description: 'Browse and manage channel partners in your directory',
 }
 
