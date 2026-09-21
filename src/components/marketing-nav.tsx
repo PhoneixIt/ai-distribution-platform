@@ -2,10 +2,9 @@ import Link from 'next/link'
 
 const links = [
   ['Platform', '/platform'],
-  ['AI Workforce', '/ai-workforce'],
   ['How it works', '/how-it-works'],
+  ['AI Workforce', '/ai-workforce'],
   ['Solutions', '/solutions'],
-  ['Partners', '/partners'],
   ['Resources', '/resources'],
   ['About', '/about'],
 ]
