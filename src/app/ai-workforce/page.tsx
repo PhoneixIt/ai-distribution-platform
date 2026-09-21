@@ -13,7 +13,7 @@ const agents = [
   ['Future specialist workforce', 'Research, verification, channel fit, contact research, outreach, response and meeting specialists can extend the system as capabilities mature.'],
 ]
 
-const workflow = ['Discover', 'Research', 'Verify', 'Qualify', 'Match', 'Contact', 'Outreach', 'Respond', 'Meet', 'Sell', 'Operate', 'Follow Up', 'Learn']
+const workflow = ['Discover', 'Research', 'Verify', 'Match', 'Engage', 'Learn']
 
 export default function AIWorkforcePage() {
   return (
@@ -25,7 +25,7 @@ export default function AIWorkforcePage() {
           Don&apos;t just ask AI a question. Give the workforce a business objective.
         </h1>
         <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-400">
-          The platform is designed around coordinated specialist work. An orchestrator can delegate research, partner analysis, sales work, commercial analysis and operations while preserving one shared business context.
+          PortAi is designed around coordinated specialist work. An orchestrator can delegate ecosystem research, partner and vendor analysis, sales work, commercial analysis and operations while preserving one shared business context.
         </p>
         <div className="mt-9 flex flex-wrap gap-3">
           <Link href="/workforce" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Open AI Workforce</Link>
@@ -51,7 +51,7 @@ export default function AIWorkforcePage() {
         <div className="grid gap-12 lg:grid-cols-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-blue-400">A different interaction model</p>
-            <h2 className="mt-3 text-3xl font-semibold">Objective → coordination → evidence → decision → authorized action.</h2>
+            <h2 className="mt-3 text-3xl font-semibold">Mission → discovery → intelligence → match → approved action → learning.</h2>
           </div>
           <div className="space-y-5 text-sm leading-7 text-slate-400">
             <p>The AI workforce should not expose hidden reasoning or pretend certainty. It should return useful evidence, information gaps, recommendations, actions taken and approval requirements.</p>
