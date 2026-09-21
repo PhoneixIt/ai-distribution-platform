@@ -1,4 +1,4 @@
-# AI Distribution Platform — Testing Phase
+# PortAi — Testing Phase
 
 ## Automated checks
 
