@@ -100,15 +100,15 @@ export default function DiscoveryPage() {
   }
 
   return (
-    <AppShell title="AI Partner Discovery" subtitle="Find, research, verify and rank companies with evidence before adding them to the shared network.">
+    <AppShell title="Ecosystem discovery" subtitle="Start with the current PortAi wedge: discover, research, verify and rank channel partners with evidence before adding them to the shared network.">
       <div className="mx-auto max-w-7xl px-0 py-0">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <Link href="/app" className="text-sm text-blue-400 hover:text-blue-300">← Workspace overview</Link>
-            <h1 className="mt-3 text-3xl font-bold">AI Partner Discovery</h1>
-            <p className="mt-2 max-w-3xl text-slate-400">Find relevant companies broadly, verify them with evidence, and rank the best channel opportunities.</p>
+            <h1 className="mt-3 text-3xl font-bold">Discover the ecosystem</h1>
+            <p className="mt-2 max-w-3xl text-slate-400">Start with a market, technology and partner objective. PortAi searches broadly, researches candidates, makes evidence visible and ranks channel fit before you add a company to your network.</p>
           </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs text-slate-400">Exa + evidence layer</div>
+          <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs text-slate-400">Research + evidence layer</div>
         </div>
 
         <form onSubmit={runDiscovery} className="rounded-xl border border-slate-800 bg-slate-900 p-6">
@@ -128,7 +128,7 @@ export default function DiscoveryPage() {
           </div>
           <div className="mt-4 flex flex-col gap-3 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
             <p>“Broadest available” means as many relevant companies as this discovery run can surface, not a claim that every company in the country exists in the results.</p>
-            <button disabled={loading} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Discovering & researching...' : 'Run AI Discovery'}</button>
+            <button disabled={loading} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Discovering & researching...' : 'Run ecosystem discovery'}</button>
           </div>
           {error && <p className="mt-4 rounded-lg border border-red-900 bg-red-950/40 p-3 text-sm text-red-300">{error}</p>}
         </form>
@@ -136,7 +136,7 @@ export default function DiscoveryPage() {
         {report && (
           <section className="mt-8">
             <div className="grid gap-4 md:grid-cols-4">
-              <Stat label="Companies found" value={report.candidatesDiscovered} />
+              <Stat label="Candidates discovered" value={report.candidatesDiscovered} />
               <Stat label="Research completed" value={report.candidatesResearched} />
               <Stat label="Ranked results" value={report.finalRankedCandidates.length} />
               <Stat label="Search angles" value={report.searchQueries.length} />
@@ -145,8 +145,8 @@ export default function DiscoveryPage() {
             <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-5">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold">Best matches</h2>
-                  <p className="mt-1 text-sm text-slate-400">The strongest candidates are ranked first. Open a result for the evidence and research details before adding a company to the shared network.</p>
+                  <h2 className="text-lg font-semibold">Qualified ecosystem candidates</h2>
+                  <p className="mt-1 text-sm text-slate-400">Candidates are ranked by current fit signals. Open a result to inspect evidence, gaps and qualification details before adding it to the shared network.</p>
                 </div>
                 <span className="text-sm text-slate-500">{report.finalRankedCandidates.length} results</span>
               </div>
