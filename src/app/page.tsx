@@ -287,7 +287,7 @@ export default async function Home() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Link href="/" className="flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black">AI</span>
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black">P</span>
                 <span className="text-sm font-semibold">PortAi</span>
               </Link>
               <p className="mt-4 max-w-xs text-sm leading-6 text-slate-600">An AI-native ecosystem for technology distribution.</p>
