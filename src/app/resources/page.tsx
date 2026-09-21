@@ -4,10 +4,10 @@ import MarketingFooter from '@/components/marketing-footer'
 
 const resources = [
   ['Product overview', 'Understand the platform layers, AI workforce and intended operating model.', '/platform'],
-  ['How it works', 'See the Discover → Research → Verify → Qualify → Match → Engage → Operate loop.', '/how-it-works'],
+  ['How it works', 'See the Discover → Research → Verify → Match → Engage → Learn mission loop.', '/how-it-works'],
   ['AI Workforce', 'Explore the specialist workforce and the objective-driven interaction model.', '/ai-workforce'],
   ['Solutions', 'See how the platform maps to distributors, vendors, channel, sales, commercial and operations teams.', '/solutions'],
-  ['Partners', 'Explore the partner intelligence and channel operating model.', '/partners'],
+  ['Partners', 'Explore the partner intelligence and ecosystem operating model.', '/partners'],
   ['Workspace', 'See the product that exists today and follow the platform as capabilities expand.', '/app'],
 ]
 
