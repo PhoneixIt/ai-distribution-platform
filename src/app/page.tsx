@@ -49,7 +49,7 @@ export default async function Home() {
       <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black shadow-lg shadow-blue-950/30">AI</span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black shadow-lg shadow-blue-950/30">P</span>
             <span className="text-sm font-semibold tracking-tight">PortAi</span>
           </Link>
           <div className="hidden items-center gap-6 text-sm text-slate-400 lg:flex">
@@ -288,7 +288,7 @@ export default async function Home() {
             <div>
               <Link href="/" className="flex items-center gap-3">
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black">AI</span>
-                <span className="text-sm font-semibold">AI Distribution Platform</span>
+                <span className="text-sm font-semibold">PortAi</span>
               </Link>
               <p className="mt-4 max-w-xs text-sm leading-6 text-slate-600">An AI-native ecosystem for technology distribution.</p>
             </div>
@@ -319,7 +319,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="mt-10 flex flex-col gap-2 border-t border-slate-900 pt-6 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-            <span>AI Distribution Platform</span>
+            <span>PortAi</span>
             <span>People manage the business. AI helps operate the work.</span>
           </div>
         </div>
