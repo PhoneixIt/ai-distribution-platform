@@ -50,7 +50,7 @@ export default async function Home() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black shadow-lg shadow-blue-950/30">AI</span>
-            <span className="text-sm font-semibold tracking-tight">AI Distribution Platform</span>
+            <span className="text-sm font-semibold tracking-tight">PortAi</span>
           </Link>
           <div className="hidden items-center gap-6 text-sm text-slate-400 lg:flex">
             <Link href="/platform" className="transition hover:text-white">Platform</Link>
