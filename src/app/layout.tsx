@@ -10,9 +10,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'AI Distribution Platform',
+  title: 'PortAi — AI-Native Technology Distribution Ecosystem',
   description:
-    'AI operating platform for software distribution and channel teams. Manage vendors, partners, customers, opportunities and commercial operations in one workspace.'
+    'PortAi connects vendors, distributors, partners and customers in one intelligent technology distribution ecosystem.'
 }
 
 type RootLayoutProps = Readonly<{ children: React.ReactNode }>
