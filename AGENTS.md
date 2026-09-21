@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## 1. Product
 
-We are building an AI-powered B2B channel distribution platform.
+We are building an AI-native technology distribution ecosystem.
 
 The platform connects:
 
@@ -515,4 +515,4 @@ Prefer features that create measurable value over cosmetic features.
 
 Build the smallest useful version first.
 
-<!-- END:AI-DISTRIBUTION-PLATFORM-PROJECT-INSTRUCTIONS -->
+<!-- END:PORTAI-PROJECT-INSTRUCTIONS -->
