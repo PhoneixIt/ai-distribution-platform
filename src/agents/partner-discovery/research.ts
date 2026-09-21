@@ -279,7 +279,7 @@ async function fetchTextPage(url: string, signal: AbortSignal) {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml',
-      'User-Agent': 'AI Distribution Platform local development research',
+      'User-Agent': 'PortAi local development research',
     },
     signal,
   })
