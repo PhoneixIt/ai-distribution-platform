@@ -32,6 +32,7 @@ export type PartnerDiscoveryReport = {
   candidatesNeedingReview: PartnerDiscoveryReportCandidate[]
   candidatesNotQualified: PartnerDiscoveryReportCandidate[]
   finalRankedCandidates: PartnerDiscoveryReportCandidate[]
+  researchedCandidates: PartnerDiscoveryReportCandidate[]
   skippedResults: string[]
 }
 
@@ -51,11 +52,6 @@ export type PartnerDiscoveryRunnerDependencies = {
 }
 
 const RESEARCH_CONCURRENCY = 8
-const MAX_RESEARCH_CANDIDATES = 250
-
-function researchBudget(request: PartnerDiscoveryRequest) {
-  return Math.min(MAX_RESEARCH_CANDIDATES, Math.max(50, request.desiredCandidateCount * 15))
-}
 
 function rankCandidates(left: PartnerDiscoveryReportCandidate, right: PartnerDiscoveryReportCandidate) {
   const statusRank = {
@@ -160,18 +156,24 @@ export async function runPartnerDiscovery(
     needsReview: 0,
     message: `Discovered ${discovery.candidates.length} potential companies across ${discovery.searchQueries.length} search paths.`,
   })
-  const budget = researchBudget(request)
-  const researchCandidates = discovery.candidates.slice(0, budget)
-  const reportCandidates = await researchCandidatesInParallel(researchCandidates, agent, request)
+  const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent, request)
   const qualifiedSoFar = reportCandidates.filter((item) => item.qualification.status === 'qualified').length
   const reviewSoFar = reportCandidates.filter((item) => item.qualification.status === 'needs_review').length
+  await dependencies.onProgress?.({
+    stage: 'researching',
+    discovered: discovery.candidates.length,
+    researched: reportCandidates.length,
+    qualified: 0,
+    needsReview: 0,
+    message: `Research completed for ${reportCandidates.length} of ${discovery.candidates.length} discovered companies.`,
+  })
   await dependencies.onProgress?.({
     stage: 'qualifying',
     discovered: discovery.candidates.length,
     researched: reportCandidates.length,
     qualified: qualifiedSoFar,
     needsReview: reviewSoFar,
-    message: `Verified and qualified ${reportCandidates.length} companies from the strongest ${researchCandidates.length} candidates in a discovery universe of ${discovery.candidates.length}.`,
+    message: `Verified and qualified ${reportCandidates.length} companies across the full discovery universe of ${discovery.candidates.length} discovered companies.`,
   })
 
   const finalRankedCandidates = reportCandidates
@@ -195,6 +197,7 @@ export async function runPartnerDiscovery(
       (item) => item.qualification.status === 'not_qualified'
     ),
     finalRankedCandidates,
+    researchedCandidates: reportCandidates,
     skippedResults: discovery.skippedResults,
   }
 
@@ -202,9 +205,9 @@ export async function runPartnerDiscovery(
     stage: 'completed',
     discovered: finalReport.candidatesDiscovered,
     researched: finalReport.candidatesResearched,
-    qualified: finalReport.candidatesQualified.length,
-    needsReview: finalReport.candidatesNeedingReview.length,
-    message: `Discovery complete. ${finalReport.finalRankedCandidates.length} strongest matches selected from ${finalReport.candidatesResearched} verified candidates across ${finalReport.candidatesDiscovered} discovered companies.`,
+    qualified: reportCandidates.filter((item) => item.qualification.status === 'qualified').length,
+    needsReview: reportCandidates.filter((item) => item.qualification.status === 'needs_review').length,
+    message: `Discovery complete. ${finalReport.finalRankedCandidates.length} requested matches selected from ${finalReport.candidatesResearched} researched companies across ${finalReport.candidatesDiscovered} discovered companies.`,
   })
 
   return finalReport
