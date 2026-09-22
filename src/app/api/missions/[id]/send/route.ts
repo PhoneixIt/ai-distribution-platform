@@ -50,8 +50,12 @@ export async function POST(request: Request, context: Context) {
 
   await supabase.from('mission_outreach_drafts').update({ status: 'sent', send_result: payload }).eq('id', draftId)
   await supabase.from('missions').update({
-    current_stage: 'tracking', status: 'completed',
-    result_summary: { ...(mission.data.result_summary || {}), last_sent_draft_id: draftId }
+    current_stage: 'sent', status: 'running',
+    result_summary: { ...(mission.data.result_summary || {}), last_sent_draft_id: draftId, sent_at: new Date().toISOString() }
+  }).eq('id', id)
+
+  await supabase.from('missions').update({
+    current_stage: 'tracking', status: 'running'
   }).eq('id', id)
 
   return NextResponse.json({ success: true, draftId, provider: payload })
