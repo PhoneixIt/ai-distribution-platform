@@ -1,0 +1,81 @@
+-- Phase 2A-1 follow-up: harden alias visibility.
+-- Shared/public aliases are readable when their source is explicitly public/system.
+-- Private-source aliases remain scoped to the source workspace.
+
+drop policy if exists ecosystem_org_aliases_select on public.ecosystem_organization_aliases;
+create policy ecosystem_org_aliases_select
+  on public.ecosystem_organization_aliases for select to authenticated
+  using (
+    (
+      source_org_id is null
+      and source_type in ('public_web','company_website','research','system')
+    )
+    or (
+      source_org_id is not null
+      and public.is_org_member(source_org_id)
+    )
+  );
+
+drop policy if exists ecosystem_org_aliases_insert on public.ecosystem_organization_aliases;
+create policy ecosystem_org_aliases_insert
+  on public.ecosystem_organization_aliases for insert to authenticated
+  with check (
+    created_by = auth.uid()
+    and (
+      (
+        source_org_id is null
+        and source_type in ('public_web','company_website','research','system')
+      )
+      or (
+        source_org_id is not null
+        and public.is_org_member(source_org_id)
+      )
+    )
+  );
+
+drop policy if exists ecosystem_org_aliases_update on public.ecosystem_organization_aliases;
+create policy ecosystem_org_aliases_update
+  on public.ecosystem_organization_aliases for update to authenticated
+  using (
+    created_by = auth.uid()
+    and (
+      (
+        source_org_id is null
+        and source_type in ('public_web','company_website','research','system')
+      )
+      or (
+        source_org_id is not null
+        and public.is_org_member(source_org_id)
+      )
+    )
+  )
+  with check (
+    created_by = auth.uid()
+    and (
+      (
+        source_org_id is null
+        and source_type in ('public_web','company_website','research','system')
+      )
+      or (
+        source_org_id is not null
+        and public.is_org_member(source_org_id)
+      )
+    )
+  );
+
+drop policy if exists ecosystem_org_aliases_delete on public.ecosystem_organization_aliases;
+create policy ecosystem_org_aliases_delete
+  on public.ecosystem_organization_aliases for delete to authenticated
+  using (
+    created_by = auth.uid()
+    and (
+      (
+        source_org_id is null
+        and source_type in ('public_web','company_website','research','system')
+      )
+      or (
+        source_org_id is not null
+        and public.is_org_member(source_org_id)
+      )
+    )
+  );
