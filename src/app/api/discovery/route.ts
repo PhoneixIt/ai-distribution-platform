@@ -42,9 +42,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Request body must be valid JSON.' }, { status: 400 })
   }
 
+  const missionId = typeof (input as Record<string, unknown>).missionId === 'string' ? String((input as Record<string, unknown>).missionId).trim() : ''
   const discoveryRequest = normalizeRequest(input)
   if (!discoveryRequest.country || !discoveryRequest.technologyFocus) return NextResponse.json({ error: 'Country and technology focus are required.' }, { status: 400 })
   if (!discoveryRequest.partnerTypes.length) return NextResponse.json({ error: 'At least one partner type is required.' }, { status: 400 })
+
+  let mission: { id: string } | null = null
+  if (missionId) {
+    const missionResult = await supabase
+      .from('missions')
+      .select('id,status,current_stage')
+      .eq('id', missionId)
+      .maybeSingle()
+    if (missionResult.error) return NextResponse.json({ error: missionResult.error.message }, { status: 500 })
+    if (!missionResult.data) return NextResponse.json({ error: 'Mission was not found in this workspace.' }, { status: 404 })
+    mission = { id: missionResult.data.id }
+    const missionUpdate = await supabase
+      .from('missions')
+      .update({ status: 'running', current_stage: 'discovering', error_message: null })
+      .eq('id', mission.id)
+    if (missionUpdate.error) return NextResponse.json({ error: missionUpdate.error.message }, { status: 500 })
+  }
 
   const { data: recentRun } = await supabase
     .from('discovery_runs')
@@ -64,7 +82,10 @@ export async function POST(request: Request) {
     .select('id')
     .single()
 
-  if (runError || !run) return NextResponse.json({ error: runError?.message || 'Could not create discovery run.' }, { status: 500 })
+  if (runError || !run) {
+    if (mission) await supabase.from('missions').update({ status: 'failed', current_stage: 'failed', error_message: runError?.message || 'Could not create discovery run.' }).eq('id', mission.id)
+    return NextResponse.json({ error: runError?.message || 'Could not create discovery run.' }, { status: 500 })
+  }
 
   try {
     const report = await runPartnerDiscovery(discoveryRequest)
@@ -103,6 +124,24 @@ export async function POST(request: Request) {
       savedCandidates = insertedCandidates || []
     }
 
+    if (mission) {
+      const missionUpdate = await supabase.from('missions').update({
+        discovery_run_id: run.id,
+        status: 'completed',
+        current_stage: report.finalRankedCandidates.length ? 'dossier_ready' : 'scored',
+        candidate_count: report.finalRankedCandidates.length,
+        result_summary: {
+          discovered: report.candidatesDiscovered,
+          researched: report.candidatesResearched,
+          returned: report.finalRankedCandidates.length,
+          qualified: report.candidatesQualified.length,
+          needs_review: report.candidatesNeedingReview.length,
+        },
+        completed_at: new Date().toISOString(),
+      }).eq('id', mission.id)
+      if (missionUpdate.error) throw missionUpdate.error
+    }
+
     await supabase.from('discovery_runs').update({
       status: 'completed',
       search_queries: report.searchQueries,
@@ -118,10 +157,11 @@ export async function POST(request: Request) {
       candidateId: candidateIdsByWebsite.get(item.candidate.website) || null,
     }))
 
-    return NextResponse.json({ runId: run.id, report: { ...report, finalRankedCandidates } })
+    return NextResponse.json({ missionId: mission?.id || null, runId: run.id, report: { ...report, finalRankedCandidates } })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Discovery failed.'
     await supabase.from('discovery_runs').update({ status: 'failed', error_message: message, completed_at: new Date().toISOString() }).eq('id', run.id)
+    if (mission) await supabase.from('missions').update({ status: 'failed', current_stage: 'failed', error_message: message, discovery_run_id: run.id }).eq('id', mission.id)
     return NextResponse.json({ runId: run.id, error: message }, { status: 500 })
   }
 }

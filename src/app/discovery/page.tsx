@@ -50,6 +50,8 @@ export default function DiscoveryPage() {
   const [error, setError] = useState('')
   const [report, setReport] = useState<Report | null>(null)
   const [promoting, setPromoting] = useState<string | null>(null)
+  const [missionId, setMissionId] = useState<string | null>(null)
+  const [missionStage, setMissionStage] = useState('defined')
   const [promoted, setPromoted] = useState<Record<string, boolean>>({})
 
   async function runDiscovery(event: FormEvent) {
@@ -57,7 +59,27 @@ export default function DiscoveryPage() {
     setLoading(true)
     setError('')
     setReport(null)
+    setMissionId(null)
+    setMissionStage('defined')
     try {
+      const objective = `Find qualified ${partnerTypes} partners for ${technology} in ${country}${customerSegment ? ` serving ${customerSegment}` : ''}.`
+      const missionResponse = await fetch('/api/missions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          objective,
+          country,
+          technologyFocus: technology,
+          partnerTypes: partnerTypes.split(',').map((value) => value.trim()).filter(Boolean),
+          customerSegment: customerSegment || undefined,
+        }),
+      })
+      const missionPayload = await missionResponse.json()
+      if (!missionResponse.ok) throw new Error(missionPayload.error || 'Could not create mission.')
+      const createdMissionId = missionPayload.mission?.id as string
+      setMissionId(createdMissionId)
+      setMissionStage('discovering')
+
       const response = await fetch('/api/discovery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -67,11 +89,13 @@ export default function DiscoveryPage() {
           partnerTypes: partnerTypes.split(',').map((value) => value.trim()).filter(Boolean),
           customerSegment: customerSegment || undefined,
           desiredCandidateCount: Number(count),
+          missionId: createdMissionId,
         }),
       })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Discovery failed.')
       setReport(payload.report as Report)
+      setMissionStage(payload.report?.finalRankedCandidates?.length ? 'dossier_ready' : 'scored')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Discovery failed.')
     } finally {
@@ -108,7 +132,10 @@ export default function DiscoveryPage() {
             <h1 className="mt-3 text-3xl font-bold">Discover the ecosystem</h1>
             <p className="mt-2 max-w-3xl text-slate-400">Start with a market, technology and partner objective. PortAi searches broadly, researches candidates, makes evidence visible and ranks channel fit before you add a company to your network.</p>
           </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs text-slate-400">Research + evidence layer</div>
+          <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs text-slate-400">
+            <span className="font-medium text-slate-300">Mission</span>{missionId ? ` · ${missionId.slice(0, 8)}` : ' · ready'}
+            <span className="ml-2 text-blue-400">{missionStage.replaceAll('_', ' ')}</span>
+          </div>
         </div>
 
         <form onSubmit={runDiscovery} className="rounded-xl border border-slate-800 bg-slate-900 p-6">
