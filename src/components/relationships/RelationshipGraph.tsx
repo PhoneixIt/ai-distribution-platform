@@ -50,8 +50,8 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
   }), [relationships])
 
   const loadOrganizations = async () => {
-    const { supabase, user, organization } = await ensureWorkspace()
-    const own = await ensureEcosystemOrganization(supabase, user.id, {
+    const { supabase, user, organization, orgId } = await ensureWorkspace()
+    const own = await ensureEcosystemOrganization(supabase, user.id, orgId, {
       display_name: organization.name,
       organization_roles: organization.organization_roles || (organization.organization_type ? [organization.organization_type] : []),
     })
@@ -68,8 +68,8 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
     if (!newOrg.name.trim()) return
     setBusy(true); setMessage('')
     try {
-      const { supabase, user } = await ensureWorkspace()
-      const org = await ensureEcosystemOrganization(supabase, user.id, { display_name: newOrg.name, website: newOrg.website, country: newOrg.country })
+      const { supabase, user, orgId } = await ensureWorkspace()
+      const org = await ensureEcosystemOrganization(supabase, user.id, orgId, { display_name: newOrg.name, website: newOrg.website, country: newOrg.country })
       setOrganizations(prev => prev.some(x => x.id === org.id) ? prev : [...prev, org])
       setForm(f => ({ ...f, to: org.id }))
       setNewOrg({ name: '', website: '', country: '' })
