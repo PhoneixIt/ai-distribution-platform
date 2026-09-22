@@ -1,10 +1,10 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AppShell from '@/components/app-shell'
-import { ButtonPrimary, Card } from '@/components/ui'
-import { ensureWorkspace } from '@/lib/supabase/workspace'
+import { ButtonPrimary } from '@/components/ui'
+import { ensureWorkspace, ORGANIZATION_TYPES } from '@/lib/supabase/workspace'
 import { createPartner } from '@/lib/supabase/services'
 
 export default function AddPartnerPage() {
@@ -19,11 +19,12 @@ export default function AddPartnerPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  useState(() => {
+  useEffect(() => {
     void ensureWorkspace().then(({ organization }) => {
-      setWorkspaceRole(organization?.organization_type || organization?.organization_roles?.[0] || 'Organization')
+      const role = organization?.organization_type || organization?.organization_roles?.[0] || 'other'
+      setWorkspaceRole(ORGANIZATION_TYPES.find(item => item.value === role)?.label || 'Organization')
     }).catch(() => setWorkspaceRole('Organization'))
-  })
+  }, [])
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -74,7 +75,6 @@ export default function AddPartnerPage() {
       </div>
     </AppShell>
   )
-}
 }
 
 const partnerTypeOptions = ['Reseller', 'VAR / Solution Provider', 'MSP', 'MSSP', 'System Integrator', 'Technology Partner', 'Service Provider', 'Distributor']
