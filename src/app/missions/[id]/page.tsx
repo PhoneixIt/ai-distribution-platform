@@ -10,6 +10,8 @@ type Mission = {
   vendor_name: string | null
   product_name: string | null
   country: string | null
+  technology_focus: string | null
+  partner_types: string[]
   customer_segment: string | null
   status: string
   current_stage: string
@@ -64,6 +66,33 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     finally { setBusy('') }
   }
 
+  async function startDiscovery() {
+    if (!mission) return
+    setBusy('Start discovery'); setError(''); setNotice('')
+    try {
+      const response = await fetch('/api/discovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          missionId: mission.id,
+          country: mission.country,
+          technologyFocus: mission.technology_focus,
+          partnerTypes: mission.partner_types,
+          customerSegment: mission.customer_segment,
+          desiredCandidateCount: 100,
+        }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'Discovery failed.')
+      await load(mission.id)
+      setNotice('Discovery completed. PortAi has prepared the candidates for review.')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Discovery failed.')
+    } finally {
+      setBusy('')
+    }
+  }
+
   async function runStage(endpoint: string, label: string) {
     if (!mission) return
     setBusy(label); setError(''); setNotice('')
@@ -99,6 +128,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-wider text-blue-400">Execution stages</p><h2 className="mt-1 text-lg font-semibold">Contact research → personalized draft → human approval → send</h2></div><span className="text-xs text-slate-500">No automatic send</span></div>
       <div className="mt-4 flex flex-wrap gap-2">
+        {mission.current_stage === 'defined' || mission.current_stage === 'failed' ? <button disabled={!!busy} onClick={startDiscovery} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold disabled:opacity-40">{busy === 'Start discovery' ? 'Discovering…' : 'Start discovery →'}</button> : null}
         <button disabled={!!busy || mission.current_stage !== 'dossier_ready'} onClick={() => runStage('/api/missions/' + mission.id + '/contacts','Contact research')} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold disabled:opacity-40">Research contacts</button>
         <button disabled={!!busy || !['contacts_researched','draft_ready'].includes(mission.current_stage)} onClick={() => runStage('/api/missions/' + mission.id + '/drafts','Generate drafts')} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold disabled:opacity-40">Generate drafts</button>
       </div>

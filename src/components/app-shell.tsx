@@ -101,7 +101,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
               <button onClick={() => router.back()} className="rounded-lg border border-slate-800 px-2.5 py-2 text-xs text-slate-400 hover:border-slate-700 hover:text-white" aria-label="Go back">← Back</button>
               <button onClick={() => router.forward()} className="rounded-lg border border-slate-800 px-2.5 py-2 text-xs text-slate-400 hover:border-slate-700 hover:text-white" aria-label="Go forward">Forward →</button>
             </div>
-            <Link href="/workforce" className="hidden rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold hover:bg-blue-500 sm:block">Run a mission</Link>
+            <Link href="/missions/new" className="hidden rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold hover:bg-blue-500 sm:block">Start a mission</Link>
             <div className="hidden max-w-48 truncate text-right text-xs text-slate-400 md:block">{email}</div>
             <button onClick={signOut} className="rounded-lg border border-slate-800 px-3 py-2 text-xs font-medium text-slate-300 hover:border-slate-700 hover:text-white">Sign out</button>
           </div>
