@@ -23,6 +23,20 @@ type OrganizationType =
   | 'other'
   | null
 
+const roleLabels: Record<string, string> = {
+  vendor: 'Vendor',
+  distributor: 'Distributor',
+  reseller: 'Reseller',
+  var: 'VAR',
+  msp: 'MSP',
+  mssp: 'MSSP',
+  system_integrator: 'System Integrator',
+  technology_partner: 'Technology Partner',
+  service_provider: 'Service Provider',
+  customer: 'Customer',
+  other: 'Organization',
+}
+
 const shared: NavGroup[] = [
   { label: 'PortAi', items: [
     { href: '/app', label: 'Home' },
