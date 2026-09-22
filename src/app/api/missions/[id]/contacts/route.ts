@@ -92,10 +92,12 @@ export async function POST(_request: Request, context: Context) {
   }
 
   const dossierCount = await supabase.from('mission_dossiers').select('id', { count: 'exact', head: true }).eq('mission_id', id)
+  const usage = await supabase.from('mission_external_usage').select('credits_consumed').eq('mission_id', id)
+  const apolloCreditsConsumed = (usage.data || []).reduce((sum, row) => sum + Number(row.credits_consumed || 0), 0)
   await supabase.from('missions').update({
     current_stage: 'contacts_researched',
     status: 'completed',
-    result_summary: { ...(mission.data.result_summary || {}), contacts_found: selected.length, dossiers_completed: dossierCount.count || 0 }
+    result_summary: { ...(mission.data.result_summary || {}), contacts_found: selected.length, dossiers_completed: dossierCount.count || 0, apollo_credits_consumed: apolloCreditsConsumed }
   }).eq('id', id)
 
   return NextResponse.json({ missionId: id, candidates: candidates.length, contactsFound: selected.length, dossiersCompleted: dossierCount.count || 0, apollo: { companyEnrichment: candidates.length, peopleSearch: selected.length, peopleEnrichment: selected.length } })
