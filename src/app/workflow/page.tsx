@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import AppShell from '@/components/app-shell'
 
 const steps = [
@@ -12,7 +13,12 @@ const steps = [
   { number: '06', label: 'Operate', title: 'Let the AI workforce coordinate the work', description: 'Research, qualification, matching, outreach and meeting agents share the same workspace data and human approval stays in control.', href: '/workforce', action: 'Open AI workforce' },
 ]
 
+type Mission = { id: string; objective: string; current_stage: string; status: string; candidate_count: number; result_summary: Record<string, unknown> }
+
 export default function WorkflowPage() {
+  const [missions, setMissions] = useState<Mission[]>([])
+  useEffect(() => { void fetch('/api/missions').then((r) => r.json()).then((data) => setMissions(data.missions || [])).catch(() => {}) }, [])
+
   return (
     <AppShell title="Missions" subtitle="Turn an ecosystem objective into a connected sequence of discovery, intelligence, matching and action.">
       <section className="rounded-2xl border border-blue-900/50 bg-gradient-to-br from-blue-950/40 to-slate-900 p-6 lg:p-8">
@@ -22,6 +28,11 @@ export default function WorkflowPage() {
           <p className="mt-3 text-sm leading-6 text-slate-400">Every stage contributes context to the same mission. PortAi keeps evidence, relationships, recommendations and approved actions connected so the work can improve over time.</p>
         </div>
       </section>
+
+      {missions.length ? <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Active missions</p><h2 className="mt-1 text-lg font-semibold">Execution state</h2></div><span className="text-xs text-slate-500">{missions.length} recent</span></div>
+        <div className="mt-4 space-y-2">{missions.map((mission) => <Link key={mission.id} href={'/missions/' + mission.id} className="block rounded-xl border border-slate-800 bg-slate-950 p-4 hover:border-blue-900"><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm font-medium text-slate-200">{mission.objective}</p><span className="rounded-full border border-slate-700 px-2.5 py-1 text-[11px] text-slate-400">{mission.current_stage.replaceAll('_',' ')}</span></div><p className="mt-1 text-xs text-slate-600">Selected: {mission.candidate_count} · Contacts: {String(mission.result_summary.contacts_found ?? 0)} · Drafts: {String(mission.result_summary.drafts_generated ?? 0)} · Credits: {String(mission.result_summary.apollo_credits_consumed ?? 0)}</p></Link>)}</div>
+      </section> : null}
 
       <section className="mt-6 grid gap-4 lg:grid-cols-2">
         {steps.map((step) => (
@@ -37,6 +48,12 @@ export default function WorkflowPage() {
             </div>
           </article>
         ))}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">External data cost</p>
+        <h2 className="mt-1 text-lg font-semibold">Apollo usage is mission-visible</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">PortAi records estimated and consumed external credits per mission. The first test is configured without phone or waterfall enrichment, so the planned maximum is 20 Apollo credits for 10 selected companies.</p>
       </section>
 
       <section className="mt-6 grid gap-4 md:grid-cols-3">
