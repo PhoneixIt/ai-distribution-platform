@@ -92,6 +92,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
         <Metric label="Qualified" value={summary.qualified ?? 0} />
         <Metric label="Selected" value={mission.candidate_count} />
         <Metric label="Contacts" value={summary.contacts_found ?? 0} />
+        <Metric label="Apollo credits" value={summary.apollo_credits_consumed ?? 0} />
       </div>
     </section>
 
