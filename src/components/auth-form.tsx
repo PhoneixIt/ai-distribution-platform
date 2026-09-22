@@ -46,6 +46,11 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
     setOrganizationRoles(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value])
   }
 
+  function changeOrganizationType(value: string) {
+    setOrganizationType(value)
+    setOrganizationRoles(current => current.filter(role => role !== value))
+  }
+
   async function signInWithProvider(provider: Provider) {
     setError('')
     setMessage('')
@@ -87,7 +92,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
             full_name: name.trim(),
             organization_name: organizationName.trim(),
             organization_type: organizationType,
-            organization_roles: organizationRoles,
+            organization_roles: organizationRoles.filter(role => role !== organizationType),
           } },
         })
         if (authError) throw authError
@@ -136,8 +141,8 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
           <Field label="Company / organization"><input required value={organizationName} onChange={e => setOrganizationName(e.target.value)} className={input} placeholder="Acme Technologies" /></Field>
         </div>}
         {mode === 'signup' && <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Organization type"><select required value={organizationType} onChange={e => setOrganizationType(e.target.value)} className={input}><option value="">Select one</option>{ORGANIZATION_TYPES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
-          <div><span className="text-sm font-medium text-slate-300">Additional roles <span className="text-xs font-normal text-slate-600">optional</span></span><div className="mt-2 flex flex-wrap gap-2">{ORGANIZATION_ROLES.map(item => <button key={item.value} type="button" onClick={() => toggleRole(item.value)} className={organizationRoles.includes(item.value) ? 'rounded-full border border-blue-500 bg-blue-600/15 px-3 py-2 text-xs text-blue-200' : 'rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-400'}>{item.label}</button>)}</div></div>
+          <Field label="Organization type"><select required value={organizationType} onChange={e => changeOrganizationType(e.target.value)} className={input}><option value="">Select one</option>{ORGANIZATION_TYPES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
+          <div><span className="text-sm font-medium text-slate-300">Additional roles <span className="text-xs font-normal text-slate-600">optional</span></span><div className="mt-2 flex flex-wrap gap-2">{ORGANIZATION_ROLES.filter(item => item.value !== organizationType).map(item => <button key={item.value} type="button" onClick={() => toggleRole(item.value)} className={organizationRoles.includes(item.value) ? 'rounded-full border border-blue-500 bg-blue-600/15 px-3 py-2 text-xs text-blue-200' : 'rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-400'}>{item.label}</button>)}</div></div>
         </div>}
         {mode !== 'reset' && <Field label="Email"><input required type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className={input} placeholder="you@company.com" /></Field>}
         {mode !== 'forgot' && mode !== 'reset' && <Field label="Password"><input required type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className={input} placeholder="••••••••" /></Field>}
