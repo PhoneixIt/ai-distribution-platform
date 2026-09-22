@@ -245,15 +245,13 @@ export default function IntegrationsPage() {
           }
 
           if (target.display_name.toLowerCase() !== company.toLowerCase()) {
-            await createEcosystemOrganizationAlias(supabase, {
+            await createEcosystemOrganizationAlias(supabase, user.id, orgId, {
               ecosystem_organization_id: target.id,
               alias: company,
               alias_type: 'alternate_name',
               source_type: 'file_import',
               source_reference: fileName,
-              source_org_id: orgId,
               verified: false,
-              created_by: user.id,
             })
           }
 
