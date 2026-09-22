@@ -35,9 +35,19 @@ export type PartnerDiscoveryReport = {
   skippedResults: string[]
 }
 
+export type PartnerDiscoveryProgress = {
+  stage: 'discovering' | 'researching' | 'qualifying' | 'completed'
+  discovered: number
+  researched: number
+  qualified: number
+  needsReview: number
+  message: string
+}
+
 export type PartnerDiscoveryRunnerDependencies = {
   webSearch?: WebSearchProvider
   companyResearch?: CompanyResearchProvider
+  onProgress?: (progress: PartnerDiscoveryProgress) => Promise<void> | void
 }
 
 const RESEARCH_CONCURRENCY = 8
@@ -137,13 +147,31 @@ export async function runPartnerDiscovery(
 
   const agent = createPartnerDiscoveryAgent({ webSearch, companyResearch })
   const discovery = await agent.discoverFromWeb(request)
+  await dependencies.onProgress?.({
+    stage: 'discovering',
+    discovered: discovery.candidates.length,
+    researched: 0,
+    qualified: 0,
+    needsReview: 0,
+    message: `Discovered ${discovery.candidates.length} potential companies across ${discovery.searchQueries.length} search paths.`,
+  })
   const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent, request)
+  const qualifiedSoFar = reportCandidates.filter((item) => item.qualification.status === 'qualified').length
+  const reviewSoFar = reportCandidates.filter((item) => item.qualification.status === 'needs_review').length
+  await dependencies.onProgress?.({
+    stage: 'qualifying',
+    discovered: discovery.candidates.length,
+    researched: reportCandidates.length,
+    qualified: qualifiedSoFar,
+    needsReview: reviewSoFar,
+    message: `Verified and qualified ${reportCandidates.length} companies.`,
+  })
 
   const finalRankedCandidates = reportCandidates
     .sort(rankCandidates)
     .slice(0, request.desiredCandidateCount)
 
-  return {
+  const finalReport = {
     request,
     searchQueries: discovery.searchQueries,
     candidatesDiscovered: discovery.candidates.length,
@@ -162,6 +190,17 @@ export async function runPartnerDiscovery(
     finalRankedCandidates,
     skippedResults: discovery.skippedResults,
   }
+
+  await dependencies.onProgress?.({
+    stage: 'completed',
+    discovered: finalReport.candidatesDiscovered,
+    researched: finalReport.candidatesResearched,
+    qualified: finalReport.candidatesQualified.length,
+    needsReview: finalReport.candidatesNeedingReview.length,
+    message: `Discovery complete. ${finalReport.finalRankedCandidates.length} strongest matches selected for the requested result set.`,
+  })
+
+  return finalReport
 }
 
 export async function runMockPartnerDiscoveryDemo(
