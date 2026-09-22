@@ -82,6 +82,11 @@ export async function POST(_request: Request, context: Context) {
   }
 
   await supabase.from('missions').update({
+    current_stage: 'draft_ready', status: 'running',
+    result_summary: { ...(mission.result_summary || {}), drafts_generated: created.length }
+  }).eq('id', id)
+
+  await supabase.from('missions').update({
     current_stage: 'waiting_approval', status: 'waiting_approval',
     result_summary: { ...(mission.result_summary || {}), drafts_generated: created.length, approvals_requested: created.length }
   }).eq('id', id)
