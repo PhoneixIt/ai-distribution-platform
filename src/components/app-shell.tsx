@@ -153,6 +153,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
   const [email, setEmail] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [organizationType, setOrganizationType] = useState<OrganizationType>(null)
+  const [organizationRoles, setOrganizationRoles] = useState<string[]>([])
   const [organizationName, setOrganizationName] = useState('')
 
   useEffect(() => {
@@ -170,7 +171,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
 
       const membership = await supabase
         .from('org_members')
-        .select('organizations(name,organization_type,onboarding_status)')
+        .select('organizations(name,organization_type,organization_roles,onboarding_status)')
         .eq('user_id', data.user.id)
         .eq('status', 'active')
         .limit(1)
@@ -183,6 +184,8 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
 
       setOrganizationName(organization?.name ?? '')
       setOrganizationType((organization?.organization_type as OrganizationType) ?? null)
+      const additionalRoles = Array.isArray(organization?.organization_roles) ? organization.organization_roles : []
+      setOrganizationRoles(Array.from(new Set([organization?.organization_type, ...additionalRoles].filter(Boolean))))
       setLoading(false)
     })
 
@@ -202,6 +205,8 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
     router.replace('/')
     router.refresh()
   }
+
+  const workspaceRoleLabel = useMemo(() => organizationRoles.length ? organizationRoles.map(role => roleLabel(role as OrganizationType)).join(' · ') : roleLabel(organizationType), [organizationRoles, organizationType])
 
   const groups = useMemo<NavGroup[]>(() => {
     const roleGroupsForType = roleGroups[organizationType || 'other'] || roleGroups.other
@@ -226,7 +231,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-sm font-black">P</span>
               <span>
                 <span className="block text-sm font-semibold">{organizationName || 'PortAi'}</span>
-                <span className="hidden text-[11px] capitalize text-slate-500 sm:block">{roleLabel(organizationType)} workspace</span>
+                <span className="hidden text-[11px] capitalize text-slate-500 sm:block">{workspaceRoleLabel} workspace</span>
               </span>
             </Link>
           </div>
