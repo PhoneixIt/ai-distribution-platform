@@ -12,7 +12,6 @@ import {
   normalizeDomain,
   normalizeOrganizationName,
   upsertExternalIdentity,
-  createEcosystemOrganizationAlias,
   type EcosystemConnection,
 } from '@/lib/supabase/services'
 import { ensureWorkspace } from '@/lib/supabase/workspace'
@@ -158,13 +157,23 @@ export default function IntegrationsPage() {
 
     try {
       const { supabase, orgId, user, organization } = await ensureWorkspace()
-      const connection = await createEcosystemConnection(supabase, orgId, user.id, {
-        provider: 'file_import',
-        connection_type: fileName.toLowerCase().endsWith('.csv') ? 'csv' : 'spreadsheet',
-        display_name: fileName || 'Spreadsheet import',
-        sync_direction: 'inbound',
-        metadata: { source_file: fileName, rows: rows.length, mapping },
-      })
+      const { data: existingConnection, error: connectionLookupError } = await supabase
+        .from('ecosystem_connections')
+        .select('*')
+        .eq('org_id', orgId)
+        .eq('provider', 'file_import')
+        .eq('display_name', fileName || 'Spreadsheet import')
+        .maybeSingle()
+      if (connectionLookupError) throw connectionLookupError
+      const connection = existingConnection
+        ? existingConnection as import('@/lib/supabase/services').EcosystemConnection
+        : await createEcosystemConnection(supabase, orgId, user.id, {
+            provider: 'file_import',
+            connection_type: fileName.toLowerCase().endsWith('.csv') ? 'csv' : 'spreadsheet',
+            display_name: fileName || 'Spreadsheet import',
+            sync_direction: 'inbound',
+            metadata: { source_file: fileName, rows: rows.length, mapping },
+          })
 
       const canonical = await listEcosystemOrganizations(supabase, '', 5000)
       const byDomain = new Map<string, typeof canonical[number]>()
@@ -244,17 +253,6 @@ export default function IntegrationsPage() {
             target = data as typeof target
           }
 
-          if (target.display_name.toLowerCase() !== company.toLowerCase()) {
-            await createEcosystemOrganizationAlias(supabase, user.id, orgId, {
-              ecosystem_organization_id: target.id,
-              alias: company,
-              alias_type: 'alternate_name',
-              source_type: 'file_import',
-              source_reference: fileName,
-              verified: false,
-            })
-          }
-
           await upsertExternalIdentity(supabase, {
             ecosystem_organization_id: target.id,
             connection_id: connection.id,
@@ -274,13 +272,13 @@ export default function IntegrationsPage() {
         }
       }
 
-      await updateEcosystemConnection(supabase, orgId, connection.id, {
+      const completedConnection = await updateEcosystemConnection(supabase, orgId, connection.id, {
         sync_status: errors.length ? 'partial' : 'completed',
         last_sync_at: new Date().toISOString(),
         last_error: errors.length ? errors.slice(0, 5).join(' | ') : null,
         metadata: { source_file: fileName, rows: rows.length, created, matched, needs_review: review, errors: errors.length, workspace_role: organization.organization_type },
       })
-      setConnections(list => [connection, ...list.filter(item => item.id !== connection.id)])
+      setConnections(list => [completedConnection, ...list.filter(item => item.id !== completedConnection.id)])
       setSummary({ rows: rows.length, created, matched, review, errors })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Import failed.')
