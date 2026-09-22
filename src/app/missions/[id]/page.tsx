@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import AppShell from '@/components/app-shell'
 
 type Mission = {
@@ -53,8 +52,6 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
   const [autoStarted, setAutoStarted] = useState(false)
-  const searchParams = useSearchParams()
-  const autoStart = searchParams.get('autostart') === '1'
 
   async function load(id: string) {
     const [m, d] = await Promise.all([
@@ -77,10 +74,12 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
   }, [params])
 
   useEffect(() => {
-    if (!autoStart || !mission || autoStarted || busy) return
+    if (!mission || autoStarted || busy || typeof window === 'undefined') return
+    const autoStart = new URLSearchParams(window.location.search).get('autostart') === '1'
+    if (!autoStart) return
     setAutoStarted(true)
     void runMission()
-  }, [autoStart, mission, autoStarted, busy])
+  }, [mission, autoStarted, busy])
 
   async function post(endpoint: string, body?: Record<string, unknown>) {
     const response = await fetch(endpoint, {
