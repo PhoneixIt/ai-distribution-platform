@@ -153,25 +153,13 @@ export function buildPartnerDiscoveryQueries(request: PartnerDiscoveryRequest) {
     'Stuttgart', 'Leipzig', 'Dortmund', 'Hannover', 'Nuremberg', 'Bremen',
   ]
 
-  const languageTerms = [
-    '',
-    'deutsch',
-    'Deutschland',
-    'Mittelstand',
-    'IT Dienstleister',
-    'Managed Services',
-  ]
-
   for (const partnerType of request.partnerTypes) {
     const type = partnerType.trim()
     if (!type) continue
 
     for (const region of regionalTerms) {
-      for (const language of languageTerms) {
-        addQuery(queries, [technology, type, customerSegment, industry, region, language].filter(Boolean).join(' '))
-      }
-      addQuery(queries, [type, technology, 'services', region].filter(Boolean).join(' '))
-      addQuery(queries, [type, 'Unternehmen', technology, region].filter(Boolean).join(' '))
+      addQuery(queries, [technology, type, customerSegment, industry, region].filter(Boolean).join(' '))
+      addQuery(queries, [type, technology, 'Unternehmen', region].filter(Boolean).join(' '))
     }
   }
 
