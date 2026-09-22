@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import AppShell from '@/components/app-shell'
-import { ensureWorkspace } from '@/lib/supabase/workspace'
+import { ensureWorkspace, ORGANIZATION_ROLES, ORGANIZATION_TYPES } from '@/lib/supabase/workspace'
 
 function Status({ label, value }: { label: string; value: string }) {
   return (
