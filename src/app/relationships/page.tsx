@@ -2,7 +2,7 @@ import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { RelationshipGraph } from '@/components/relationships/RelationshipGraph'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 import { ensureWorkspace } from '@/lib/supabase/workspace'
-import { listEcosystemRelationships } from '@/lib/supabase/services'
+import { listEcosystemRelationships, type EcosystemRelationship } from '@/lib/supabase/services'
 
 export const metadata = {
   title: 'Relationships | PortAi',
@@ -11,7 +11,7 @@ export const metadata = {
 
 export default async function RelationshipsPage() {
   const { supabase, user, error: authError } = await getAuthenticatedServerClient()
-  let relationships = []
+  let relationships: EcosystemRelationship[] = []
   let loadError = authError?.message || (!user ? 'Authentication required.' : '')
 
   if (user && !authError) {
