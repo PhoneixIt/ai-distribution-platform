@@ -268,7 +268,7 @@ export default function IntegrationsPage() {
             metadata: { row_number: index + 2, source_file: fileName },
           })
         } catch (cause) {
-          errors.push(\`Row \${index + 2}: \${cause instanceof Error ? cause.message : 'Import failed.'}\`)
+          errors.push(`Row ${index + 2}: ${cause instanceof Error ? cause.message : 'Import failed.'}`)
           if (errors.length >= 25) break
         }
       }
