@@ -197,7 +197,7 @@ export default function IntegrationsPage() {
           const website = value(row[mapping.website || ''])
           const domain = normalizeDomain(website)
           const country = value(row[mapping.country || ''])
-          const externalId = value(row[mapping.external_id || '']) || \`row-\${index + 2}\`
+          const externalId = value(row[mapping.external_id || '']) || `row-${index + 2}`
           const incomingRoles = rolesFrom(value(row[mapping.role || '']))
 
           let target = domain ? byDomain.get(domain) || null : null
