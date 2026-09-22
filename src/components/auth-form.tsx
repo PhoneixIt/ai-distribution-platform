@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Provider } from '@supabase/supabase-js'
+import { ORGANIZATION_ROLES, ORGANIZATION_TYPES } from '@/lib/supabase/workspace'
 
 const socialProviders: Array<{ provider: Provider; label: string; icon: React.ReactNode }> = [
   { provider: 'google', label: 'Google', icon: <GoogleIcon /> },
@@ -17,6 +18,9 @@ const socialProviders: Array<{ provider: Provider; label: string; icon: React.Re
 export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot' | 'reset' }) {
   const router = useRouter()
   const [name, setName] = useState('')
+  const [organizationName, setOrganizationName] = useState('')
+  const [organizationType, setOrganizationType] = useState('')
+  const [organizationRoles, setOrganizationRoles] = useState<string[]>([])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -35,23 +39,23 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
     return () => window.clearTimeout(timer)
   }, [])
 
-  const title = mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Create your workspace' : mode === 'forgot' ? 'Reset your password' : 'Choose a new password'
-  const description = mode === 'login' ? 'Sign in to your channel intelligence workspace.' : mode === 'signup' ? 'Start building your vendor, distributor and partner network.' : mode === 'forgot' ? 'We will send a secure reset link to your email.' : 'Set a new password for your account.'
+  const title = mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Create your PortAi workspace' : mode === 'forgot' ? 'Reset your password' : 'Choose a new password'
+  const description = mode === 'login' ? 'Sign in to your channel intelligence workspace.' : mode === 'signup' ? 'Tell PortAi what kind of business you operate so your workspace can be personalized from day one.' : mode === 'forgot' ? 'We will send a secure reset link to your email.' : 'Set a new password for your account.'
+
+  function toggleRole(value: string) {
+    setOrganizationRoles(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value])
+  }
 
   async function signInWithProvider(provider: Provider) {
     setError('')
     setMessage('')
     setSocialLoading(provider)
-
     try {
       const supabase = createClient()
       const redirectTo = `${window.location.origin}/auth/callback`
       const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo,
-          ...(provider === 'azure' ? { scopes: 'email' } : {}),
-        },
+        options: { redirectTo, ...(provider === 'azure' ? { scopes: 'email' } : {}) },
       })
       if (authError) throw authError
       if (!data.url) throw new Error('Could not start social sign-in.')
@@ -72,9 +76,20 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
         router.replace('/app'); router.refresh(); return
       }
       if (mode === 'signup') {
+        if (!organizationName.trim()) throw new Error('Enter your company or organization name.')
+        if (!organizationType) throw new Error('Select your organization type.')
         if (password.length < 8) throw new Error('Password must be at least 8 characters.')
         if (password !== confirm) throw new Error('Passwords do not match.')
-        const { data, error: authError } = await supabase.auth.signUp({ email: email.trim(), password, options: { data: { full_name: name.trim() } } })
+        const { data, error: authError } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { data: {
+            full_name: name.trim(),
+            organization_name: organizationName.trim(),
+            organization_type: organizationType,
+            organization_roles: organizationRoles,
+          } },
+        })
         if (authError) throw authError
         if (data.session) { router.replace('/app'); router.refresh(); return }
         setMessage('Account created. Check your email to confirm the account, then sign in.')
@@ -101,7 +116,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
   const primaryProviders = socialProviders.slice(0, 2)
   const secondaryProviders = socialProviders.slice(2)
 
-  return <main className="min-h-screen bg-slate-950 text-white"><div className="mx-auto flex min-h-screen max-w-md items-center px-5 py-10"><div className="w-full">
+  return <main className="min-h-screen bg-slate-950 text-white"><div className="mx-auto flex min-h-screen max-w-xl items-center px-5 py-10"><div className="w-full">
     <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"><span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-600 text-xs font-black">P</span> PortAi</Link>
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-7 shadow-2xl shadow-black/20">
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1><p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
@@ -111,17 +126,24 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
           {primaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">{socialLoading === provider ? 'Connecting…' : <>{icon}<span>Continue with {label}</span></>}</button>)}
         </div>
         <button type="button" onClick={() => setShowMoreProviders(value => !value)} className="mt-3 w-full text-xs text-slate-500 hover:text-slate-300">{showMoreProviders ? 'Hide other sign-in options' : 'More sign-in options'}</button>
-        {showMoreProviders && <div className="mt-3 grid grid-cols-3 gap-3">{secondaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} aria-label={`Continue with ${label}`} title={`Continue with ${label}`} className="flex items-center justify-center rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50">{icon}</button>)}</div>}
+        {showMoreProviders && <div className="mt-3 grid grid-cols-3 gap-3">{secondaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} aria-label={`Continue with ${label}`} title={`Continue with ${label}`}>{icon}</button>)}</div>}
         <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>Or continue with email</span><span className="h-px flex-1 bg-slate-800" /></div>
       </>}
 
       <form onSubmit={submit} className="space-y-4">
-        {mode === 'signup' && <Field label="Full name"><input required value={name} onChange={e => setName(e.target.value)} className={input} placeholder="Your name" /></Field>}
+        {mode === 'signup' && <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Full name"><input required value={name} onChange={e => setName(e.target.value)} className={input} placeholder="Your name" /></Field>
+          <Field label="Company / organization"><input required value={organizationName} onChange={e => setOrganizationName(e.target.value)} className={input} placeholder="Acme Technologies" /></Field>
+        </div>}
+        {mode === 'signup' && <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Organization type"><select required value={organizationType} onChange={e => setOrganizationType(e.target.value)} className={input}><option value="">Select one</option>{ORGANIZATION_TYPES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
+          <div><span className="text-sm font-medium text-slate-300">Additional roles <span className="text-xs font-normal text-slate-600">optional</span></span><div className="mt-2 flex flex-wrap gap-2">{ORGANIZATION_ROLES.map(item => <button key={item.value} type="button" onClick={() => toggleRole(item.value)} className={organizationRoles.includes(item.value) ? 'rounded-full border border-blue-500 bg-blue-600/15 px-3 py-2 text-xs text-blue-200' : 'rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-400'}>{item.label}</button>)}</div></div>
+        </div>}
         {mode !== 'reset' && <Field label="Email"><input required type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className={input} placeholder="you@company.com" /></Field>}
         {mode !== 'forgot' && mode !== 'reset' && <Field label="Password"><input required type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className={input} placeholder="••••••••" /></Field>}
         {mode === 'reset' && <><Field label="New password"><input required type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} className={input} placeholder="At least 8 characters" /></Field><Field label="Confirm password"><input required type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} className={input} placeholder="Repeat your password" /></Field></>}
         {mode === 'signup' && <Field label="Confirm password"><input required type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} className={input} placeholder="Repeat your password" /></Field>}
-        <button disabled={loading || socialLoading !== null} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Working…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Update password'}</button>
+        <button disabled={loading || socialLoading !== null} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Working…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create workspace' : mode === 'forgot' ? 'Send reset link' : 'Update password'}</button>
       </form>
       {error && <div className="mt-4 rounded-lg border border-red-900/60 bg-red-950/20 p-3 text-sm text-red-300">{error}</div>}
       {message && <div className="mt-4 rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-3 text-sm text-emerald-300">{message}</div>}
@@ -129,7 +151,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
         {mode === 'login' ? <><Link href="/signup" className="text-blue-400 hover:text-blue-300">Create account</Link><Link href="/forgot-password" className="hover:text-white">Forgot password?</Link></> : mode === 'signup' ? <Link href="/login" className="text-blue-400 hover:text-blue-300">Already have an account? Sign in</Link> : <Link href="/login" className="text-blue-400 hover:text-blue-300">Back to sign in</Link>}
       </div>
     </div>
-    <p className="mt-5 text-center text-xs leading-5 text-slate-600">Your workspace is created when you first sign in. Public company intelligence remains separate from your private sales workspace.</p>
+    <p className="mt-5 text-center text-xs leading-5 text-slate-600">Your workspace is created with the business identity you provide. You can refine roles and operating preferences later.</p>
   </div></div></main>
 }
 
@@ -137,6 +159,6 @@ const input = 'mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-sm font-medium text-slate-300">{label}{children}</label> }
 function GoogleIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.35 12.23c0-.72-.06-1.42-.18-2.09H12v3.95h5.23a4.47 4.47 0 0 1-1.94 2.93v2.43h3.14c1.84-1.69 2.92-4.18 2.92-7.22Z"/><path fill="#34A853" d="M12 21.7c2.63 0 4.84-.87 6.45-2.35l-3.14-2.43c-.87.58-1.98.93-3.31.93-2.54 0-4.7-1.72-5.47-4.04H3.29v2.5A9.74 9.74 0 0 0 12 21.7Z"/><path fill="#FBBC05" d="M6.53 13.81A5.85 5.85 0 0 1 6.23 12c0-.63.11-1.24.3-1.81v-2.5H3.29A9.73 9.73 0 0 0 2.25 12c0 1.57.38 3.05 1.04 4.31l3.24-2.5Z"/><path fill="#EA4335" d="M12 6.15c1.43 0 2.72.49 3.74 1.46l2.8-2.8C16.84 3.25 14.63 2.3 12 2.3a9.74 9.74 0 0 0-8.71 5.39l3.24 2.5C7.3 7.87 9.46 6.15 12 6.15Z"/></svg> }
 function MicrosoftIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f35325" d="M2 2h9.5v9.5H2z"/><path fill="#81bc06" d="M12.5 2H22v9.5h-9.5z"/><path fill="#05a6f0" d="M2 12.5h9.5V22H2z"/><path fill="#ffba08" d="M12.5 12.5H22V22h-9.5z"/></svg> }
-function GitHubIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.17c-3.2.7-3.88-1.36-3.88-1.36-.53-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.67 1.25 3.32.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.18-3.1.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.16 1.18a10.96 10.96 0 0 1 5.75 0c2.2-1.49 3.16-1.18 3.16-1.18.62 1.59.23 2.77.11 3.06.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.77 1.05.77 2.12v3.14c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg> }
+function GitHubIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.17c-3.2.7-3.88-1.36-3.88-1.36-.53-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.67 1.25 3.32.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.18-3.1.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.16 1.18a10.96 10.96 0 0 1 5.75 0c2.2-1.49 3.16-1.18 3.16-1.18.62 1.59.23 2.77.11 3.06.73.81-.51 1.47.11 3.06 0 0 .96-.31 3.16 1.18a10.96 10.96 0 0 1 5.75 0c2.2-1.49 3.16-1.18 3.16-1.18.62 1.59.23 2.77.11 3.06.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.77 1.05.77 2.12v3.14c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg> }
 function LinkedInIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.65 3.5a2.15 2.15 0 1 1 0 4.3 2.15 2.15 0 0 1 0-4.3ZM2.75 9h3.8v12h-3.8V9Zm6.1 0h3.64v1.64h.05c.51-.97 1.75-2 3.6-2 3.85 0 4.56 2.53 4.56 5.82V21h-3.8v-5.8c0-1.38-.03-3.15-1.92-3.15-1.92 0-2.22 1.5-2.22 3.05V21h-3.8V9Z"/></svg> }
 function AppleIcon() { return <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 12.54c0-2.37 1.94-3.51 2.03-3.57a4.36 4.36 0 0 0-3.43-1.85c-1.45-.15-2.83.86-3.57.86-.75 0-1.9-.84-3.12-.82a4.6 4.6 0 0 0-3.86 2.35c-1.67 2.89-.43 7.14 1.18 9.47.8 1.14 1.73 2.42 2.97 2.38 1.2-.05 1.66-.77 3.11-.77 1.45 0 1.86.77 3.13.74 1.3-.02 2.1-1.17 2.89-2.32.9-1.32 1.27-2.59 1.29-2.65-.03-.01-2.49-.95-2.62-3.82Zm-2.34-6.95c.65-.79 1.09-1.89.97-2.99-.94.04-2.08.63-2.76 1.42-.6.69-1.12 1.8-.98 2.86 1.05.08 2.12-.53 2.77-1.29Z"/></svg> }
