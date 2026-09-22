@@ -36,7 +36,6 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
   const [selected, setSelected] = useState<EcosystemRelationship | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
-  const [searchA, setSearchA] = useState('')
   const [searchB, setSearchB] = useState('')
   const [newOrg, setNewOrg] = useState({ name: '', website: '', country: '' })
   const [form, setForm] = useState({ from: '', to: '', type: 'vendor_distributor', lifecycle: 'identified', status: 'active', market: '', territory: '', started: '', nextAction: '', notes: '' })
@@ -57,11 +56,11 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
     })
     const list = await listEcosystemOrganizations(supabase, '', 200)
     setOrganizations([own, ...list.filter(x => x.id !== own.id)])
+    setForm(f => ({ ...f, from: own.id }))
   }
 
   useEffect(() => { void loadOrganizations().catch(e => setMessage(e instanceof Error ? e.message : 'Could not load organizations.')) }, [])
 
-  const filteredA = organizations.filter(o => o.display_name.toLowerCase().includes(searchA.toLowerCase()))
   const filteredB = organizations.filter(o => o.display_name.toLowerCase().includes(searchB.toLowerCase()))
 
   const addExternalOrg = async () => {
@@ -152,9 +151,9 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
         <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Your organization</p>
           <p className="mt-1 text-sm text-slate-600">The relationship is recorded from this workspace.</p>
-          <select value={form.from} onChange={e=>setForm(f=>({...f,from:e.target.value}))} className="mt-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
-            <option value="">Select your organization</option>{organizations.slice(0,1).map(o=><option key={o.id} value={o.id}>{o.display_name}</option>)}
-          </select>
+          <div className="mt-3 rounded-lg border border-indigo-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-900">
+            {organizations[0]?.display_name || 'Loading workspace organization…'}
+          </div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">Related organization</p>
