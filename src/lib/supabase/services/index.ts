@@ -192,7 +192,7 @@ export type {
 } from './relationships'
 
 
-export { listEcosystemOrganizations, ensureEcosystemOrganization } from './ecosystem-organizations'
+export { listEcosystemOrganizations, ensureEcosystemOrganization, updateEcosystemOrganizationRoles } from './ecosystem-organizations'
 export type { EcosystemOrganization } from './ecosystem-organizations'
 
 
