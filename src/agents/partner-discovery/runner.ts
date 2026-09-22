@@ -93,7 +93,8 @@ function markResearchFailure(candidate: PartnerCandidate, error: unknown) {
 async function researchCandidatesInParallel(
   candidates: PartnerCandidate[],
   agent: ReturnType<typeof createPartnerDiscoveryAgent>,
-  request: PartnerDiscoveryRequest
+  request: PartnerDiscoveryRequest,
+  onProgress?: (researched: number, qualified: number, needsReview: number) => Promise<void> | void
 ) {
   const results: PartnerDiscoveryReportCandidate[] = new Array(candidates.length)
   let nextIndex = 0
@@ -112,10 +113,11 @@ async function researchCandidatesInParallel(
         researchedCandidate = markResearchFailure(preliminaryCandidate, error)
       }
 
-      results[index] = reportCandidate(
-        researchedCandidate,
-        agent.qualifyCandidate(researchedCandidate, request)
-      )
+      results[index] = reportCandidate(researchedCandidate, agent.qualifyCandidate(researchedCandidate, request))
+      const completed = results.filter(Boolean)
+      const qualified = completed.filter((item) => item.qualification.status === 'qualified').length
+      const needsReview = completed.filter((item) => item.qualification.status === 'needs_review').length
+      await onProgress?.(completed.length, qualified, needsReview)
     }
   }
 
@@ -156,7 +158,16 @@ export async function runPartnerDiscovery(
     needsReview: 0,
     message: `Discovered ${discovery.candidates.length} potential companies across ${discovery.searchQueries.length} search paths.`,
   })
-  const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent, request)
+  const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent, request, async (researched, qualified, needsReview) => {
+    await dependencies.onProgress?.({
+      stage: 'researching',
+      discovered: discovery.candidates.length,
+      researched,
+      qualified,
+      needsReview,
+      message: `Researching and verifying the market: ${researched} of ${discovery.candidates.length} companies completed.`,
+    })
+  })
   const qualifiedSoFar = reportCandidates.filter((item) => item.qualification.status === 'qualified').length
   const reviewSoFar = reportCandidates.filter((item) => item.qualification.status === 'needs_review').length
   await dependencies.onProgress?.({
