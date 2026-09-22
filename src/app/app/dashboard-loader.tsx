@@ -32,7 +32,7 @@ export default function DashboardLoader({
 }
 
 async function loadDashboard() {
-  const { supabase, orgId } = await ensureWorkspace()
+  const { supabase, orgId, organization } = await ensureWorkspace()
 
   const [partners, vendors, distributors, customers, opportunities, matches] = await Promise.all([
     supabase.from('partners').select('*', { count: 'exact', head: true }),
@@ -64,7 +64,13 @@ async function loadDashboard() {
 
   if (recentError) throw new Error(`Could not load recent opportunities: ${recentError.message}`)
 
+  const primaryRole = organization?.organization_type || organization?.organization_roles?.[0] || 'other'
+  const roles = Array.from(new Set([primaryRole, ...(organization?.organization_roles || [])])).filter(Boolean)
+
   return {
+    organizationName: organization?.name || 'Workspace',
+    primaryRole,
+    roles,
     stats: {
       partners: partners.count ?? 0,
       vendors: vendors.count ?? 0,
