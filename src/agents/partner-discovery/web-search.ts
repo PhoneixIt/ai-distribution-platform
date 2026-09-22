@@ -8,9 +8,8 @@ import type {
 
 const DUCKDUCKGO_HTML_URL = 'https://html.duckduckgo.com/html/'
 const EXA_API_KEY_ENV = 'EXA_API_KEY'
-const DEFAULT_MAX_RESULTS = 10
+const DEFAULT_MAX_RESULTS = 25
 const MAX_RESULTS_LIMIT = 100
-const MAX_DISCOVERY_QUERIES = 12
 
 function decodeHtml(value: string) {
   return value
@@ -129,7 +128,7 @@ export function createLocalWebSearchProvider(): WebSearchProvider {
 
 function addQuery(queries: string[], value: string) {
   const normalized = value.replace(/\s+/g, ' ').trim()
-  if (!normalized || queries.includes(normalized) || queries.length >= MAX_DISCOVERY_QUERIES) {
+  if (!normalized || queries.includes(normalized)) {
     return
   }
 
@@ -148,23 +147,49 @@ export function buildPartnerDiscoveryQueries(request: PartnerDiscoveryRequest) {
   const companySize = request.companySize?.trim()
   const queries: string[] = []
 
+  const regionalTerms = [
+    country,
+    'Berlin', 'Munich', 'Hamburg', 'Frankfurt', 'Cologne', 'Dusseldorf',
+    'Stuttgart', 'Leipzig', 'Dortmund', 'Hannover', 'Nuremberg', 'Bremen',
+  ]
+
+  const languageTerms = [
+    '',
+    'deutsch',
+    'Deutschland',
+    'Mittelstand',
+    'IT Dienstleister',
+    'Managed Services',
+  ]
+
   for (const partnerType of request.partnerTypes) {
     const type = partnerType.trim()
     if (!type) continue
 
-    addQuery(queries, `${technology} ${type} ${country}`)
-    addQuery(queries, `${type} ${technology} services ${country}`)
-    addQuery(queries, [technology, type, customerSegment, industry, country].filter(Boolean).join(' '))
-    addQuery(queries, `${type} companies ${country}`)
+    for (const region of regionalTerms) {
+      for (const language of languageTerms) {
+        addQuery(queries, [technology, type, customerSegment, industry, region, language].filter(Boolean).join(' '))
+      }
+      addQuery(queries, [type, technology, 'services', region].filter(Boolean).join(' '))
+      addQuery(queries, [type, 'Unternehmen', technology, region].filter(Boolean).join(' '))
+    }
   }
 
-  addQuery(queries, [technology, customerSegment, country, capability].filter(Boolean).join(' '))
-  addQuery(queries, [technology, country, industry, 'partners'].filter(Boolean).join(' '))
-  addQuery(queries, [technology, country, vendorPartnership, 'partner'].filter(Boolean).join(' '))
-  addQuery(queries, [technology, country, certification].filter(Boolean).join(' '))
-  addQuery(queries, [technology, country, companySize, 'IT services'].filter(Boolean).join(' '))
-  addQuery(queries, `${technology} managed services ${country}`)
-  addQuery(queries, `${technology} security services ${country}`)
+  const broadTerms = [
+    [technology, customerSegment, country, capability],
+    [technology, country, industry, 'partners'],
+    [technology, country, vendorPartnership, 'partner'],
+    [technology, country, certification],
+    [technology, country, companySize, 'IT services'],
+    [technology, 'managed services', country],
+    [technology, 'security services', country],
+    [technology, 'IT Dienstleister', country],
+    [technology, 'Systemhaus', country],
+    [technology, 'MSSP', country],
+    [technology, 'MSP', country],
+  ]
+
+  for (const terms of broadTerms) addQuery(queries, terms.filter(Boolean).join(' '))
 
   return queries
 }
