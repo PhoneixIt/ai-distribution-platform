@@ -166,7 +166,7 @@ export default function IntegrationsPage() {
         .maybeSingle()
       if (connectionLookupError) throw connectionLookupError
       const connection = existingConnection
-        ? existingConnection as import('@/lib/supabase/services').EcosystemConnection
+        ? existingConnection as EcosystemConnection
         : await createEcosystemConnection(supabase, orgId, user.id, {
             provider: 'file_import',
             connection_type: fileName.toLowerCase().endsWith('.csv') ? 'csv' : 'spreadsheet',
