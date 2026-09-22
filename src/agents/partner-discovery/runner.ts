@@ -51,6 +51,11 @@ export type PartnerDiscoveryRunnerDependencies = {
 }
 
 const RESEARCH_CONCURRENCY = 8
+const MAX_RESEARCH_CANDIDATES = 250
+
+function researchBudget(request: PartnerDiscoveryRequest) {
+  return Math.min(MAX_RESEARCH_CANDIDATES, Math.max(50, request.desiredCandidateCount * 15))
+}
 
 function rankCandidates(left: PartnerDiscoveryReportCandidate, right: PartnerDiscoveryReportCandidate) {
   const statusRank = {
@@ -155,7 +160,9 @@ export async function runPartnerDiscovery(
     needsReview: 0,
     message: `Discovered ${discovery.candidates.length} potential companies across ${discovery.searchQueries.length} search paths.`,
   })
-  const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent, request)
+  const budget = researchBudget(request)
+  const researchCandidates = discovery.candidates.slice(0, budget)
+  const reportCandidates = await researchCandidatesInParallel(researchCandidates, agent, request)
   const qualifiedSoFar = reportCandidates.filter((item) => item.qualification.status === 'qualified').length
   const reviewSoFar = reportCandidates.filter((item) => item.qualification.status === 'needs_review').length
   await dependencies.onProgress?.({
@@ -164,7 +171,7 @@ export async function runPartnerDiscovery(
     researched: reportCandidates.length,
     qualified: qualifiedSoFar,
     needsReview: reviewSoFar,
-    message: `Verified and qualified ${reportCandidates.length} companies.`,
+    message: `Verified and qualified ${reportCandidates.length} companies from the strongest ${researchCandidates.length} candidates in a discovery universe of ${discovery.candidates.length}.`,
   })
 
   const finalRankedCandidates = reportCandidates
@@ -197,7 +204,7 @@ export async function runPartnerDiscovery(
     researched: finalReport.candidatesResearched,
     qualified: finalReport.candidatesQualified.length,
     needsReview: finalReport.candidatesNeedingReview.length,
-    message: `Discovery complete. ${finalReport.finalRankedCandidates.length} strongest matches selected for the requested result set.`,
+    message: `Discovery complete. ${finalReport.finalRankedCandidates.length} strongest matches selected from ${finalReport.candidatesResearched} verified candidates across ${finalReport.candidatesDiscovered} discovered companies.`,
   })
 
   return finalReport
