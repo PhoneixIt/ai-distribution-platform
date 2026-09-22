@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type AppShellProps = { children: React.ReactNode; title?: string; subtitle?: string }
+type NavItem = { href: string; label: string }
+type NavGroup = { label: string; items: NavItem[] }
 
 type OrganizationType =
   | 'vendor'
@@ -21,13 +23,13 @@ type OrganizationType =
   | 'other'
   | null
 
-const shared = {
-  PortAi: [
+const shared: NavGroup[] = [
+  { label: 'PortAi', items: [
     { href: '/app', label: 'Home' },
     { href: '/workflow', label: 'Missions' },
     { href: '/workforce', label: 'AI Workforce' },
-  ],
-}
+  ]},
+]
 
 const roleGroups: Record<string, { label: string; items: { href: string; label: string }[] }[]> = {
   vendor: [
@@ -198,10 +200,10 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
     router.refresh()
   }
 
-  const groups = useMemo(() => {
+  const groups = useMemo<NavGroup[]>(() => {
     const roleGroupsForType = roleGroups[organizationType || 'other'] || roleGroups.other
     return [
-      shared,
+      ...shared,
       ...roleGroupsForType,
       { label: 'Administration', items: [{ href: '/settings', label: 'Settings' }] },
     ]
