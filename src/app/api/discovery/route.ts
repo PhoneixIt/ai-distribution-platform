@@ -43,6 +43,22 @@ async function executeDiscoveryRun(
           returned_count: progress.qualified + progress.needsReview,
           error_message: progress.message,
         }).eq('id', runId)
+
+        await supabase.from('missions').update({
+          status: 'running',
+          current_stage: progress.stage === 'discovering' || progress.stage === 'researching' || progress.stage === 'qualifying'
+            ? 'discovering'
+            : 'dossier_ready',
+          candidate_count: progress.discovered,
+          result_summary: {
+            discovered: progress.discovered,
+            researched: progress.researched,
+            qualified: progress.qualified,
+            needs_review: progress.needsReview,
+            progress_message: progress.message,
+          },
+          error_message: null,
+        }).eq('id', missionId)
       },
     })
 
