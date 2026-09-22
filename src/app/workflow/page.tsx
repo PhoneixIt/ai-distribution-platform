@@ -25,7 +25,7 @@ export default function WorkflowPage() {
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">The operating loop</p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl">Discover → Research → Verify → Match → Engage → Learn</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-400">Every stage contributes context to the same mission. PortAi keeps evidence, relationships, recommendations and approved actions connected so the work can improve over time.</p>
+          <p className="mt-3 text-sm leading-6 text-slate-400">Every stage contributes context to the same mission. PortAi keeps evidence, relationships, recommendations and approved actions connected so the work can improve over time.</p><div className="mt-5"><Link href="/missions/new" className="inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold hover:bg-blue-500">Start a new mission →</Link></div>
         </div>
       </section>
 
