@@ -45,6 +45,7 @@ const shared: NavGroup[] = [
   ]},
   { label: 'Ecosystem', items: [
     { href: '/relationships', label: 'Relationships' },
+    { href: '/integrations', label: 'Integrations' },
   ]},
 ]
 
