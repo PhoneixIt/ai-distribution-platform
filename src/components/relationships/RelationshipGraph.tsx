@@ -58,6 +58,7 @@ const territoryOptions = ['Global','Middle East','GCC','Levant','MEA','Europe','
 export function RelationshipGraph({ initialRelationships, error }: Props) {
   const [relationships, setRelationships] = useState(initialRelationships)
   const [organizations, setOrganizations] = useState<EcosystemOrganization[]>([])
+  const [workspaceRoles, setWorkspaceRoles] = useState<string[]>([])
   const [filter, setFilter] = useState('all')
   const [showAdd, setShowAdd] = useState(false)
   const [selected, setSelected] = useState<EcosystemRelationship | null>(null)
@@ -77,13 +78,15 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
 
   const loadOrganizations = async () => {
     const { supabase, user, organization, orgId } = await ensureWorkspace()
+    const ownRoles = Array.from(new Set([organization.organization_type, ...(organization.organization_roles || [])].filter(Boolean)))
+    setWorkspaceRoles(ownRoles)
     const own = await ensureEcosystemOrganization(supabase, user.id, orgId, {
       display_name: organization.name,
-      organization_roles: organization.organization_roles || (organization.organization_type ? [organization.organization_type] : []),
+      organization_roles: ownRoles,
     })
     const list = await listEcosystemOrganizations(supabase, '', 200)
     setOrganizations([own, ...list.filter(x => x.id !== own.id)])
-    setForm(f => ({ ...f, from: own.id, fromRole: f.fromRole || organization.organization_type || organization.organization_roles?.[0] || '' }))
+    setForm(f => ({ ...f, from: own.id, fromRole: f.fromRole || ownRoles[0] || '' }))
   }
 
   useEffect(() => { void loadOrganizations().catch(e => setMessage(e instanceof Error ? e.message : 'Could not load organizations.')) }, [])
