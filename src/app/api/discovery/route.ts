@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   if (missionResult.error) return NextResponse.json({ error: missionResult.error.message }, { status: 500 })
   if (!missionResult.data) return NextResponse.json({ error: 'Mission was not found in this workspace.' }, { status: 404 })
 
-  const requestedMatch = missionResult.data.objective.match(/\\b(?:find|identify|discover|source)\\s+(\\d{1,6})\\b/i)
+  const requestedMatch = missionResult.data.objective.match(/\b(?:find|identify|discover|source)\s+(\\d{1,6})\\b/i)
   const requestedCount = requestedMatch ? Math.max(1, Number(requestedMatch[1])) : discoveryRequest.desiredCandidateCount
   discoveryRequest.desiredCandidateCount = requestedCount
 
