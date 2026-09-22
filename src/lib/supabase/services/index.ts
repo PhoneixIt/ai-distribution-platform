@@ -194,3 +194,13 @@ export type {
 
 export { listEcosystemOrganizations, ensureEcosystemOrganization } from './ecosystem-organizations'
 export type { EcosystemOrganization } from './ecosystem-organizations'
+
+
+export { listEcosystemConnections, createEcosystemConnection, updateEcosystemConnection } from './ecosystem-connections'
+export type { EcosystemConnection } from './ecosystem-connections'
+
+export { listExternalIdentities, findExternalIdentity, upsertExternalIdentity } from './ecosystem-identities'
+export type { EcosystemExternalIdentity } from './ecosystem-identities'
+
+export { listEcosystemOrganizationAliases, createEcosystemOrganizationAlias } from './ecosystem-aliases'
+export type { EcosystemOrganizationAlias } from './ecosystem-aliases'
