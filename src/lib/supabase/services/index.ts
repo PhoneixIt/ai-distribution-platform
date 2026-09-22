@@ -190,3 +190,7 @@ export type {
   EcosystemRelationship,
   EcosystemRelationshipInput,
 } from './relationships'
+
+
+export { listEcosystemOrganizations, ensureEcosystemOrganization } from './ecosystem-organizations'
+export type { EcosystemOrganization } from './ecosystem-organizations'
