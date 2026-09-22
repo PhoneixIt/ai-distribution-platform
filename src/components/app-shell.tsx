@@ -2,43 +2,144 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type AppShellProps = { children: React.ReactNode; title?: string; subtitle?: string }
 
-const groups = [
-  {
-    label: 'PortAi',
-    items: [
-      { href: '/app', label: 'Ecosystem overview' },
-      { href: '/workflow', label: 'Missions' },
-      { href: '/workforce', label: 'AI Workforce' },
-    ],
-  },
-  {
-    label: 'Ecosystem',
-    items: [
+type OrganizationType =
+  | 'vendor'
+  | 'distributor'
+  | 'reseller'
+  | 'var'
+  | 'msp'
+  | 'mssp'
+  | 'system_integrator'
+  | 'technology_partner'
+  | 'service_provider'
+  | 'customer'
+  | 'other'
+  | null
+
+const shared = {
+  PortAi: [
+    { href: '/app', label: 'Home' },
+    { href: '/workflow', label: 'Missions' },
+    { href: '/workforce', label: 'AI Workforce' },
+  ],
+}
+
+const roleGroups: Record<string, { label: string; items: { href: string; label: string }[] }[]> = {
+  vendor: [
+    { label: 'Go to market', items: [
       { href: '/partners', label: 'Partners' },
-      { href: '/vendors', label: 'Vendors' },
-      { href: '/distributors', label: 'Distributors' },
-      { href: '/customers', label: 'Customers' },
+      { href: '/discovery', label: 'Partner recruitment' },
       { href: '/products', label: 'Products & solutions' },
+      { href: '/opportunities', label: 'Channel pipeline' },
+    ]},
+    { label: 'Intelligence', items: [
       { href: '/matches', label: 'Matches' },
+      { href: '/engagements', label: 'Engagements' },
+    ]},
+  ],
+  distributor: [
+    { label: 'Channel', items: [
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/partners', label: 'Resellers & partners' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/products', label: 'Products' },
+      { href: '/opportunities', label: 'Pipeline' },
+    ]},
+    { label: 'Intelligence', items: [
+      { href: '/discovery', label: 'Discover ecosystem' },
+      { href: '/matches', label: 'Matches' },
+    ]},
+  ],
+  reseller: [
+    { label: 'Business', items: [
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/products', label: 'Solutions' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/opportunities', label: 'Opportunities' },
+      { href: '/engagements', label: 'Activities' },
+    ]},
+  ],
+  var: [
+    { label: 'Business', items: [
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/products', label: 'Solutions' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/opportunities', label: 'Opportunities' },
+      { href: '/engagements', label: 'Activities' },
+    ]},
+  ],
+  msp: [
+    { label: 'Business', items: [
+      { href: '/vendors', label: 'Technology vendors' },
+      { href: '/products', label: 'Solutions & services' },
+      { href: '/customers', label: 'Customers' },
       { href: '/opportunities', label: 'Opportunities' },
       { href: '/engagements', label: 'Engagements' },
-    ],
-  },
-  {
-    label: 'Intelligence',
-    items: [{ href: '/discovery', label: 'Discover ecosystem' },
-      { href: '/pricing', label: 'Plans & usage' }],
-  },
-  {
-    label: 'Administration',
-    items: [{ href: '/settings', label: 'Settings' }],
-  },
-]
+    ]},
+  ],
+  mssp: [
+    { label: 'Business', items: [
+      { href: '/vendors', label: 'Security vendors' },
+      { href: '/products', label: 'Solutions & services' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/opportunities', label: 'Opportunities' },
+      { href: '/engagements', label: 'Engagements' },
+    ]},
+  ],
+  system_integrator: [
+    { label: 'Business', items: [
+      { href: '/vendors', label: 'Technology vendors' },
+      { href: '/products', label: 'Solutions' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/opportunities', label: 'Projects & opportunities' },
+      { href: '/engagements', label: 'Engagements' },
+    ]},
+  ],
+  technology_partner: [
+    { label: 'Ecosystem', items: [
+      { href: '/vendors', label: 'Technology partners' },
+      { href: '/products', label: 'Integrations & solutions' },
+      { href: '/opportunities', label: 'Joint opportunities' },
+      { href: '/engagements', label: 'Engagements' },
+    ]},
+  ],
+  service_provider: [
+    { label: 'Business', items: [
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/products', label: 'Services & solutions' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/opportunities', label: 'Opportunities' },
+      { href: '/engagements', label: 'Engagements' },
+    ]},
+  ],
+  customer: [
+    { label: 'Technology workspace', items: [
+      { href: '/discovery', label: 'Find solutions' },
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/products', label: 'Solutions' },
+      { href: '/opportunities', label: 'Projects & evaluations' },
+      { href: '/engagements', label: 'Purchases & engagements' },
+    ]},
+  ],
+  other: [
+    { label: 'Ecosystem', items: [
+      { href: '/partners', label: 'Partners' },
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/products', label: 'Products & solutions' },
+      { href: '/opportunities', label: 'Opportunities' },
+    ]},
+  ],
+}
+
+function roleLabel(type: OrganizationType) {
+  return type ? type.replaceAll('_', ' ') : 'Workspace setup'
+}
 
 export default function AppShell({ children, title, subtitle }: AppShellProps) {
   const router = useRouter()
@@ -46,18 +147,37 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [organizationType, setOrganizationType] = useState<OrganizationType>(null)
+  const [organizationName, setOrganizationName] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
     let mounted = true
 
-    void supabase.auth.getUser().then(({ data, error }) => {
+    void supabase.auth.getUser().then(async ({ data, error }) => {
       if (!mounted) return
       if (error || !data.user || data.user.is_anonymous) {
         router.replace(`/login?next=${encodeURIComponent(pathname || '/app')}`)
         return
       }
+
       setEmail(data.user.email ?? data.user.user_metadata?.full_name ?? null)
+
+      const membership = await supabase
+        .from('org_members')
+        .select('organizations(name,organization_type,onboarding_status)')
+        .eq('user_id', data.user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle()
+
+      if (!mounted) return
+      const organization = Array.isArray(membership.data?.organizations)
+        ? membership.data?.organizations[0]
+        : membership.data?.organizations
+
+      setOrganizationName(organization?.name ?? '')
+      setOrganizationType((organization?.organization_type as OrganizationType) ?? null)
       setLoading(false)
     })
 
@@ -78,6 +198,15 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
     router.refresh()
   }
 
+  const groups = useMemo(() => {
+    const roleGroupsForType = roleGroups[organizationType || 'other'] || roleGroups.other
+    return [
+      shared,
+      ...roleGroupsForType,
+      { label: 'Administration', items: [{ href: '/settings', label: 'Settings' }] },
+    ]
+  }, [organizationType])
+
   if (loading) {
     return <div className="grid min-h-screen place-items-center bg-slate-950 text-white"><div className="text-sm text-slate-400">Loading workspace…</div></div>
   }
@@ -91,8 +220,8 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
             <Link href="/app" className="flex items-center gap-2.5">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-sm font-black">P</span>
               <span>
-                <span className="block text-sm font-semibold">PortAi</span>
-                <span className="hidden text-[11px] text-slate-500 sm:block">Ecosystem operating workspace</span>
+                <span className="block text-sm font-semibold">{organizationName || 'PortAi'}</span>
+                <span className="hidden text-[11px] capitalize text-slate-500 sm:block">{roleLabel(organizationType)} workspace</span>
               </span>
             </Link>
           </div>
@@ -124,10 +253,10 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
             ))}
           </nav>
           <div className="mt-8 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs font-semibold text-slate-300">AI stays under your control</p>
-            <p className="mt-2 text-xs leading-5 text-slate-500">PortAi connects ecosystem intelligence with coordinated AI work. Important decisions and external commitments remain with your team.</p>
+            <p className="text-xs font-semibold text-slate-300">PortAi is working for you</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">Internal research and workflow steps run automatically. Your team only steps in when a meaningful business decision or external action needs attention.</p>
           </div>
-          <div className="absolute bottom-4 left-4 right-4 text-[11px] text-slate-600">{title || 'Workspace'}</div>
+          <div className="absolute bottom-4 left-4 right-4 text-[11px] capitalize text-slate-600">{roleLabel(organizationType)} · {title || 'Workspace'}</div>
         </aside>
         {mobileOpen && <button className="fixed inset-0 top-[61px] z-20 bg-black/40 lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation" />}
         <main className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
