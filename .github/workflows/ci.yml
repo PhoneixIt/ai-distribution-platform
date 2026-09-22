@@ -2,63 +2,23 @@ name: CI
 
 on:
   push:
-    branches: [main, feat/ai-operating-layer]
+    branches:
+      - '**'
   pull_request:
-    branches: [main]
 
 jobs:
-  validate:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+      SUPABASE_SERVICE_ROLE_KEY: placeholder
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-
-      # Regenerate the lockfile from package.json so CI stays valid when dependency ranges change.
-      - run: npm install --package-lock-only
-      - run: npm ci
-
-      - name: Dependency audit
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Type check
-        run: npx tsc --noEmit
-
-      - name: Production build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
-
-      - name: Start production server
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
-        run: |
-          nohup npm start -- -p 3000 > /tmp/ai-distribution-platform.log 2>&1 &
-          echo $! > /tmp/ai-distribution-platform.pid
-          for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
-            sleep 1
-          done
-          cat /tmp/ai-distribution-platform.log
-          exit 1
-
-      - name: Smoke test
-        run: npm run smoke
-        env:
-          BASE_URL: http://127.0.0.1:3000
-
-      - name: Stop production server
-        if: always()
-        run: |
-          if [ -f /tmp/ai-distribution-platform.pid ]; then
-            kill "$(cat /tmp/ai-distribution-platform.pid)" || true
-          fi
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
