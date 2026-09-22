@@ -202,8 +202,8 @@ export default function IntegrationsPage() {
 
           let target = domain ? byDomain.get(domain) || null : null
           let matchMethod = target ? 'exact_domain' : 'candidate'
-          let matchConfidence = target ? 0.98 : 1
-          let status: 'candidate' | 'confirmed' = target ? 'confirmed' : 'confirmed'
+          let matchConfidence: number | null = target ? 0.98 : null
+          let status: 'candidate' | 'confirmed' = target ? 'confirmed' : 'candidate'
 
           if (target) {
             matched += 1
@@ -241,6 +241,7 @@ export default function IntegrationsPage() {
             byName.set(target.normalized_name, target)
             if (target.primary_domain) byDomain.set(normalizeDomain(target.primary_domain) || target.primary_domain, target)
             created += 1
+            review += 1
           }
 
           if (incomingRoles.some(role => !target!.organization_roles.includes(role))) {
