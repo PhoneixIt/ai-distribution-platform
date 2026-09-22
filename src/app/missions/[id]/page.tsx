@@ -97,30 +97,53 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     setBusy('run')
     setError('')
     setNotice('PortAi is running the mission end-to-end. You only need to step in when a decision requires you.')
+
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
     try {
       let current = mission
-      let guard = 0
 
-      while (!['waiting_approval', 'completed', 'tracking'].includes(current.current_stage) && guard++ < 5) {
-        if (current.current_stage === 'defined' || current.current_stage === 'failed') {
-          setNotice('Discovering and researching the best matching companies…')
-          await post('/api/discovery', {
-            missionId: current.id,
-            country: current.country,
-            technologyFocus: current.technology_focus,
-            partnerTypes: current.partner_types,
-            customerSegment: current.customer_segment,
-            desiredCandidateCount: 10,
-          })
-        } else if (current.current_stage === 'dossier_ready') {
-          setNotice('Selecting the strongest candidates and researching decision-makers…')
-          await post('/api/missions/' + current.id + '/contacts')
-        } else if (current.current_stage === 'contacts_researched' || current.current_stage === 'draft_ready') {
-          setNotice('Preparing personalized outreach drafts from verified evidence…')
-          await post('/api/missions/' + current.id + '/drafts')
+      if (current.current_stage === 'defined' || current.current_stage === 'failed') {
+        setNotice('Starting broad discovery across the available web sources…')
+        await post('/api/discovery', {
+          missionId: current.id,
+          country: current.country,
+          technologyFocus: current.technology_focus,
+          partnerTypes: current.partner_types,
+          customerSegment: current.customer_segment,
+          desiredCandidateCount: 10,
+        })
+      }
+
+      for (let attempt = 0; attempt < 180; attempt += 1) {
+        current = await load(current.id)
+
+        if (current.current_stage === 'dossier_ready' || current.current_stage === 'scored') break
+        if (current.current_stage === 'failed') throw new Error('PortAi could not complete discovery. Check the execution details and retry the mission.')
+
+        const discovered = Number(current.result_summary?.discovered ?? 0)
+        const researched = Number(current.result_summary?.researched ?? 0)
+        const qualifiedNow = Number(current.result_summary?.qualified ?? 0)
+        if (discovered || researched) {
+          setNotice(`PortAi is expanding coverage and verifying companies… ${discovered} discovered, ${researched} researched, ${qualifiedNow} qualified so far.`)
         } else {
-          break
+          setNotice('PortAi is expanding discovery coverage across the requested market…')
         }
+
+        await wait(2000)
+      }
+
+      current = await load(current.id)
+
+      if (current.current_stage === 'dossier_ready') {
+        setNotice('Discovery is complete. PortAi is researching decision-makers for the strongest matches…')
+        await post('/api/missions/' + current.id + '/contacts')
+        current = await load(current.id)
+      }
+
+      if (current.current_stage === 'contacts_researched' || current.current_stage === 'draft_ready') {
+        setNotice('Preparing personalized outreach drafts from verified evidence…')
+        await post('/api/missions/' + current.id + '/drafts')
         current = await load(current.id)
       }
 
@@ -128,6 +151,10 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
         setNotice('Ready for your approval. PortAi stopped before any external message was sent.')
       } else if (current.current_stage === 'completed' || current.current_stage === 'tracking') {
         setNotice('Mission execution is complete for this run.')
+      } else if (current.current_stage === 'failed') {
+        throw new Error('Mission execution failed. You can retry after reviewing the execution details.')
+      } else {
+        setNotice('PortAi is continuing the mission in the background. You can leave this page and return later.')
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Mission execution failed.')
