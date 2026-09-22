@@ -11,7 +11,7 @@ type MissionDiscoveryInput = {
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
   if (!url || !key) throw new Error('Supabase service credentials are not configured for durable mission workflows.')
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 }
