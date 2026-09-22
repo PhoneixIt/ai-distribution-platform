@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 import { start } from 'workflow/api'
@@ -57,12 +56,27 @@ export async function POST(request: Request) {
 
   const missionResult = await supabase
     .from('missions')
-    .select('id,status,current_stage')
+    .select('id,status,current_stage,objective,discovery_run_id')
     .eq('id', missionId)
     .maybeSingle()
 
   if (missionResult.error) return NextResponse.json({ error: missionResult.error.message }, { status: 500 })
   if (!missionResult.data) return NextResponse.json({ error: 'Mission was not found in this workspace.' }, { status: 404 })
+
+  const requestedMatch = missionResult.data.objective.match(/\\b(?:find|identify|discover|source)\\s+(\\d{1,6})\\b/i)
+  const requestedCount = requestedMatch ? Math.max(1, Number(requestedMatch[1])) : discoveryRequest.desiredCandidateCount
+  discoveryRequest.desiredCandidateCount = requestedCount
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY) {
+    return NextResponse.json({ error: 'Durable mission execution requires SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) in Vercel.' }, { status: 503 })
+  }
+
+  if (missionResult.data.discovery_run_id) {
+    const { data: activeRun } = await supabase.from('discovery_runs').select('id,status').eq('id', missionResult.data.discovery_run_id).maybeSingle()
+    if (activeRun?.status === 'running') {
+      return NextResponse.json({ runId: activeRun.id, status: 'running', message: 'PortAi is already working on this mission. Progress will continue automatically.' }, { status: 202 })
+    }
+  }
 
   const { data: run, error: runError } = await supabase
     .from('discovery_runs')
