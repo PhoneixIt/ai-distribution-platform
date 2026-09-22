@@ -69,7 +69,7 @@ export default function NewMissionPage() {
       })
       const payload = await response.json()
       if (!response.ok || !payload.mission?.id) throw new Error(payload.error || 'Could not create mission.')
-      router.push('/missions/' + payload.mission.id)
+      router.push('/missions/' + payload.mission.id + '?autostart=1')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not create mission.')
       setRunning(false)
@@ -122,7 +122,7 @@ export default function NewMissionPage() {
             {error ? <div className="rounded-xl border border-red-900 bg-red-950/20 p-4 text-sm text-red-300">{error}</div> : null}
 
             <div className="flex flex-col-reverse gap-3 border-t border-slate-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-xl text-xs leading-5 text-slate-500">Creating a mission does not contact anyone or spend Apollo credits. External actions remain behind explicit approval.</p>
+              <p className="max-w-xl text-xs leading-5 text-slate-500">PortAi will start working immediately. Internal research and workflow steps run automatically; external actions remain behind the appropriate business control.</p>
               <button disabled={running || !objective.trim()} className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{running ? 'Creating mission…' : 'Create mission →'}</button>
             </div>
           </form>
