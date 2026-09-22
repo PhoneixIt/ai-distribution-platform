@@ -65,3 +65,20 @@ export async function ensureEcosystemOrganization(
   if (error) throw error
   return data as EcosystemOrganization
 }
+
+
+export async function updateEcosystemOrganizationRoles(
+  supabase: SupabaseClient,
+  id: string,
+  roles: string[],
+): Promise<EcosystemOrganization> {
+  const cleanRoles = Array.from(new Set(roles.filter(Boolean)))
+  const { data, error } = await supabase
+    .from('ecosystem_organizations')
+    .update({ organization_roles: cleanRoles, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as EcosystemOrganization
+}
