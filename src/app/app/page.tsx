@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import AppShell from '@/components/app-shell'
 import DashboardLoader from './dashboard-loader'
+import { ensureWorkspace } from '@/lib/supabase/workspace'
 
 type Stats = { partners: number; vendors: number; distributors: number; customers: number; opportunities: number; matches: number }
 type Recent = { id: string; title: string; status: string; stage: string; estimated_value: number | null }
@@ -20,6 +22,12 @@ export default function AppDashboard() {
   const [data, setData] = useState<DashboardData>({ stats: { partners: 0, vendors: 0, distributors: 0, customers: 0, opportunities: 0, matches: 0 }, recent: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    ensureWorkspace().then(({ organization }) => {
+      if (organization?.onboarding_status !== 'completed') window.location.replace('/onboarding')
+    }).catch(() => {})
+  }, [])
 
   const handleData = useCallback((nextData: DashboardData) => { setData(nextData); setLoading(false) }, [])
   const handleError = useCallback((message: string) => { setError(message); setLoading(false) }, [])
