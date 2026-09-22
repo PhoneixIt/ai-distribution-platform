@@ -89,8 +89,9 @@ create table if not exists public.mission_approvals (
 create index if not exists mission_approvals_mission_idx on public.mission_approvals(mission_id, requested_at desc);
 alter table public.mission_approvals enable row level security;
 revoke all on table public.mission_approvals from anon, authenticated;
-grant select on table public.mission_approvals to authenticated;
+grant select, insert on table public.mission_approvals to authenticated;
 create policy "mission_approvals_members_select" on public.mission_approvals for select to authenticated using ((select public.is_org_member(org_id)));
+create policy "mission_approvals_members_insert" on public.mission_approvals for insert to authenticated with check ((select public.is_org_member(org_id)) and requested_by = (select auth.uid()));
 
 create or replace function private.decide_mission_approval(p_approval_id uuid, p_action text, p_notes text default null)
 returns jsonb language plpgsql security definer set search_path = '' as $$
