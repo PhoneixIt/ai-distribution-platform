@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import AppShell from '@/components/app-shell'
 
 type Mission = {
@@ -51,6 +52,9 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
   const [error, setError] = useState('')
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
+  const [autoStarted, setAutoStarted] = useState(false)
+  const searchParams = useSearchParams()
+  const autoStart = searchParams.get('autostart') === '1'
 
   async function load(id: string) {
     const [m, d] = await Promise.all([
@@ -71,6 +75,12 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     })
     return () => { active = false }
   }, [params])
+
+  useEffect(() => {
+    if (!autoStart || !mission || autoStarted || busy) return
+    setAutoStarted(true)
+    void runMission()
+  }, [autoStart, mission, autoStarted, busy])
 
   async function post(endpoint: string, body?: Record<string, unknown>) {
     const response = await fetch(endpoint, {
@@ -195,7 +205,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
         </div>
         {canRun ? (
           <button disabled={isRunning} onClick={runMission} className="min-w-44 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold disabled:cursor-wait disabled:opacity-50">
-            {busy === 'run' ? 'Running mission…' : 'Run mission →'}
+            {busy === 'run' ? 'Working…' : mission.current_stage === 'failed' ? 'Retry mission →' : 'Run again →'}
           </button>
         ) : waitingApproval ? (
           <span className="rounded-xl border border-amber-900 bg-amber-950/20 px-5 py-3 text-sm font-semibold text-amber-300">Your approval is next</span>
