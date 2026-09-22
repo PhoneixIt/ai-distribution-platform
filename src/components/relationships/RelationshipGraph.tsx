@@ -51,6 +51,25 @@ const relationshipLabel = (fromRole: string, toRole: string) => {
   return 'Partnership'
 }
 
+const storedRelationshipLabel = (type: string, fromRole: string, toRole: string) => {
+  const semantic: Record<string, string> = {
+    distribution: 'Distribution',
+    channel: 'Channel',
+    partnership: 'Partnership',
+    technology: 'Technology',
+    customer: 'Customer',
+  }
+  if (semantic[type]) return semantic[type]
+  if (type === 'vendor_distributor' || type === 'distributor_vendor') return 'Distribution'
+  return relationshipLabel(fromRole, toRole)
+}
+
+const selectFromRole = (workspaceRoles: string[], relatedRole: string) =>
+  workspaceRoles.find(role => !!compatibleTypes[role]?.[relatedRole]) || ''
+
+const roleLabelList = (roles: string[]) =>
+  roles.length ? roles.map(role => roleLabels[role] || role).join(' · ') : 'Role not set'
+
 const marketOptions = ['Global','Cybersecurity','Data Protection','Cloud','Networking','Infrastructure','AI','SaaS','IT Services','Other']
 const territoryOptions = ['Global','Middle East','GCC','Levant','MEA','Europe','DACH','Germany','Turkey','North America','Latin America','APAC','Other']
 
@@ -114,7 +133,10 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
       const { supabase, user, orgId } = await ensureWorkspace()
       const org = await ensureEcosystemOrganization(supabase, user.id, orgId, { display_name: newOrg.name, website: newOrg.website, country: newOrg.country, organization_roles: newOrg.role ? [newOrg.role] : [] })
       setOrganizations(prev => prev.some(x => x.id === org.id) ? prev : [...prev, org])
-      setForm(f => ({ ...f, to: org.id, toRole: org.organization_roles?.[0] || '', type: f.fromRole && org.organization_roles?.[0] && compatibleTypes[f.fromRole]?.[org.organization_roles[0]] ? f.fromRole + '_' + org.organization_roles[0] : '' }))
+      const relatedRole = org.organization_roles?.find(role => roleOrder.includes(role)) || ''
+      const fromRole = selectFromRole(workspaceRoles, relatedRole) || workspaceRoles[0] || ''
+      const type = fromRole && relatedRole && compatibleTypes[fromRole]?.[relatedRole] ? compatibleTypes[fromRole][relatedRole] : ''
+      setForm(f => ({ ...f, to: org.id, toRole: relatedRole, fromRole, type }))
       setNewOrg({ name: '', website: '', country: '', role: '' })
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not add organization.') }
     finally { setBusy(false) }
@@ -183,8 +205,7 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
 
   const orgName = (id: string) => organizations.find(o => o.id === id)?.display_name || id
   const orgRoles = (id: string) => organizations.find(o => o.id === id)?.organization_roles || []
-  const typeOptions = form.fromRole ? Object.entries(compatibleTypes[form.fromRole] || {}) : []
-  const canCreateType = !!form.fromRole && !!form.toRole && !!compatibleTypes[form.fromRole]?.[form.toRole]
+  const canCreateType = !!form.fromRole && !!form.toRole && !!form.type
 
   return <main className="mx-auto w-full max-w-7xl px-6 py-8">
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -196,7 +217,7 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
     <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-slate-950">Relationship graph</h2><p className="mt-1 text-sm text-slate-500">Your ecosystem relationship layer. PortAi will populate this from connected systems, imports, and AI discovery as those sources become available.</p></div><select value={filter} onChange={e=>setFilter(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"><option value="all">All lifecycle stages</option>{Object.entries(lifecycleLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
       {filtered.length === 0 ? <div className="px-6 py-14 text-center"><p className="font-medium text-slate-900">No workspace relationships yet</p><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">Add an organization relationship to begin building your ecosystem graph.</p></div> :
-      <div className="divide-y divide-slate-100">{filtered.map(r=><button key={r.id} onClick={()=>setSelected(r)} className="grid w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50 md:grid-cols-[1fr_auto_1fr_auto] md:items-center"><div><p className="text-sm font-medium text-slate-900">{orgName(r.from_entity_id)}</p><p className="text-xs text-slate-500">{roleLabels[orgRoles(r.from_entity_id)[0]] || 'Organization'}</p></div><div className="text-center text-xs font-medium text-indigo-600">{relationshipLabel(orgRoles(r.from_entity_id)[0], orgRoles(r.to_entity_id)[0])}</div><div><p className="text-sm font-medium text-slate-900">{orgName(r.to_entity_id)}</p><p className="text-xs text-slate-500">{roleLabels[orgRoles(r.to_entity_id)[0]] || 'Organization'}</p></div><div className="text-xs text-slate-500 md:text-right">{lifecycleLabels[r.lifecycle_stage]} · {r.status}</div></button>)}</div>}
+      <div className="divide-y divide-slate-100">{filtered.map(r=><button key={r.id} onClick={()=>setSelected(r)} className="grid w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50 md:grid-cols-[1fr_auto_1fr_auto] md:items-center"><div><p className="text-sm font-medium text-slate-900">{orgName(r.from_entity_id)}</p><p className="text-xs text-slate-500">{roleLabelList(orgRoles(r.from_entity_id))}</p></div><div className="text-center text-xs font-medium text-indigo-600">{storedRelationshipLabel(r.relationship_type, orgRoles(r.from_entity_id)[0] || '', orgRoles(r.to_entity_id)[0] || '')}</div><div><p className="text-sm font-medium text-slate-900">{orgName(r.to_entity_id)}</p><p className="text-xs text-slate-500">{roleLabelList(orgRoles(r.to_entity_id))}</p></div><div className="text-xs text-slate-500 md:text-right">{lifecycleLabels[r.lifecycle_stage]} · {r.status}</div></button>)}</div>}
     </section>
 
     {showAdd ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-xl font-semibold">Add relationship</h2><button onClick={()=>setShowAdd(false)} className="text-slate-500">Close</button></div>
@@ -239,7 +260,7 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
       <div className="mt-6 flex justify-end gap-2"><button onClick={()=>setShowAdd(false)} className="rounded-lg border px-4 py-2 text-sm">Cancel</button><button disabled={busy} onClick={()=>void submit()} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white">{busy?'Saving…':'Create relationship'}</button></div>
     </div></div> : null}
 
-    {selected ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs font-medium text-indigo-600">Relationship</p><h2 className="mt-1 text-xl font-semibold">{orgName(selected.from_entity_id)} ↔ {orgName(selected.to_entity_id)}</h2><p className="mt-1 text-sm text-slate-500">{relationshipLabel(orgRoles(selected.from_entity_id)[0], orgRoles(selected.to_entity_id)[0])}</p></div><button onClick={()=>setSelected(null)} className="text-slate-500">Close</button></div>
+    {selected ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs font-medium text-indigo-600">Relationship</p><h2 className="mt-1 text-xl font-semibold">{orgName(selected.from_entity_id)} ↔ {orgName(selected.to_entity_id)}</h2><p className="mt-1 text-sm text-slate-500">{storedRelationshipLabel(selected.relationship_type, orgRoles(selected.from_entity_id)[0] || '', orgRoles(selected.to_entity_id)[0] || '')}</p></div><button onClick={()=>setSelected(null)} className="text-slate-500">Close</button></div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-xs font-medium text-slate-600">Lifecycle<select value={selected.lifecycle_stage} onChange={e=>setSelected({...selected,lifecycle_stage:e.target.value as any})} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">{RELATIONSHIP_LIFECYCLE_STAGES.map(v=><option key={v} value={v}>{lifecycleLabels[v]}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Status<select value={selected.status} onChange={e=>setSelected({...selected,status:e.target.value as any})} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">{RELATIONSHIP_STATUSES.map(v=><option key={v} value={v}>{v}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Market<select value={selected.market||''} onChange={e=>setSelected({...selected,market:e.target.value||null})} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"><option value="">Select market</option>{marketOptions.map(v=><option key={v} value={v}>{v}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Territory<select value={selected.territory||''} onChange={e=>setSelected({...selected,territory:e.target.value||null})} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"><option value="">Select territory</option>{territoryOptions.map(v=><option key={v} value={v}>{v}</option>)}</select></label><textarea value={selected.notes||''} onChange={e=>setSelected({...selected,notes:e.target.value||null})} placeholder="Notes" className="rounded-lg border px-3 py-2 text-sm sm:col-span-2"/></div>
       <div className="mt-6 flex flex-wrap justify-between gap-2"><button disabled={busy} onClick={()=>void removeRelationship()} className="text-sm text-red-600">Delete</button><div className="flex gap-2"><button disabled={busy} onClick={()=>void closeRelationship()} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">Close relationship</button><button disabled={busy} onClick={()=>void save()} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white">{busy?'Saving…':'Save changes'}</button></div></div>
     </div></div> : null}
