@@ -1,119 +1,163 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import type { EcosystemRelationship } from '@/lib/supabase/services'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  createEcosystemRelationship,
+  deleteEcosystemRelationship,
+  ensureEcosystemOrganization,
+  listEcosystemOrganizations,
+  updateEcosystemRelationship,
+  RELATIONSHIP_LIFECYCLE_STAGES,
+  RELATIONSHIP_STATUSES,
+  type EcosystemOrganization,
+  type EcosystemRelationship,
+} from '@/lib/supabase/services'
+import { ensureWorkspace } from '@/lib/supabase/workspace'
 
-type Props = {
-  initialRelationships: EcosystemRelationship[]
-  error?: string
-}
+type Props = { initialRelationships: EcosystemRelationship[]; error?: string }
 
 const lifecycleLabels: Record<string, string> = {
-  identified: 'Identified',
-  prospect: 'Prospect',
-  engaged: 'Engaged',
-  qualified: 'Qualified',
-  application: 'Application',
-  approved: 'Approved',
-  onboarding: 'Onboarding',
-  enabled: 'Enabled',
-  active: 'Active',
-  growing: 'Growing',
-  at_risk: 'At risk',
-  dormant: 'Dormant',
-  reactivated: 'Reactivated',
-  closed: 'Closed',
+  identified: 'Identified', prospect: 'Prospect', engaged: 'Engaged', qualified: 'Qualified',
+  application: 'Application', approved: 'Approved', onboarding: 'Onboarding', enabled: 'Enabled',
+  active: 'Active', growing: 'Growing', at_risk: 'At risk', dormant: 'Dormant',
+  reactivated: 'Reactivated', closed: 'Closed',
 }
+const relationshipTypes = [
+  'vendor_distributor','vendor_reseller','vendor_msp','vendor_mssp','vendor_system_integrator',
+  'vendor_technology_partner','distributor_reseller','distributor_msp','partner_customer','technology_partner',
+]
+const typeLabel = (v: string) => v.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
 
 export function RelationshipGraph({ initialRelationships, error }: Props) {
-  const [relationships] = useState(initialRelationships)
+  const [relationships, setRelationships] = useState(initialRelationships)
+  const [organizations, setOrganizations] = useState<EcosystemOrganization[]>([])
   const [filter, setFilter] = useState('all')
+  const [showAdd, setShowAdd] = useState(false)
+  const [selected, setSelected] = useState<EcosystemRelationship | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const [searchA, setSearchA] = useState('')
+  const [searchB, setSearchB] = useState('')
+  const [newOrg, setNewOrg] = useState({ name: '', website: '', country: '' })
+  const [form, setForm] = useState({ from: '', to: '', type: 'vendor_distributor', lifecycle: 'identified', status: 'active', market: '', territory: '', started: '', nextAction: '', notes: '' })
 
-  const filtered = useMemo(
-    () => filter === 'all' ? relationships : relationships.filter((item) => item.lifecycle_stage === filter),
-    [filter, relationships],
-  )
-
+  const filtered = useMemo(() => filter === 'all' ? relationships : relationships.filter(r => r.lifecycle_stage === filter), [filter, relationships])
   const counts = useMemo(() => ({
     total: relationships.length,
-    active: relationships.filter((item) => item.status === 'active').length,
-    growing: relationships.filter((item) => item.lifecycle_stage === 'growing').length,
-    atRisk: relationships.filter((item) => item.lifecycle_stage === 'at_risk').length,
+    active: relationships.filter(r => r.status === 'active').length,
+    growing: relationships.filter(r => r.lifecycle_stage === 'growing').length,
+    atRisk: relationships.filter(r => r.lifecycle_stage === 'at_risk').length,
   }), [relationships])
 
-  return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-8">
-      <div className="mb-8">
-        <p className="text-sm font-medium text-indigo-600">Ecosystem</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">Relationships</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          Your workspace relationship graph. Relationships connect organizations and ecosystem entities across their commercial lifecycle.
-        </p>
-      </div>
+  const loadOrganizations = async () => {
+    const { supabase, user, organization } = await ensureWorkspace()
+    const own = await ensureEcosystemOrganization(supabase, user.id, {
+      display_name: organization.name,
+      organization_roles: organization.organization_roles || (organization.organization_type ? [organization.organization_type] : []),
+    })
+    const list = await listEcosystemOrganizations(supabase, '', 200)
+    setOrganizations([own, ...list.filter(x => x.id !== own.id)])
+  }
 
-      {error ? (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      ) : null}
+  useEffect(() => { void loadOrganizations().catch(e => setMessage(e instanceof Error ? e.message : 'Could not load organizations.')) }, [])
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          ['Total relationships', counts.total],
-          ['Active', counts.active],
-          ['Growing', counts.growing],
-          ['At risk', counts.atRisk],
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
-          </div>
-        ))}
-      </div>
+  const filteredA = organizations.filter(o => o.display_name.toLowerCase().includes(searchA.toLowerCase()))
+  const filteredB = organizations.filter(o => o.display_name.toLowerCase().includes(searchB.toLowerCase()))
 
-      <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-semibold text-slate-950">Relationship graph</h2>
-            <p className="mt-1 text-xs text-slate-500">Tenant-scoped operational relationships, separate from public market intelligence.</p>
-          </div>
-          <select
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-          >
-            <option value="all">All lifecycle stages</option>
-            {Object.entries(lifecycleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-        </div>
+  const addExternalOrg = async () => {
+    if (!newOrg.name.trim()) return
+    setBusy(true); setMessage('')
+    try {
+      const { supabase, user } = await ensureWorkspace()
+      const org = await ensureEcosystemOrganization(supabase, user.id, { display_name: newOrg.name, website: newOrg.website, country: newOrg.country })
+      setOrganizations(prev => prev.some(x => x.id === org.id) ? prev : [...prev, org])
+      setForm(f => ({ ...f, to: org.id }))
+      setNewOrg({ name: '', website: '', country: '' })
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not add organization.') }
+    finally { setBusy(false) }
+  }
 
-        {filtered.length === 0 ? (
-          <div className="px-6 py-14 text-center">
-            <p className="font-medium text-slate-900">No workspace relationships yet</p>
-            <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
-              PortAi will use this graph to connect partners, vendors, distributors, customers and other ecosystem participants as relationships are created.
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {filtered.map((relationship) => (
-              <div key={relationship.id} className="grid gap-3 px-5 py-4 md:grid-cols-[1fr_auto_1fr_auto] md:items-center">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{relationship.from_entity_type}</p>
-                  <p className="truncate text-xs text-slate-500">{relationship.from_entity_id}</p>
-                </div>
-                <div className="text-center text-xs font-medium text-indigo-600">{relationship.relationship_type}</div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{relationship.to_entity_type}</p>
-                  <p className="truncate text-xs text-slate-500">{relationship.to_entity_id}</p>
-                </div>
-                <div className="text-xs text-slate-500 md:text-right">
-                  <div>{lifecycleLabels[relationship.lifecycle_stage] || relationship.lifecycle_stage}</div>
-                  <div className="mt-1">{relationship.health_score == null ? 'No health score' : `${relationship.health_score}/100 health`}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
-  )
+  const submit = async () => {
+    if (!form.from || !form.to || form.from === form.to) { setMessage('Select two different organizations.'); return }
+    setBusy(true); setMessage('')
+    try {
+      const { supabase, orgId, user } = await ensureWorkspace()
+      const duplicate = relationships.find(r => r.from_entity_type === 'organization' && r.to_entity_type === 'organization' && r.from_entity_id === form.from && r.to_entity_id === form.to && r.relationship_type === form.type)
+      if (duplicate) { setSelected(duplicate); setShowAdd(false); setMessage('This relationship already exists.'); return }
+      const created = await createEcosystemRelationship(supabase, orgId, user.id, {
+        from_entity_type: 'organization', from_entity_id: form.from, to_entity_type: 'organization', to_entity_id: form.to,
+        relationship_type: form.type, lifecycle_stage: form.lifecycle as any, status: form.status as any,
+        market: form.market || null, territory: form.territory || null, started_at: form.started || null,
+        next_action_at: form.nextAction ? new Date(form.nextAction).toISOString() : null, notes: form.notes || null,
+      })
+      setRelationships(prev => [created, ...prev]); setSelected(created); setShowAdd(false)
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not create relationship.') }
+    finally { setBusy(false) }
+  }
+
+  const save = async () => {
+    if (!selected) return
+    setBusy(true); setMessage('')
+    try {
+      const { supabase, orgId } = await ensureWorkspace()
+      const updated = await updateEcosystemRelationship(supabase, orgId, selected.id, {
+        lifecycle_stage: selected.lifecycle_stage, status: selected.status, market: selected.market,
+        territory: selected.territory, started_at: selected.started_at, next_action_at: selected.next_action_at,
+        notes: selected.notes,
+      })
+      setRelationships(prev => prev.map(r => r.id === updated.id ? updated : r)); setSelected(updated)
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not update relationship.') }
+    finally { setBusy(false) }
+  }
+
+  const closeRelationship = async () => {
+    if (!selected) return
+    setBusy(true)
+    try {
+      const { supabase, orgId } = await ensureWorkspace()
+      const updated = await updateEcosystemRelationship(supabase, orgId, selected.id, { lifecycle_stage: 'closed', status: 'closed' })
+      setRelationships(prev => prev.map(r => r.id === updated.id ? updated : r)); setSelected(updated)
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not close relationship.') }
+    finally { setBusy(false) }
+  }
+
+  const removeRelationship = async () => {
+    if (!selected || !window.confirm('Delete this relationship record?')) return
+    setBusy(true)
+    try {
+      const { supabase, orgId } = await ensureWorkspace()
+      await deleteEcosystemRelationship(supabase, orgId, selected.id)
+      setRelationships(prev => prev.filter(r => r.id !== selected.id)); setSelected(null)
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not delete relationship.') }
+    finally { setBusy(false) }
+  }
+
+  const orgName = (id: string) => organizations.find(o => o.id === id)?.display_name || id
+
+  return <main className="mx-auto w-full max-w-7xl px-6 py-8">
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div><p className="text-sm font-medium text-indigo-600">Ecosystem</p><h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">Relationships</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Connect organizations and manage the relationship lifecycle from one workspace.</p></div>
+      <button onClick={() => { setShowAdd(true); setMessage('') }} className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white">+ Add relationship</button>
+    </div>
+    {error || message ? <div className="mb-6 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{error || message}</div> : null}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[['Total relationships',counts.total],['Active',counts.active],['Growing',counts.growing],['At risk',counts.atRisk]].map(([l,v])=><div key={l} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-xs font-medium uppercase tracking-wide text-slate-500">{l}</p><p className="mt-2 text-2xl font-semibold text-slate-950">{v}</p></div>)}</div>
+    <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-slate-950">Relationship graph</h2><p className="mt-1 text-xs text-slate-500">Organization-to-organization relationships with operational context.</p></div><select value={filter} onChange={e=>setFilter(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"><option value="all">All lifecycle stages</option>{Object.entries(lifecycleLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
+      {filtered.length === 0 ? <div className="px-6 py-14 text-center"><p className="font-medium text-slate-900">No workspace relationships yet</p><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">Add an organization relationship to begin building your ecosystem graph.</p></div> :
+      <div className="divide-y divide-slate-100">{filtered.map(r=><button key={r.id} onClick={()=>setSelected(r)} className="grid w-full gap-3 px-5 py-4 text-left hover:bg-slate-50 md:grid-cols-[1fr_auto_1fr_auto] md:items-center"><div><p className="text-sm font-medium text-slate-900">{orgName(r.from_entity_id)}</p><p className="text-xs text-slate-500">Organization</p></div><div className="text-center text-xs font-medium text-indigo-600">{typeLabel(r.relationship_type)}</div><div><p className="text-sm font-medium text-slate-900">{orgName(r.to_entity_id)}</p><p className="text-xs text-slate-500">Organization</p></div><div className="text-xs text-slate-500 md:text-right">{lifecycleLabels[r.lifecycle_stage]} · {r.status}</div></button>)}</div>}
+    </section>
+
+    {showAdd ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-xl font-semibold">Add relationship</h2><button onClick={()=>setShowAdd(false)} className="text-slate-500">Close</button></div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2"><div><label className="text-xs font-medium text-slate-600">From organization</label><input value={searchA} onChange={e=>setSearchA(e.target.value)} placeholder="Search organizations" className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"/><select value={form.from} onChange={e=>setForm(f=>({...f,from:e.target.value}))} className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"><option value="">Select</option>{filteredA.map(o=><option key={o.id} value={o.id}>{o.display_name}</option>)}</select></div>
+      <div><label className="text-xs font-medium text-slate-600">To organization</label><input value={searchB} onChange={e=>setSearchB(e.target.value)} placeholder="Search organizations" className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"/><select value={form.to} onChange={e=>setForm(f=>({...f,to:e.target.value}))} className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"><option value="">Select</option>{filteredB.map(o=><option key={o.id} value={o.id}>{o.display_name}</option>)}</select></div></div>
+      <div className="mt-4 rounded-xl border border-dashed p-4"><p className="text-xs font-medium text-slate-600">New ecosystem organization</p><div className="mt-2 grid gap-2 sm:grid-cols-3"><input placeholder="Company name" value={newOrg.name} onChange={e=>setNewOrg({...newOrg,name:e.target.value})} className="rounded-lg border px-3 py-2 text-sm"/><input placeholder="Website" value={newOrg.website} onChange={e=>setNewOrg({...newOrg,website:e.target.value})} className="rounded-lg border px-3 py-2 text-sm"/><input placeholder="Country" value={newOrg.country} onChange={e=>setNewOrg({...newOrg,country:e.target.value})} className="rounded-lg border px-3 py-2 text-sm"/></div><button disabled={busy} onClick={()=>void addExternalOrg()} className="mt-2 text-sm font-medium text-indigo-600">Add organization</button></div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-xs font-medium text-slate-600">Relationship type<select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm">{relationshipTypes.map(v=><option key={v} value={v}>{typeLabel(v)}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Lifecycle<select value={form.lifecycle} onChange={e=>setForm(f=>({...f,lifecycle:e.target.value}))} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm">{RELATIONSHIP_LIFECYCLE_STAGES.map(v=><option key={v} value={v}>{lifecycleLabels[v]}</option>)}</select></label><input placeholder="Market" value={form.market} onChange={e=>setForm(f=>({...f,market:e.target.value}))} className="rounded-lg border px-3 py-2 text-sm"/><input placeholder="Territory" value={form.territory} onChange={e=>setForm(f=>({...f,territory:e.target.value}))} className="rounded-lg border px-3 py-2 text-sm"/><input type="date" value={form.started} onChange={e=>setForm(f=>({...f,started:e.target.value}))} className="rounded-lg border px-3 py-2 text-sm"/><input type="datetime-local" value={form.nextAction} onChange={e=>setForm(f=>({...f,nextAction:e.target.value}))} className="rounded-lg border px-3 py-2 text-sm"/><textarea placeholder="Notes" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} className="rounded-lg border px-3 py-2 text-sm sm:col-span-2"/></div>
+      <div className="mt-6 flex justify-end gap-2"><button onClick={()=>setShowAdd(false)} className="rounded-lg border px-4 py-2 text-sm">Cancel</button><button disabled={busy} onClick={()=>void submit()} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white">{busy?'Saving…':'Create relationship'}</button></div>
+    </div></div> : null}
+
+    {selected ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs font-medium text-indigo-600">Relationship</p><h2 className="mt-1 text-xl font-semibold">{orgName(selected.from_entity_id)} ↔ {orgName(selected.to_entity_id)}</h2><p className="mt-1 text-sm text-slate-500">{typeLabel(selected.relationship_type)}</p></div><button onClick={()=>setSelected(null)} className="text-slate-500">Close</button></div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-xs font-medium text-slate-600">Lifecycle<select value={selected.lifecycle_stage} onChange={e=>setSelected({...selected,lifecycle_stage:e.target.value as any})} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm">{RELATIONSHIP_LIFECYCLE_STAGES.map(v=><option key={v} value={v}>{lifecycleLabels[v]}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Status<select value={selected.status} onChange={e=>setSelected({...selected,status:e.target.value as any})} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm">{RELATIONSHIP_STATUSES.map(v=><option key={v} value={v}>{v}</option>)}</select></label><input value={selected.market||''} onChange={e=>setSelected({...selected,market:e.target.value||null})} placeholder="Market" className="rounded-lg border px-3 py-2 text-sm"/><input value={selected.territory||''} onChange={e=>setSelected({...selected,territory:e.target.value||null})} placeholder="Territory" className="rounded-lg border px-3 py-2 text-sm"/><textarea value={selected.notes||''} onChange={e=>setSelected({...selected,notes:e.target.value||null})} placeholder="Notes" className="rounded-lg border px-3 py-2 text-sm sm:col-span-2"/></div>
+      <div className="mt-6 flex flex-wrap justify-between gap-2"><button disabled={busy} onClick={()=>void removeRelationship()} className="text-sm text-red-600">Delete</button><div className="flex gap-2"><button disabled={busy} onClick={()=>void closeRelationship()} className="rounded-lg border px-3 py-2 text-sm">Close relationship</button><button disabled={busy} onClick={()=>void save()} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white">{busy?'Saving…':'Save changes'}</button></div></div>
+    </div></div> : null}
+  </main>
 }
