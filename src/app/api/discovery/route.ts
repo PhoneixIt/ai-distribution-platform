@@ -72,8 +72,12 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle()
 
-  if (recentRun && Date.now() - new Date(recentRun.created_at).getTime() < 60_000) {
-    return NextResponse.json({ error: 'Please wait about one minute before starting another discovery run.' }, { status: 429 })
+  if (recentRun && missionId) {
+    const missionState = await supabase.from('missions').select('status').eq('id', missionId).maybeSingle()
+    const canRetryFailedMission = missionState.data?.status === 'failed'
+    if (!canRetryFailedMission && Date.now() - new Date(recentRun.created_at).getTime() < 60_000) {
+      return NextResponse.json({ error: 'A discovery run is already in progress. PortAi will reuse it rather than start duplicate work.' }, { status: 429 })
+    }
   }
 
   const { data: run, error: runError } = await supabase
