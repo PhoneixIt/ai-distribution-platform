@@ -31,15 +31,17 @@ export async function POST(_request: Request, context: Context) {
     .from('discovery_candidates')
     .select('*')
     .eq('discovery_run_id', mission.data.discovery_run_id)
-    .eq('qualification_status', 'qualified')
+    .in('qualification_status', ['qualified', 'needs_review'])
+    .order('qualification_score', { ascending: false })
+    .order('fit_score', { ascending: false })
     .order('rank', { ascending: true })
     .limit(10)
   if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
-  if (!candidates?.length) return NextResponse.json({ error: 'No qualified candidates are available for contact research.' }, { status: 409 })
+  if (!candidates?.length) return NextResponse.json({ error: 'No viable candidates are available for contact research. PortAi needs more evidence before spending contact-enrichment credits.' }, { status: 409 })
   if (candidates.length < 10) {
     return NextResponse.json({
-      error: 'Mission requires 10 qualified candidates before contact research can start.',
-      qualifiedCandidates: candidates.length,
+      error: 'Fewer than 10 viable candidates are available for contact research.',
+      viableCandidates: candidates.length,
       required: 10
     }, { status: 409 })
   }
@@ -94,7 +96,7 @@ export async function POST(_request: Request, context: Context) {
         commercial: { customer_segments: candidate.customer_segments, services: candidate.services, partner_types: candidate.partner_types },
         intelligence: { discovery_fit_score: candidate.fit_score, qualification_score: candidate.qualification_score, qualification_status: candidate.qualification_status, reasons: candidate.qualification_reasons, concerns: candidate.concerns, evidence: candidate.evidence, apollo_company: apolloOrg || null },
         people: enriched ? [enriched] : searched ? [searched] : [],
-        recommended_action: { action: 'review_contact_and_prepare_personalized_outreach', rationale: 'Candidate passed the discovery qualification stage; review the evidence and contact context before outreach.' },
+        recommended_action: { action: 'review_contact_and_prepare_personalized_outreach', rationale: 'Candidate was selected from the strongest qualified and evidence-backed review candidates; confirm fit before outreach.' },
         status: 'contacts_researched'
       }
       await supabase.from('mission_dossiers').upsert(dossier, { onConflict: 'mission_id,candidate_id' })
