@@ -32,19 +32,13 @@ export async function POST(_request: Request, context: Context) {
     .select('*')
     .eq('discovery_run_id', mission.data.discovery_run_id)
     .in('qualification_status', ['qualified', 'needs_review'])
+    .not('rank', 'is', null)
     .order('qualification_score', { ascending: false })
     .order('fit_score', { ascending: false })
     .order('rank', { ascending: true })
-    .limit(10)
+    .limit(Math.max(1, Number((mission.data.result_summary || {}).requested || 10)))
   if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
   if (!candidates?.length) return NextResponse.json({ error: 'No viable candidates are available for contact research. PortAi needs more evidence before spending contact-enrichment credits.' }, { status: 409 })
-  if (candidates.length < 10) {
-    return NextResponse.json({
-      error: 'Fewer than 10 viable candidates are available for contact research.',
-      viableCandidates: candidates.length,
-      required: 10
-    }, { status: 409 })
-  }
 
   const domains = candidates.map((row) => domainFromWebsite(row.website)).filter((x): x is string => Boolean(x))
   if (!domains.length) return NextResponse.json({ error: 'No candidate websites can be enriched.' }, { status: 409 })
@@ -85,7 +79,7 @@ export async function POST(_request: Request, context: Context) {
   const selected = candidates.map((candidate) => {
     const domain = domainFromWebsite(candidate.website)
     return domain ? pickOneByDomain(people, domain) : null
-  }).filter((x): x is Record<string, unknown> => Boolean(x)).slice(0,10)
+  }).filter((x): x is Record<string, unknown> => Boolean(x)).slice(0, candidates.length)
 
   if (selected.length && apolloAvailable) {
     const ids = selected.map((person) => String(person.id)).filter(Boolean)
