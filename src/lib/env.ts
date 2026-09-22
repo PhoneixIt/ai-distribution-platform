@@ -3,7 +3,7 @@ const REQUIRED_PUBLIC_ENV_VARS = [
 ] as const
 
 export function validateEnvironment(): void {
-  const missing = REQUIRED_PUBLIC_ENV_VARS.filter((name) => !process.env[name])
+  const missing: string[] = REQUIRED_PUBLIC_ENV_VARS.filter((name) => !process.env[name])
   const hasPublicKey = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   )
