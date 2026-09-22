@@ -192,8 +192,8 @@ export type {
 } from './relationships'
 
 
-export { listEcosystemOrganizations, ensureEcosystemOrganization, updateEcosystemOrganizationRoles } from './ecosystem-organizations'
-export type { EcosystemOrganization } from './ecosystem-organizations'
+export { listEcosystemOrganizations, ensureEcosystemOrganization, updateEcosystemOrganizationRoles, normalizeOrganizationName, normalizeDomain } from './ecosystem-organizations'
+export type { EcosystemOrganization, EcosystemOrganizationInput } from './ecosystem-organizations'
 
 
 export { listEcosystemConnections, createEcosystemConnection, updateEcosystemConnection } from './ecosystem-connections'
