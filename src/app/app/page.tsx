@@ -34,7 +34,7 @@ export default function AppDashboard() {
   const { stats, recent } = data
 
   return (
-    <AppShell title="Ecosystem overview" subtitle="One connected view of supply, distribution, channel capability, customer demand and the work moving between them.">
+    <AppShell title="Vendor command center" subtitle="One connected view of supply, distribution, channel capability, customer demand and the work moving between them.">
       <DashboardLoader onData={handleData} onError={handleError} />
       {error && <div className="mb-6 rounded-2xl border border-red-900/60 bg-red-950/20 p-4 text-sm text-red-300">{error}</div>}
 
