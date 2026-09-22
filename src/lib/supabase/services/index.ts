@@ -171,3 +171,22 @@ export async function deleteOpportunity(supabase: SupabaseClient, id: string): P
   const { error } = await supabase.from('opportunities').delete().eq('id', id)
   if (error) throw error
 }
+
+export {
+  ECOSYSTEM_ENTITY_TYPES,
+  RELATIONSHIP_LIFECYCLE_STAGES,
+  RELATIONSHIP_STATUSES,
+  listEcosystemRelationships,
+  getEcosystemRelationship,
+  createEcosystemRelationship,
+  updateEcosystemRelationship,
+  deleteEcosystemRelationship,
+} from './relationships'
+
+export type {
+  EcosystemEntityType,
+  RelationshipLifecycleStage,
+  RelationshipStatus,
+  EcosystemRelationship,
+  EcosystemRelationshipInput,
+} from './relationships'
