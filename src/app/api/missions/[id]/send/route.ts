@@ -17,6 +17,10 @@ export async function POST(request: Request, context: Context) {
   const draftId = typeof body.draftId === 'string' ? body.draftId : ''
   if (!draftId) return NextResponse.json({ error: 'draftId is required.' }, { status: 400 })
 
+  const mission = await supabase.from('missions').select('id,result_summary').eq('id', id).maybeSingle()
+  if (mission.error) return NextResponse.json({ error: mission.error.message }, { status: 500 })
+  if (!mission.data) return NextResponse.json({ error: 'Mission not found.' }, { status: 404 })
+
   const draft = await supabase.from('mission_outreach_drafts').select('*,mission_approvals(*)').eq('id', draftId).eq('mission_id', id).maybeSingle()
   if (draft.error) return NextResponse.json({ error: draft.error.message }, { status: 500 })
   if (!draft.data) return NextResponse.json({ error: 'Draft not found.' }, { status: 404 })
@@ -47,7 +51,7 @@ export async function POST(request: Request, context: Context) {
   await supabase.from('mission_outreach_drafts').update({ status: 'sent', send_result: payload }).eq('id', draftId)
   await supabase.from('missions').update({
     current_stage: 'tracking', status: 'completed',
-    result_summary: { ...(draft.data.mission_result_summary || {}), last_sent_draft_id: draftId }
+    result_summary: { ...(mission.data.result_summary || {}), last_sent_draft_id: draftId }
   }).eq('id', id)
 
   return NextResponse.json({ success: true, draftId, provider: payload })
