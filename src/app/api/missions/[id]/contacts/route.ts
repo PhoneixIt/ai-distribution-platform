@@ -31,10 +31,18 @@ export async function POST(_request: Request, context: Context) {
     .from('discovery_candidates')
     .select('*')
     .eq('discovery_run_id', mission.data.discovery_run_id)
+    .eq('qualification_status', 'qualified')
     .order('rank', { ascending: true })
     .limit(10)
   if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
-  if (!candidates?.length) return NextResponse.json({ error: 'No dossier-ready candidates are available.' }, { status: 409 })
+  if (!candidates?.length) return NextResponse.json({ error: 'No qualified candidates are available for contact research.' }, { status: 409 })
+  if (candidates.length < 10) {
+    return NextResponse.json({
+      error: 'Mission requires 10 qualified candidates before contact research can start.',
+      qualifiedCandidates: candidates.length,
+      required: 10
+    }, { status: 409 })
+  }
 
   const domains = candidates.map((row) => domainFromWebsite(row.website)).filter((x): x is string => Boolean(x))
   if (!domains.length) return NextResponse.json({ error: 'No candidate websites can be enriched.' }, { status: 409 })
@@ -42,11 +50,13 @@ export async function POST(_request: Request, context: Context) {
   const orgPayload = await enrichOrganizations(candidates.map((row) => ({ name: row.company_name, website: row.website, domain: domainFromWebsite(row.website) })))
   const orgs = Array.isArray(orgPayload.organizations) ? orgPayload.organizations as Record<string, unknown>[] : []
 
+  const companyCredits = Number(orgPayload.credits_consumed)
+  const companyCreditsConsumed = Number.isFinite(companyCredits) ? companyCredits : domains.length
   await supabase.from('mission_external_usage').insert({
     org_id: mission.data.org_id, mission_id: id, provider: 'apollo',
-    operation: 'organization_enrichment', entity_count: candidates.length,
-    estimated_credits: candidates.length, credits_consumed: candidates.length,
-    created_by: user.id, metadata: { waterfall: false }
+    operation: 'organization_enrichment', entity_count: domains.length,
+    estimated_credits: domains.length, credits_consumed: companyCreditsConsumed,
+    created_by: user.id, metadata: { waterfall: false, actual_usage_reported: Number.isFinite(companyCredits) }
   })
 
   const orgByDomain = new Map(orgs.map((org) => [String(org.primary_domain || org.domain || '').replace(/^www\./,''), org]))
@@ -96,9 +106,15 @@ export async function POST(_request: Request, context: Context) {
   const apolloCreditsConsumed = (usage.data || []).reduce((sum, row) => sum + Number(row.credits_consumed || 0), 0)
   await supabase.from('missions').update({
     current_stage: 'contacts_researched',
-    status: 'completed',
+    status: 'running',
     result_summary: { ...(mission.data.result_summary || {}), contacts_found: selected.length, dossiers_completed: dossierCount.count || 0, apollo_credits_consumed: apolloCreditsConsumed }
   }).eq('id', id)
 
-  return NextResponse.json({ missionId: id, candidates: candidates.length, contactsFound: selected.length, dossiersCompleted: dossierCount.count || 0, apollo: { companyEnrichment: candidates.length, peopleSearch: selected.length, peopleEnrichment: selected.length } })
+  return NextResponse.json({
+    missionId: id,
+    candidates: candidates.length,
+    contactsFound: selected.length,
+    dossiersCompleted: dossierCount.count || 0,
+    apollo: { companyEnrichment: domains.length, peopleSearch: selected.length, peopleEnrichment: selected.length, creditsConsumed: apolloCreditsConsumed }
+  })
 }
