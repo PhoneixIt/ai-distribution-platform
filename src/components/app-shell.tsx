@@ -1,4 +1,4 @@
-'use client'
+`use client`
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -28,6 +28,9 @@ const shared: NavGroup[] = [
     { href: '/app', label: 'Home' },
     { href: '/workflow', label: 'Missions' },
     { href: '/workforce', label: 'AI Workforce' },
+  ]},
+  { label: 'Ecosystem', items: [
+    { href: '/relationships', label: 'Relationships' },
   ]},
 ]
 
@@ -230,7 +233,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden items-center gap-1 sm:flex">
               <button onClick={() => router.back()} className="rounded-lg border border-slate-800 px-2.5 py-2 text-xs text-slate-400 hover:border-slate-700 hover:text-white" aria-label="Go back">← Back</button>
-              <button onClick={() => router.forward()} className="rounded-lg border border-slate-800 px-2.5 py-2 text-xs text-slate-400 hover:border-slate-700 hover:text-white" aria-label="Go forward">Forward →</button>
+              <button onClick={() => router.forward()} className="rounded-lg border border-slate-800 px-2.5 py-2 text-xs text-slate-400 hover:border-slate-700 hover:text-white">Forward →</button>
             </div>
             <Link href="/missions/new" className="hidden rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold hover:bg-blue-500 sm:block">Start a mission</Link>
             <div className="hidden max-w-48 truncate text-right text-xs text-slate-400 md:block">{email}</div>
