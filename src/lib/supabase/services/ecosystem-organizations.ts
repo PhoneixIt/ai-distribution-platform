@@ -40,6 +40,7 @@ export async function listEcosystemOrganizations(
 export async function ensureEcosystemOrganization(
   supabase: SupabaseClient,
   userId: string,
+  orgId: string,
   input: { display_name: string; website?: string | null; country?: string | null; organization_roles?: string[] },
 ): Promise<EcosystemOrganization> {
   const normalized_name = normalizeName(input.display_name)
@@ -59,6 +60,7 @@ export async function ensureEcosystemOrganization(
     source_type: 'manual',
     verified: false,
     created_by: userId,
+    created_in_org_id: orgId,
   }).select('*').single()
   if (error) throw error
   return data as EcosystemOrganization
