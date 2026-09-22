@@ -5,28 +5,68 @@ export type EcosystemOrganization = {
   canonical_name: string
   display_name: string
   normalized_name: string
+  legal_name: string | null
+  primary_domain: string | null
   website: string | null
   country: string | null
+  address: string | null
+  city: string | null
+  state_region: string | null
+  postal_code: string | null
+  phone: string | null
+  linkedin_url: string | null
   organization_roles: string[]
   description: string | null
   source_type: string
   source_reference: string | null
   verified: boolean
+  created_in_org_id: string | null
   created_by: string | null
   created_at: string
   updated_at: string
 }
 
-function normalizeName(name: string) {
+export type EcosystemOrganizationInput = {
+  display_name: string
+  legal_name?: string | null
+  website?: string | null
+  primary_domain?: string | null
+  country?: string | null
+  address?: string | null
+  city?: string | null
+  state_region?: string | null
+  postal_code?: string | null
+  phone?: string | null
+  linkedin_url?: string | null
+  organization_roles?: string[]
+  description?: string | null
+  source_type?: string
+  source_reference?: string | null
+  verified?: boolean
+}
+
+export function normalizeOrganizationName(name: string) {
   return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+export function normalizeDomain(value: string | null | undefined) {
+  if (!value) return null
+  try {
+    const raw = value.trim()
+    const url = raw.includes('://') ? raw : `https://${raw}`
+    const hostname = new URL(url).hostname.toLowerCase().replace(/^www\./, '')
+    return hostname || null
+  } catch {
+    return value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] || null
+  }
 }
 
 export async function listEcosystemOrganizations(
   supabase: SupabaseClient,
   search = '',
-  limit = 100,
+  limit = 5000,
 ): Promise<EcosystemOrganization[]> {
-  const safeLimit = Math.min(Math.max(limit, 1), 200)
+  const safeLimit = Math.min(Math.max(limit, 1), 5000)
   let query = supabase.from('ecosystem_organizations').select('*').order('display_name').limit(safeLimit)
   if (search.trim()) {
     const term = search.trim().replace(/[%_]/g, '')
@@ -41,10 +81,12 @@ export async function ensureEcosystemOrganization(
   supabase: SupabaseClient,
   userId: string,
   orgId: string,
-  input: { display_name: string; website?: string | null; country?: string | null; organization_roles?: string[] },
+  input: EcosystemOrganizationInput,
 ): Promise<EcosystemOrganization> {
-  const normalized_name = normalizeName(input.display_name)
+  const normalized_name = normalizeOrganizationName(input.display_name)
   if (!normalized_name) throw new Error('Organization name is required.')
+
+  const primary_domain = normalizeDomain(input.primary_domain || input.website)
 
   const existing = await supabase.from('ecosystem_organizations').select('*').eq('normalized_name', normalized_name).maybeSingle()
   if (existing.error) throw existing.error
@@ -54,18 +96,27 @@ export async function ensureEcosystemOrganization(
     canonical_name: input.display_name.trim(),
     display_name: input.display_name.trim(),
     normalized_name,
-    website: input.website?.trim() || null,
+    legal_name: input.legal_name?.trim() || null,
+    primary_domain,
+    website: input.website?.trim() || (primary_domain ? `https://${primary_domain}` : null),
     country: input.country?.trim() || null,
+    address: input.address?.trim() || null,
+    city: input.city?.trim() || null,
+    state_region: input.state_region?.trim() || null,
+    postal_code: input.postal_code?.trim() || null,
+    phone: input.phone?.trim() || null,
+    linkedin_url: input.linkedin_url?.trim() || null,
     organization_roles: input.organization_roles || [],
-    source_type: 'manual',
-    verified: false,
+    description: input.description?.trim() || null,
+    source_type: input.source_type?.trim() || 'manual',
+    source_reference: input.source_reference?.trim() || null,
+    verified: input.verified ?? false,
     created_by: userId,
     created_in_org_id: orgId,
   }).select('*').single()
   if (error) throw error
   return data as EcosystemOrganization
 }
-
 
 export async function updateEcosystemOrganizationRoles(
   supabase: SupabaseClient,
