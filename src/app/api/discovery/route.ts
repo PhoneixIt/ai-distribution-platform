@@ -127,7 +127,7 @@ export async function POST(request: Request) {
     if (mission) {
       const missionUpdate = await supabase.from('missions').update({
         discovery_run_id: run.id,
-        status: 'completed',
+        status: 'running',
         current_stage: report.finalRankedCandidates.length ? 'dossier_ready' : 'scored',
         candidate_count: report.finalRankedCandidates.length,
         result_summary: {
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
           qualified: report.candidatesQualified.length,
           needs_review: report.candidatesNeedingReview.length,
         },
-        completed_at: new Date().toISOString(),
+        completed_at: null,
       }).eq('id', mission.id)
       if (missionUpdate.error) throw missionUpdate.error
     }
