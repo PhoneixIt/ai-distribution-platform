@@ -22,10 +22,24 @@ const lifecycleLabels: Record<string, string> = {
   active: 'Active', growing: 'Growing', at_risk: 'At risk', dormant: 'Dormant',
   reactivated: 'Reactivated', closed: 'Closed',
 }
-const relationshipTypes = [
-  'vendor_distributor','vendor_reseller','vendor_msp','vendor_mssp','vendor_system_integrator',
-  'vendor_technology_partner','distributor_reseller','distributor_msp','partner_customer','technology_partner',
-]
+const roleLabels: Record<string, string> = {
+  vendor: 'Vendor', distributor: 'Distributor', reseller: 'Reseller', var: 'VAR / Solution Provider',
+  msp: 'MSP', mssp: 'MSSP', system_integrator: 'System Integrator',
+  technology_partner: 'Technology Partner', service_provider: 'Service Provider', customer: 'Customer',
+}
+const roleOrder = ['vendor','distributor','reseller','var','msp','mssp','system_integrator','technology_partner','service_provider','customer']
+const compatibleTypes: Record<string, Record<string, string>> = {
+  vendor: { distributor: 'Vendor → Distributor', reseller: 'Vendor → Reseller', msp: 'Vendor → MSP', mssp: 'Vendor → MSSP', system_integrator: 'Vendor → System Integrator', technology_partner: 'Vendor → Technology Partner', customer: 'Vendor → Customer' },
+  distributor: { vendor: 'Distributor → Vendor', reseller: 'Distributor → Reseller', var: 'Distributor → VAR / Solution Provider', msp: 'Distributor → MSP', mssp: 'Distributor → MSSP', system_integrator: 'Distributor → System Integrator', technology_partner: 'Distributor → Technology Partner', customer: 'Distributor → Customer' },
+  reseller: { vendor: 'Reseller → Vendor', distributor: 'Reseller → Distributor', customer: 'Reseller → Customer', technology_partner: 'Reseller → Technology Partner' },
+  var: { vendor: 'VAR → Vendor', distributor: 'VAR → Distributor', customer: 'VAR → Customer', technology_partner: 'VAR → Technology Partner' },
+  msp: { vendor: 'MSP → Vendor', distributor: 'MSP → Distributor', customer: 'MSP → Customer', technology_partner: 'MSP → Technology Partner' },
+  mssp: { vendor: 'MSSP → Vendor', distributor: 'MSSP → Distributor', customer: 'MSSP → Customer', technology_partner: 'MSSP → Technology Partner' },
+  system_integrator: { vendor: 'System Integrator → Vendor', distributor: 'System Integrator → Distributor', customer: 'System Integrator → Customer', technology_partner: 'System Integrator → Technology Partner' },
+  technology_partner: { vendor: 'Technology Partner → Vendor', distributor: 'Technology Partner → Distributor', reseller: 'Technology Partner → Reseller', msp: 'Technology Partner → MSP', mssp: 'Technology Partner → MSSP', system_integrator: 'Technology Partner → System Integrator' },
+  service_provider: { vendor: 'Service Provider → Vendor', distributor: 'Service Provider → Distributor', customer: 'Service Provider → Customer' },
+  customer: { vendor: 'Customer → Vendor', distributor: 'Customer → Distributor', reseller: 'Customer → Reseller', var: 'Customer → VAR', msp: 'Customer → MSP', mssp: 'Customer → MSSP', system_integrator: 'Customer → System Integrator' },
+}
 const typeLabel = (v: string) => v.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
 
 export function RelationshipGraph({ initialRelationships, error }: Props) {
@@ -37,8 +51,8 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [searchB, setSearchB] = useState('')
-  const [newOrg, setNewOrg] = useState({ name: '', website: '', country: '' })
-  const [form, setForm] = useState({ from: '', to: '', type: 'vendor_distributor', lifecycle: 'identified', status: 'active', market: '', territory: '', started: '', nextAction: '', notes: '' })
+  const [newOrg, setNewOrg] = useState({ name: '', website: '', country: '', role: '' })
+  const [form, setForm] = useState({ from: '', to: '', fromRole: '', toRole: '', type: '', lifecycle: 'identified', status: 'active', market: '', territory: '', started: '', nextAction: '', notes: '' })
 
   const filtered = useMemo(() => filter === 'all' ? relationships : relationships.filter(r => r.lifecycle_stage === filter), [filter, relationships])
   const counts = useMemo(() => ({
@@ -56,7 +70,7 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
     })
     const list = await listEcosystemOrganizations(supabase, '', 200)
     setOrganizations([own, ...list.filter(x => x.id !== own.id)])
-    setForm(f => ({ ...f, from: own.id }))
+    setForm(f => ({ ...f, from: own.id, fromRole: f.fromRole || organization.organization_type || organization.organization_roles?.[0] || '' }))
   }
 
   useEffect(() => { void loadOrganizations().catch(e => setMessage(e instanceof Error ? e.message : 'Could not load organizations.')) }, [])
@@ -68,16 +82,17 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
     setBusy(true); setMessage('')
     try {
       const { supabase, user, orgId } = await ensureWorkspace()
-      const org = await ensureEcosystemOrganization(supabase, user.id, orgId, { display_name: newOrg.name, website: newOrg.website, country: newOrg.country })
+      const org = await ensureEcosystemOrganization(supabase, user.id, orgId, { display_name: newOrg.name, website: newOrg.website, country: newOrg.country, organization_roles: newOrg.role ? [newOrg.role] : [] })
       setOrganizations(prev => prev.some(x => x.id === org.id) ? prev : [...prev, org])
-      setForm(f => ({ ...f, to: org.id }))
-      setNewOrg({ name: '', website: '', country: '' })
+      setForm(f => ({ ...f, to: org.id, toRole: org.organization_roles?.[0] || '', type: f.fromRole && org.organization_roles?.[0] && compatibleTypes[f.fromRole]?.[org.organization_roles[0]] ? f.fromRole + '_' + org.organization_roles[0] : '' }))
+      setNewOrg({ name: '', website: '', country: '', role: '' })
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not add organization.') }
     finally { setBusy(false) }
   }
 
   const submit = async () => {
-    if (!form.from || !form.to || form.from === form.to) { setMessage('Select two different organizations.'); return }
+    if (!form.from || !form.to || form.from === form.to) { setMessage('Select a related organization.'); return }
+    if (!form.fromRole || !form.toRole || !canCreateType) { setMessage('Select the roles for both organizations so PortAi can record the relationship type correctly.'); return }
     setBusy(true); setMessage('')
     try {
       const { supabase, orgId, user } = await ensureWorkspace()
@@ -132,6 +147,9 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
   }
 
   const orgName = (id: string) => organizations.find(o => o.id === id)?.display_name || id
+  const orgRoles = (id: string) => organizations.find(o => o.id === id)?.organization_roles || []
+  const typeOptions = form.fromRole ? Object.entries(compatibleTypes[form.fromRole] || {}) : []
+  const canCreateType = !!form.fromRole && !!form.toRole && !!compatibleTypes[form.fromRole]?.[form.toRole]
 
   return <main className="mx-auto w-full max-w-7xl px-6 py-8">
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -143,7 +161,7 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
     <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-slate-950">Relationship graph</h2><p className="mt-1 text-sm text-slate-500">Your workspace ↔ ecosystem organizations. PortAi will eventually populate this from connected systems and AI discovery.</p></div><select value={filter} onChange={e=>setFilter(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"><option value="all">All lifecycle stages</option>{Object.entries(lifecycleLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
       {filtered.length === 0 ? <div className="px-6 py-14 text-center"><p className="font-medium text-slate-900">No workspace relationships yet</p><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">Add an organization relationship to begin building your ecosystem graph.</p></div> :
-      <div className="divide-y divide-slate-100">{filtered.map(r=><button key={r.id} onClick={()=>setSelected(r)} className="grid w-full gap-3 px-5 py-4 text-left hover:bg-slate-50 md:grid-cols-[1fr_auto_1fr_auto] md:items-center"><div><p className="text-sm font-medium text-slate-900">{orgName(r.from_entity_id)}</p><p className="text-xs text-slate-500">Organization</p></div><div className="text-center text-xs font-medium text-indigo-600">{typeLabel(r.relationship_type)}</div><div><p className="text-sm font-medium text-slate-900">{orgName(r.to_entity_id)}</p><p className="text-xs text-slate-500">Organization</p></div><div className="text-xs text-slate-500 md:text-right">{lifecycleLabels[r.lifecycle_stage]} · {r.status}</div></button>)}</div>}
+      <div className="divide-y divide-slate-100">{filtered.map(r=><button key={r.id} onClick={()=>setSelected(r)} className="grid w-full gap-3 px-5 py-4 text-left hover:bg-slate-50 md:grid-cols-[1fr_auto_1fr_auto] md:items-center"><div><p className="text-sm font-medium text-slate-900">{orgName(r.from_entity_id)}</p><p className="text-xs text-slate-500">{roleLabels[orgRoles(r.from_entity_id)[0]] || 'Organization'}</p></div><div className="text-center text-xs font-medium text-indigo-600">{compatibleTypes[orgRoles(r.from_entity_id)[0]]?.[orgRoles(r.to_entity_id)[0]] || typeLabel(r.relationship_type)}</div><div><p className="text-sm font-medium text-slate-900">{orgName(r.to_entity_id)}</p><p className="text-xs text-slate-500">{roleLabels[orgRoles(r.to_entity_id)[0]] || 'Organization'}</p></div><div className="text-xs text-slate-500 md:text-right">{lifecycleLabels[r.lifecycle_stage]} · {r.status}</div></button>)}</div>}
     </section>
 
     {showAdd ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-xl font-semibold">Add relationship</h2><button onClick={()=>setShowAdd(false)} className="text-slate-500">Close</button></div>
@@ -165,8 +183,8 @@ export function RelationshipGraph({ initialRelationships, error }: Props) {
           {form.to ? <p className="mt-2 text-xs font-medium text-indigo-700">Selected: {orgName(form.to)}</p> : null}
         </div>
       </div>
-      <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-800">Don’t see the organization?</p><p className="mt-1 text-xs text-slate-500">Add it here as a canonical ecosystem organization, then select it above.</p><div className="mt-2 grid gap-2 sm:grid-cols-3"><input placeholder="Company name" value={newOrg.name} onChange={e=>setNewOrg({...newOrg,name:e.target.value})} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input placeholder="Website" value={newOrg.website} onChange={e=>setNewOrg({...newOrg,website:e.target.value})} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input placeholder="Country" value={newOrg.country} onChange={e=>setNewOrg({...newOrg,country:e.target.value})} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/></div><button disabled={busy} onClick={()=>void addExternalOrg()} className="mt-2 text-sm font-medium text-indigo-600">Add organization</button></div>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-xs font-medium text-slate-600">Relationship type<select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">{relationshipTypes.map(v=><option key={v} value={v}>{typeLabel(v)}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Lifecycle<select value={form.lifecycle} onChange={e=>setForm(f=>({...f,lifecycle:e.target.value}))} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">{RELATIONSHIP_LIFECYCLE_STAGES.map(v=><option key={v} value={v}>{lifecycleLabels[v]}</option>)}</select></label><input placeholder="Market" value={form.market} onChange={e=>setForm(f=>({...f,market:e.target.value}))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input placeholder="Territory" value={form.territory} onChange={e=>setForm(f=>({...f,territory:e.target.value}))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input type="date" value={form.started} onChange={e=>setForm(f=>({...f,started:e.target.value}))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input type="datetime-local" value={form.nextAction} onChange={e=>setForm(f=>({...f,nextAction:e.target.value}))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><textarea placeholder="Notes" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} className="rounded-lg border px-3 py-2 text-sm sm:col-span-2"/></div>
+      <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-800">Don’t see the organization?</p><p className="mt-1 text-xs text-slate-500">Add it here as a canonical ecosystem organization, then select it above.</p><div className="mt-2 grid gap-2 sm:grid-cols-2"><input placeholder="Company name" value={newOrg.name} onChange={e=>setNewOrg({...newOrg,name:e.target.value})} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input placeholder="Website" value={newOrg.website} onChange={e=>setNewOrg({...newOrg,website:e.target.value})} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input placeholder="Country" value={newOrg.country} onChange={e=>setNewOrg({...newOrg,country:e.target.value})} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/></div><select value={newOrg.role} onChange={e=>setNewOrg({...newOrg,role:e.target.value})} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"><option value="">Organization role</option>{roleOrder.map(v=><option key={v} value={v}>{roleLabels[v]}</option>)}</select><button disabled={busy || !newOrg.role} onClick={()=>void addExternalOrg()} className="mt-2 text-sm font-medium text-indigo-600">Add organization</button></div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-xs font-medium text-slate-600">Your role<select value={form.fromRole} onChange={e=>setForm(f=>({...f,fromRole:e.target.value,type:f.toRole && compatibleTypes[e.target.value]?.[f.toRole] ? e.target.value + '_' + f.toRole : ''}))} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"><option value="">Select your role</option>{roleOrder.filter(v=>organizations[0]?.organization_roles?.includes(v)).map(v=><option key={v} value={v}>{roleLabels[v]}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Related role<select value={form.toRole} onChange={e=>setForm(f=>({...f,toRole:e.target.value,type:f.fromRole && compatibleTypes[f.fromRole]?.[e.target.value] ? f.fromRole + '_' + e.target.value : ''}))} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"><option value="">Select related role</option>{roleOrder.filter(v=>organizations.find(o=>o.id===form.to)?.organization_roles?.includes(v)).map(v=><option key={v} value={v}>{roleLabels[v]}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Relationship type<select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">{typeOptions.map(([v,label])=><option key={v} value={form.fromRole + '_' + v}>{label}</option>)}</select></label><label className="text-xs font-medium text-slate-600">Lifecycle<select value={form.lifecycle} onChange={e=>setForm(f=>({...f,lifecycle:e.target.value}))} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">{RELATIONSHIP_LIFECYCLE_STAGES.map(v=><option key={v} value={v}>{lifecycleLabels[v]}</option>)}</select></label><input placeholder="Market" value={form.market} onChange={e=>setForm(f=>({...f,market:e.target.value}))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input placeholder="Territory" value={form.territory} onChange={e=>setForm(f=>({...f,territory:e.target.value}))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input type="date" value={form.started} onChange={e=>setForm(f=>({...f,started:e.target.value}))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><input type="datetime-local" value={form.nextAction} onChange={e=>setForm(f=>({...f,nextAction:e.target.value}))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"/><textarea placeholder="Notes" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} className="rounded-lg border px-3 py-2 text-sm sm:col-span-2"/></div>
       <div className="mt-6 flex justify-end gap-2"><button onClick={()=>setShowAdd(false)} className="rounded-lg border px-4 py-2 text-sm">Cancel</button><button disabled={busy} onClick={()=>void submit()} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white">{busy?'Saving…':'Create relationship'}</button></div>
     </div></div> : null}
 
