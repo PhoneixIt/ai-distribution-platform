@@ -101,7 +101,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
             technologyFocus: current.technology_focus,
             partnerTypes: current.partner_types,
             customerSegment: current.customer_segment,
-            desiredCandidateCount: 100,
+            desiredCandidateCount: 10,
           })
         } else if (current.current_stage === 'dossier_ready') {
           setNotice('Selecting the strongest candidates and researching decision-makers…')
