@@ -1,8 +1,9 @@
-import { after } from 'next/server'
 import { NextResponse } from 'next/server'
 import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
+import { start } from 'workflow/api'
+import { missionDiscoveryWorkflow } from '@/workflows/mission-discovery'
 
 export const maxDuration = 300
 
@@ -25,123 +26,6 @@ function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDisco
     desiredCandidateCount: Math.max(1, Number(input.desiredCandidateCount) || 10),
   }
 }
-
-async function executeDiscoveryRun(
-  supabase: Awaited<ReturnType<typeof getAuthenticatedServerClient>>['supabase'],
-  runId: string,
-  userId: string,
-  missionId: string,
-  discoveryRequest: PartnerDiscoveryRequest,
-) {
-  try {
-    const report = await runPartnerDiscovery(discoveryRequest, {
-      onProgress: async (progress) => {
-        await supabase.from('discovery_runs').update({
-          search_queries: reportSearchQueriesPlaceholder,
-          discovered_count: progress.discovered,
-          researched_count: progress.researched,
-          returned_count: progress.qualified + progress.needsReview,
-          error_message: progress.message,
-        }).eq('id', runId)
-
-        await supabase.from('missions').update({
-          status: 'running',
-          current_stage: progress.stage === 'discovering' || progress.stage === 'researching' || progress.stage === 'qualifying'
-            ? 'discovering'
-            : 'dossier_ready',
-          candidate_count: progress.discovered,
-          result_summary: {
-            discovered: progress.discovered,
-            researched: progress.researched,
-            qualified: progress.qualified,
-            needs_review: progress.needsReview,
-            progress_message: progress.message,
-          },
-          error_message: null,
-        }).eq('id', missionId)
-      },
-    })
-
-    const rows = report.finalRankedCandidates.map((item, index) => ({
-      discovery_run_id: runId,
-      company_name: item.candidate.companyName,
-      website: item.candidate.website || null,
-      company_type: item.candidate.partnerTypes.some((type) => /distributor/i.test(type)) ? 'distributor' : 'partner',
-      country: item.candidate.country || null,
-      description: item.candidate.description || null,
-      partner_types: item.candidate.partnerTypes,
-      technologies: item.candidate.technologies,
-      customer_segments: item.candidate.customerSegments,
-      industries: item.candidate.industries,
-      services: item.candidate.services,
-      vendor_partnerships: item.candidate.vendorPartnerships,
-      certifications: item.candidate.certifications,
-      fit_score: item.candidate.fitScore,
-      qualification_status: item.qualification.status,
-      qualification_score: item.qualification.score,
-      qualification_reasons: item.qualification.reasons,
-      concerns: item.qualification.concerns,
-      research_status: item.candidate.researchStatus,
-      research_confidence: item.candidate.researchConfidence || 0,
-      evidence: item.candidate.evidence,
-      rank: index + 1,
-    }))
-
-    let savedCandidates: Array<{ id: string; website: string | null }> = []
-    if (rows.length) {
-      const { data: insertedCandidates, error: candidateError } = await supabase
-        .from('discovery_candidates')
-        .insert(rows)
-        .select('id,website')
-      if (candidateError) throw candidateError
-      savedCandidates = insertedCandidates || []
-    }
-
-    await supabase.from('missions').update({
-      discovery_run_id: runId,
-      status: 'running',
-      current_stage: report.finalRankedCandidates.length ? 'dossier_ready' : 'scored',
-      candidate_count: report.finalRankedCandidates.length,
-      result_summary: {
-        discovered: report.candidatesDiscovered,
-        researched: report.candidatesResearched,
-        returned: report.finalRankedCandidates.length,
-        qualified: report.candidatesQualified.length,
-        needs_review: report.candidatesNeedingReview.length,
-      },
-      completed_at: null,
-      error_message: null,
-    }).eq('id', missionId)
-
-    await supabase.from('discovery_runs').update({
-      status: 'completed',
-      search_queries: report.searchQueries,
-      discovered_count: report.candidatesDiscovered,
-      researched_count: report.candidatesResearched,
-      returned_count: report.finalRankedCandidates.length,
-      error_message: null,
-      completed_at: new Date().toISOString(),
-    }).eq('id', runId)
-
-    return savedCandidates
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Discovery failed.'
-    await supabase.from('discovery_runs').update({
-      status: 'failed',
-      error_message: message,
-      completed_at: new Date().toISOString(),
-    }).eq('id', runId)
-    await supabase.from('missions').update({
-      status: 'failed',
-      current_stage: 'failed',
-      error_message: message,
-      discovery_run_id: runId,
-    }).eq('id', missionId)
-  }
-}
-
-// Placeholder only for the progress callback; the final completed update stores the real query list.
-const reportSearchQueriesPlaceholder: string[] = []
 
 export async function POST(request: Request) {
   const { supabase, user, error: authError } = await getAuthenticatedServerClient()
@@ -180,22 +64,6 @@ export async function POST(request: Request) {
   if (missionResult.error) return NextResponse.json({ error: missionResult.error.message }, { status: 500 })
   if (!missionResult.data) return NextResponse.json({ error: 'Mission was not found in this workspace.' }, { status: 404 })
 
-  const { data: recentRun } = await supabase
-    .from('discovery_runs')
-    .select('id,created_at,status')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (recentRun?.status === 'running') {
-    return NextResponse.json({
-      runId: recentRun.id,
-      status: 'running',
-      message: 'PortAi is already working on this discovery run. The mission page will continue tracking its progress.',
-    }, { status: 202 })
-  }
-
   const { data: run, error: runError } = await supabase
     .from('discovery_runs')
     .insert({
@@ -230,15 +98,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: missionUpdate.error.message }, { status: 500 })
   }
 
-  after(async () => {
-    await executeDiscoveryRun(supabase, run.id, user.id, missionId, discoveryRequest)
-  })
+  const workflowRun = await start(missionDiscoveryWorkflow, [{
+    runId: run.id,
+    missionId,
+    userId: user.id,
+    discoveryRequest,
+  }])
 
   return NextResponse.json({
     missionId,
     runId: run.id,
+    workflowRunId: workflowRun.runId,
     status: 'running',
-    message: 'PortAi has started discovery. The mission will update as research progresses.',
+    message: 'PortAi has started durable discovery. The mission will continue even if you leave the page or the deployment changes.',
   }, { status: 202 })
 }
 
