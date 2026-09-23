@@ -40,7 +40,7 @@ export async function POST(request: Request, context: Context) {
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+    headers: {\n      Authorization: 'Bearer ' + apiKey,\n      'Content-Type': 'application/json',\n      'Idempotency-Key': 'portai-mission-draft-' + draftId,\n    },
     body: JSON.stringify({ from, to: [to], subject: draft.data.subject, text: draft.data.body }),
   })
   const raw = await response.text()
@@ -48,7 +48,7 @@ export async function POST(request: Request, context: Context) {
   try { payload = raw ? JSON.parse(raw) : {} } catch {}
   if (!response.ok) return NextResponse.json({ error: 'Resend rejected the send request.', provider: payload }, { status: 502 })
 
-  await supabase.from('mission_outreach_drafts').update({ status: 'sent', send_result: payload }).eq('id', draftId)
+  const draftUpdate = await supabase.from('mission_outreach_drafts').update({ status: 'sent', send_result: payload }).eq('id', draftId)\n  if (draftUpdate.error) return NextResponse.json({ error: 'Email was accepted by the provider, but PortAi could not record the send result.' }, { status: 500 })
   await supabase.from('missions').update({
     current_stage: 'sent', status: 'running',
     result_summary: { ...(mission.data.result_summary || {}), last_sent_draft_id: draftId, sent_at: new Date().toISOString() }
