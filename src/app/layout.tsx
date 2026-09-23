@@ -33,8 +33,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
     >
       <body className="flex min-h-full flex-col bg-slate-950 text-white">
         {children}
-        <Analytics />
-        <SpeedInsights />
+        {process.env.VERCEL ? <Analytics /> : null}
+        {process.env.VERCEL ? <SpeedInsights /> : null}
       </body>
     </html>
   )
