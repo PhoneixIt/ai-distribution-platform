@@ -13,6 +13,11 @@ export async function POST(request: Request, context: Context) {
   const action = body.action === 'approve' ? 'approve' : body.action === 'reject' ? 'reject' : ''
   if (!action) return NextResponse.json({ error: 'Action must be approve or reject.' }, { status: 400 })
 
+  const check = await supabase.from('mission_approvals').select('id,mission_id,draft_id,status').eq('id', approvalId).eq('mission_id', id).maybeSingle()
+  if (check.error) return NextResponse.json({ error: check.error.message }, { status: 500 })
+  if (!check.data) return NextResponse.json({ error: 'Approval not found for this mission.' }, { status: 404 })
+  if (check.data.status !== 'pending') return NextResponse.json({ error: 'This approval is no longer pending.' }, { status: 409 })
+
   const result = await supabase.rpc('decide_mission_approval', {
     p_approval_id: approvalId,
     p_action: action,
@@ -20,9 +25,8 @@ export async function POST(request: Request, context: Context) {
   })
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 403 })
 
-  const check = await supabase.from('mission_approvals').select('id,mission_id,draft_id,status').eq('id', approvalId).eq('mission_id', id).maybeSingle()
-  if (check.error) return NextResponse.json({ error: check.error.message }, { status: 500 })
-  if (!check.data) return NextResponse.json({ error: 'Approval not found for this mission.' }, { status: 404 })
+  const updated = await supabase.from('mission_approvals').select('id,mission_id,draft_id,status').eq('id', approvalId).eq('mission_id', id).maybeSingle()
+  if (updated.error) return NextResponse.json({ error: updated.error.message }, { status: 500 })
 
-  return NextResponse.json({ success: true, approval: check.data })
+  return NextResponse.json({ success: true, approval: updated.data })
 }
