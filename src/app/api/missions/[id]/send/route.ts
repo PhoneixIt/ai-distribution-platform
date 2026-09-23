@@ -25,7 +25,13 @@ export async function POST(request: Request, context: Context) {
   if (draft.error) return NextResponse.json({ error: draft.error.message }, { status: 500 })
   if (!draft.data) return NextResponse.json({ error: 'Draft not found.' }, { status: 404 })
 
-  const approval = Array.isArray(draft.data.mission_approvals) ? draft.data.mission_approvals[0] : null
+  if (draft.data.status === 'sent') {
+    return NextResponse.json({ success: true, draftId, alreadySent: true, provider: draft.data.send_result || null })
+  }
+
+  const approval = Array.isArray(draft.data.mission_approvals)
+    ? draft.data.mission_approvals.find((item: Record<string, unknown>) => item.draft_id === draftId)
+    : null
   if (!approval || approval.status !== 'approved' || draft.data.status !== 'approved') {
     return NextResponse.json({ error: 'The draft must be explicitly approved in PortAi before sending.' }, { status: 403 })
   }
@@ -52,16 +58,27 @@ export async function POST(request: Request, context: Context) {
   try { payload = raw ? JSON.parse(raw) : {} } catch {}
   if (!response.ok) return NextResponse.json({ error: 'Resend rejected the send request.', provider: payload }, { status: 502 })
 
-  const draftUpdate = await supabase.from('mission_outreach_drafts').update({ status: 'sent', send_result: payload }).eq('id', draftId)
-  if (draftUpdate.error) return NextResponse.json({ error: 'Email was accepted by the provider, but PortAi could not record the send result.' }, { status: 500 })
-  await supabase.from('missions').update({
-    current_stage: 'sent', status: 'running',
-    result_summary: { ...(mission.data.result_summary || {}), last_sent_draft_id: draftId, sent_at: new Date().toISOString() }
-  }).eq('id', id)
+  const draftUpdate = await supabase.from('mission_outreach_drafts')
+    .update({ status: 'sent', send_result: payload })
+    .eq('id', draftId)
+    .eq('mission_id', id)
+    .eq('status', 'approved')
+  if (draftUpdate.error) {
+    return NextResponse.json({ error: 'Email was accepted by the provider, but PortAi could not record the send result.' }, { status: 500 })
+  }
 
-  await supabase.from('missions').update({
-    current_stage: 'tracking', status: 'running'
+  const missionUpdate = await supabase.from('missions').update({
+    current_stage: 'tracking',
+    status: 'running',
+    result_summary: {
+      ...(mission.data.result_summary || {}),
+      last_sent_draft_id: draftId,
+      sent_at: new Date().toISOString(),
+    }
   }).eq('id', id)
+  if (missionUpdate.error) {
+    return NextResponse.json({ error: 'Email was sent and recorded, but PortAi could not update the mission tracking state.' }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true, draftId, provider: payload })
 }
