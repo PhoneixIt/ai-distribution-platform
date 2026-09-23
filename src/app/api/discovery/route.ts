@@ -128,7 +128,7 @@ export async function POST(request: Request) {
       const missionUpdate = await supabase.from('missions').update({
         discovery_run_id: run.id,
         status: 'running',
-        current_stage: report.finalRankedCandidates.length ? 'dossier_ready' : 'scored',
+        current_stage: report.candidatesQualified.length >= 10 ? 'dossier_ready' : 'scored',
         candidate_count: report.finalRankedCandidates.length,
         result_summary: {
           discovered: report.candidatesDiscovered,
