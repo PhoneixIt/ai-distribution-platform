@@ -97,18 +97,24 @@ export async function POST(_request: Request, context: Context) {
         recommended_action: { action: 'review_contact_and_prepare_personalized_outreach', rationale: 'Candidate passed the discovery qualification stage; review the evidence and contact context before outreach.' },
         status: 'contacts_researched'
       }
-      await supabase.from('mission_dossiers').upsert(dossier, { onConflict: 'mission_id,candidate_id' })
+      const dossierWrite = await supabase.from('mission_dossiers').upsert(dossier, { onConflict: 'mission_id,candidate_id' })
+      if (dossierWrite.error) {
+        return NextResponse.json({ error: dossierWrite.error.message, stage: 'contact_research' }, { status: 500 })
+      }
     }
   }
 
   const dossierCount = await supabase.from('mission_dossiers').select('id', { count: 'exact', head: true }).eq('mission_id', id)
   const usage = await supabase.from('mission_external_usage').select('credits_consumed').eq('mission_id', id)
   const apolloCreditsConsumed = (usage.data || []).reduce((sum, row) => sum + Number(row.credits_consumed || 0), 0)
-  await supabase.from('missions').update({
+  const missionUpdate = await supabase.from('missions').update({
     current_stage: 'contacts_researched',
     status: 'running',
     result_summary: { ...(mission.data.result_summary || {}), contacts_found: selected.length, dossiers_completed: dossierCount.count || 0, apollo_credits_consumed: apolloCreditsConsumed }
   }).eq('id', id)
+  if (missionUpdate.error) {
+    return NextResponse.json({ error: missionUpdate.error.message, stage: 'contact_research' }, { status: 500 })
+  }
 
   return NextResponse.json({
     missionId: id,
