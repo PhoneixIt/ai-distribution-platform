@@ -19,7 +19,13 @@ test.describe('public UI smoke coverage', () => {
     }
   })
 
-  test('workforce page has a real objective input in the public build', async ({ page }) => {
+  test('workforce page has a real objective input after authentication', async ({ page }) => {
+    test.skip(!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD, 'Set E2E_EMAIL and E2E_PASSWORD in CI to enable protected-page checks.')
+    await page.goto('/login')
+    await page.getByLabel('Email').fill(process.env.E2E_EMAIL!)
+    await page.getByLabel('Password').fill(process.env.E2E_PASSWORD!)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await expect(page).toHaveURL(/\/app/)
     await page.goto('/workforce')
     const objective = page.locator('textarea')
     await expect(objective).toHaveCount(1)
