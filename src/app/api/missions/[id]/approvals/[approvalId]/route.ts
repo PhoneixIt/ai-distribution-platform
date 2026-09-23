@@ -13,6 +13,10 @@ export async function POST(request: Request, context: Context) {
   const action = body.action === 'approve' ? 'approve' : body.action === 'reject' ? 'reject' : ''
   if (!action) return NextResponse.json({ error: 'Action must be approve or reject.' }, { status: 400 })
 
+  const pendingCheck = await supabase.from('mission_approvals').select('id,mission_id,draft_id,status').eq('id', approvalId).eq('mission_id', id).eq('status', 'pending').maybeSingle()
+  if (pendingCheck.error) return NextResponse.json({ error: pendingCheck.error.message }, { status: 500 })
+  if (!pendingCheck.data) return NextResponse.json({ error: 'Pending approval not found for this mission.' }, { status: 404 })
+
   const result = await supabase.rpc('decide_mission_approval', {
     p_approval_id: approvalId,
     p_action: action,
