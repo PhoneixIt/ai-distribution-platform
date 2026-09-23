@@ -57,11 +57,6 @@ export async function POST(request: Request) {
     if (missionResult.error) return NextResponse.json({ error: missionResult.error.message }, { status: 500 })
     if (!missionResult.data) return NextResponse.json({ error: 'Mission was not found in this workspace.' }, { status: 404 })
     mission = { id: missionResult.data.id }
-    const missionUpdate = await supabase
-      .from('missions')
-      .update({ status: 'running', current_stage: 'discovering', error_message: null })
-      .eq('id', mission.id)
-    if (missionUpdate.error) return NextResponse.json({ error: missionUpdate.error.message }, { status: 500 })
   }
 
   const { data: recentRun } = await supabase
@@ -74,6 +69,14 @@ export async function POST(request: Request) {
 
   if (recentRun && Date.now() - new Date(recentRun.created_at).getTime() < 60_000) {
     return NextResponse.json({ error: 'Please wait about one minute before starting another discovery run.' }, { status: 429 })
+  }
+
+  if (mission) {
+    const missionUpdate = await supabase
+      .from('missions')
+      .update({ status: 'running', current_stage: 'discovering', error_message: null })
+      .eq('id', mission.id)
+    if (missionUpdate.error) return NextResponse.json({ error: missionUpdate.error.message }, { status: 500 })
   }
 
   const { data: run, error: runError } = await supabase
