@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import AppShell from '@/components/app-shell'
 import { ensureWorkspace } from '@/lib/supabase/workspace'
+import { getOrganizationProfile, getPartnerSubtypeLabel } from '@/lib/organization-roles'
 
 function Status({ label, value }: { label: string; value: string }) {
   return (
@@ -16,6 +17,8 @@ function Status({ label, value }: { label: string; value: string }) {
 export default function SettingsPage() {
   const [name, setName] = useState('')
   const [workspace, setWorkspace] = useState('')
+  const [organizationType, setOrganizationType] = useState<string | null>(null)
+  const [organizationRoles, setOrganizationRoles] = useState<string[]>([])
   const [plan, setPlan] = useState('starter')
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -29,6 +32,8 @@ export default function SettingsPage() {
         setName((user.user_metadata?.full_name as string) || '')
         setWorkspace(organization?.name || '')
         setPlan(organization?.plan || 'starter')
+        setOrganizationType(organization?.organization_type ?? null)
+        setOrganizationRoles(organization?.organization_roles ?? [])
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : 'Could not load settings.')
       }
@@ -58,6 +63,8 @@ export default function SettingsPage() {
       setError(cause instanceof Error ? cause.message : 'Could not save settings.')
     }
   }
+
+  const organizationProfile = getOrganizationProfile(organizationType, organizationRoles)
 
   return (
     <AppShell
@@ -98,6 +105,14 @@ export default function SettingsPage() {
               className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 outline-none focus:border-blue-500"
             />
           </label>
+          <div className="mt-5 border-t border-slate-800 pt-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-medium text-slate-300">Organization type</h3>
+              <span className="rounded-full border border-blue-900 bg-blue-950/30 px-3 py-1 text-xs text-blue-300">{organizationProfile.label}</span>
+              {organizationProfile.partnerRoles.map(role => <span key={role} className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-400">{getPartnerSubtypeLabel(role)}</span>)}
+            </div>
+            <p className="mt-2 text-xs leading-5 text-slate-500">This role shapes your workspace navigation. Contact a workspace owner to request a role change; existing organization identity and relationships are preserved.</p>
+          </div>
           <button
             onClick={() => void save()}
             className="mt-5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold hover:bg-blue-500"

@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
-import AppShell from '@/components/app-shell'
+import AppShell, { useWorkspaceRole } from '@/components/app-shell'
+import { getPartnerSubtypeLabel, type WorkspaceRole } from '@/lib/organization-roles'
 import DashboardLoader from './dashboard-loader'
 
 type Stats = { partners: number; vendors: number; distributors: number; customers: number; opportunities: number; matches: number }
@@ -26,55 +27,12 @@ export default function AppDashboard() {
   const { stats, recent } = data
 
   return (
-    <AppShell title="Ecosystem overview" subtitle="One connected view of supply, distribution, channel capability, customer demand and the work moving between them.">
+    <AppShell title="Ecosystem overview" subtitle="Your role-focused workspace for ecosystem activity and shared AI-assisted work.">
       <DashboardLoader onData={handleData} onError={handleError} />
       {error && <div className="mb-6 rounded-2xl border border-red-900/60 bg-red-950/20 p-4 text-sm text-red-300">{error}</div>}
 
-      <section className="rounded-[2rem] border border-blue-900/50 bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-950 p-6 lg:p-8">
-        <div className="grid gap-8 xl:grid-cols-[1fr_.9fr] xl:items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-900/60 bg-blue-950/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-blue-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-400" /> Ecosystem operating layer
-            </div>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight lg:text-4xl">What do you want to accomplish?</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">Start with a mission. PortAi can turn a business objective into discovery, research, matching and coordinated work while keeping evidence and approvals visible.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/workflow" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Start a mission</Link>
-              <Link href="/discovery" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-600">Discover the ecosystem</Link>
-            </div>
-            <p className="mt-4 text-xs text-slate-600">Example: “Find 10 qualified cybersecurity MSPs in Germany for a new vendor.”</p>
-          </div>
-
-          <div className="relative rounded-3xl border border-slate-800 bg-slate-950/80 p-5">
-            <div className="grid grid-cols-2 gap-3">
-              {nodes.map(([title, copy, href]) => (
-                <Link key={title} href={href} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-blue-900/70 hover:bg-slate-900/80">
-                  <p className="text-sm font-semibold">{title}</p>
-                  <p className="mt-1 text-xs text-slate-500">{copy}</p>
-                </Link>
-              ))}
-            </div>
-            <div className="my-4 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>shared intelligence</span><span className="h-px flex-1 bg-slate-800" /></div>
-            <div className="rounded-2xl border border-blue-900/50 bg-blue-950/20 p-4 text-center">
-              <p className="text-sm font-semibold text-blue-200">Discover → Research → Verify → Match → Engage</p>
-              <p className="mt-1 text-xs text-slate-500">People set the objective. AI helps operate the work.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        {[
-          ['Partners', stats.partners, '/partners'], ['Vendors', stats.vendors, '/vendors'], ['Distributors', stats.distributors, '/distributors'],
-          ['Customers', stats.customers, '/customers'], ['Opportunities', stats.opportunities, '/opportunities'], ['Matches', stats.matches, '/matches'],
-        ].map(([label, value, href]) => (
-          <Link key={String(label)} href={String(href)} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition hover:border-slate-700 hover:bg-slate-900">
-            <p className="text-xs text-slate-500">{label}</p>
-            <p className="mt-2 text-2xl font-semibold tracking-tight">{loading ? '—' : value}</p>
-            <p className="mt-1 text-[11px] text-slate-600">Open →</p>
-          </Link>
-        ))}
-      </section>
+      <DashboardHero />
+      <DashboardStats stats={stats} loading={loading} />
 
       <section className="mt-7 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -127,5 +85,135 @@ export default function AppDashboard() {
         ].map(([title, copy]) => <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"><h3 className="text-sm font-semibold">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{copy}</p></div>)}
       </section>
     </AppShell>
+  )
+}
+
+const roleCopy: Record<WorkspaceRole, { headline: string; description: string; discoveryLabel: string; example: string }> = {
+  vendor: {
+    headline: 'Grow your channel with the right partners.',
+    description: 'Find distributors, qualified delivery partners, and customer opportunities for your products. Use missions to coordinate discovery, matching, and approved next steps.',
+    discoveryLabel: 'Find channel partners',
+    example: 'Find qualified cybersecurity MSPs in Germany for your product line.',
+  },
+  distributor: {
+    headline: 'Connect vendor supply with partner reach.',
+    description: 'Explore relevant vendors, build partner coverage, and move customer demand through one shared workspace.',
+    discoveryLabel: 'Explore vendors',
+    example: 'Find security vendors and delivery partners serving the DACH market.',
+  },
+  partner: {
+    headline: 'Find vendor programs and opportunities that fit your strengths.',
+    description: 'Use your partner workspace to discover vendors, distributors, and opportunities that match your delivery capabilities.',
+    discoveryLabel: 'Discover opportunities',
+    example: 'Find cloud and security opportunities aligned with your certifications and services.',
+  },
+  customer: {
+    headline: 'Turn technology needs into coordinated action.',
+    description: 'Discover vendors and channel support, then use shared missions to research options, compare matches, and coordinate next steps.',
+    discoveryLabel: 'Explore solutions',
+    example: 'Compare trusted providers for a new security or infrastructure requirement.',
+  },
+  other: {
+    headline: 'Bring ecosystem work into one place.',
+    description: 'Use PortAi to discover organizations, coordinate missions, and keep AI-assisted work visible to your team.',
+    discoveryLabel: 'Discover the ecosystem',
+    example: 'Start with a business objective and let PortAi organize the work.',
+  },
+  unconfigured: {
+    headline: 'Set up your organization workspace.',
+    description: 'Choose an organization role to personalize your workspace and get started.',
+    discoveryLabel: 'Discover the ecosystem',
+    example: 'Start with a business objective and let PortAi organize the work.',
+  },
+}
+
+function DashboardHero() {
+  const profile = useWorkspaceRole()
+  const copy = roleCopy[profile.primaryType]
+  const subtypeSummary = profile.partnerRoles.map(getPartnerSubtypeLabel).join(' · ')
+
+  return (
+    <section className="rounded-[2rem] border border-blue-900/50 bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-950 p-6 lg:p-8">
+      <div className="grid gap-8 xl:grid-cols-[1fr_.9fr] xl:items-center">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-900/60 bg-blue-950/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-blue-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" /> {profile.label} workspace
+          </div>
+          {subtypeSummary && <p className="mt-3 text-xs text-slate-500">Partner capabilities: {subtypeSummary}</p>}
+          <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight lg:text-4xl">{copy.headline}</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">{copy.description}</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/workflow" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Start a mission</Link>
+            <Link href="/discovery" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-600">{copy.discoveryLabel}</Link>
+            <Link href="/workforce" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-600">Open AI Workforce</Link>
+          </div>
+          <p className="mt-4 text-xs text-slate-600">{copy.example}</p>
+        </div>
+
+        <div className="relative rounded-3xl border border-slate-800 bg-slate-950/80 p-5">
+          <div className="grid grid-cols-2 gap-3">
+            {nodes.map(([title, nodeCopy, href]) => (
+              <Link key={title} href={href} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-blue-900/70 hover:bg-slate-900/80">
+                <p className="text-sm font-semibold">{title}</p>
+                <p className="mt-1 text-xs text-slate-500">{nodeCopy}</p>
+              </Link>
+            ))}
+          </div>
+          <div className="my-4 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>shared intelligence</span><span className="h-px flex-1 bg-slate-800" /></div>
+          <div className="rounded-2xl border border-blue-900/50 bg-blue-950/20 p-4 text-center">
+            <p className="text-sm font-semibold text-blue-200">Discover → Research → Verify → Match → Engage</p>
+            <p className="mt-1 text-xs text-slate-500">The workspace adapts to your role. The AI operating layer stays shared.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function DashboardStats({ stats, loading }: { stats: Stats; loading: boolean }) {
+  const profile = useWorkspaceRole()
+  const partnerLabel: Record<WorkspaceRole, string> = {
+    vendor: 'Partner relationships',
+    distributor: 'Channel partners',
+    partner: 'Partner relationships',
+    customer: 'Service partners',
+    other: 'Partner relationships',
+    unconfigured: 'Partner relationships',
+  }
+  const vendorLabel: Record<WorkspaceRole, string> = {
+    vendor: 'Vendor connections',
+    distributor: 'Vendor relationships',
+    partner: 'Vendor relationships',
+    customer: 'Vendor options',
+    other: 'Vendor relationships',
+    unconfigured: 'Vendor relationships',
+  }
+  const distributorLabel: Record<WorkspaceRole, string> = {
+    vendor: 'Distributor relationships',
+    distributor: 'Distributor connection',
+    partner: 'Distributor relationships',
+    customer: 'Distributor options',
+    other: 'Distributor relationships',
+    unconfigured: 'Distributor relationships',
+  }
+  const metrics: Array<[string, number, string]> = [
+    [partnerLabel[profile.primaryType], stats.partners, '/partners'],
+    [vendorLabel[profile.primaryType], stats.vendors, '/vendors'],
+    [distributorLabel[profile.primaryType], stats.distributors, '/distributors'],
+    ['Customers', stats.customers, '/customers'],
+    ['Opportunities', stats.opportunities, '/opportunities'],
+    ['Matches', stats.matches, '/matches'],
+  ]
+
+  return (
+    <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      {metrics.map(([label, value, href]) => (
+        <Link key={label} href={href} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition hover:border-slate-700 hover:bg-slate-900">
+          <p className="text-xs text-slate-500">{label}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight">{loading ? '—' : value}</p>
+          <p className="mt-1 text-[11px] text-slate-600">Open →</p>
+        </Link>
+      ))}
+    </section>
   )
 }
