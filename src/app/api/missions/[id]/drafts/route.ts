@@ -81,15 +81,28 @@ export async function POST(_request: Request, context: Context) {
     created.push(inserted.data)
   }
 
-  await supabase.from('missions').update({
+  if (!created.length) {
+    return NextResponse.json({
+      error: 'No outreach drafts could be generated from the available dossiers.',
+      stage: 'draft_generation'
+    }, { status: 502 })
+  }
+
+  const draftReadyUpdate = await supabase.from('missions').update({
     current_stage: 'draft_ready', status: 'running',
     result_summary: { ...(mission.result_summary || {}), drafts_generated: created.length }
   }).eq('id', id)
+  if (draftReadyUpdate.error) {
+    return NextResponse.json({ error: draftReadyUpdate.error.message, stage: 'draft_generation' }, { status: 500 })
+  }
 
-  await supabase.from('missions').update({
+  const approvalUpdate = await supabase.from('missions').update({
     current_stage: 'waiting_approval', status: 'waiting_approval',
     result_summary: { ...(mission.result_summary || {}), drafts_generated: created.length, approvals_requested: created.length }
   }).eq('id', id)
+  if (approvalUpdate.error) {
+    return NextResponse.json({ error: approvalUpdate.error.message, stage: 'draft_generation' }, { status: 500 })
+  }
 
   return NextResponse.json({ missionId: id, draftsGenerated: created.length, approvalsRequested: created.length, drafts: created })
 }
