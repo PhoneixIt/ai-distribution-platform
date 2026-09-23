@@ -35,9 +35,9 @@ async function loadDashboard() {
   const { supabase, orgId } = await ensureWorkspace()
 
   const [partners, vendors, distributors, customers, opportunities, matches] = await Promise.all([
-    supabase.from('partners').select('*', { count: 'exact', head: true }),
-    supabase.from('vendors').select('*', { count: 'exact', head: true }),
-    supabase.from('distributors').select('*', { count: 'exact', head: true }),
+    supabase.from('distributor_partners').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
+    supabase.from('org_vendors').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
+    supabase.from('org_distributors').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('customers').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('opportunities').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('partner_matches').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
