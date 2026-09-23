@@ -98,8 +98,13 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
   }
 
   const showSocial = mode === 'login' || mode === 'signup'
-  const primaryProviders = socialProviders.slice(0, 2)
-  const secondaryProviders = socialProviders.slice(2)
+  const enabledProviderKeys = (process.env.NEXT_PUBLIC_SUPABASE_OAUTH_PROVIDERS || 'google')
+    .split(',')
+    .map(value => value.trim())
+    .filter((value): value is Provider => socialProviders.some(item => item.provider === value))
+  const enabledProviders = socialProviders.filter(({ provider }) => enabledProviderKeys.includes(provider))
+  const primaryProviders = enabledProviders.slice(0, 2)
+  const secondaryProviders = enabledProviders.slice(2)
 
   return <main className="min-h-screen bg-slate-950 text-white"><div className="mx-auto flex min-h-screen max-w-md items-center px-5 py-10"><div className="w-full">
     <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"><span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-600 text-xs font-black">P</span> PortAi</Link>
@@ -110,8 +115,8 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
         <div className="mt-7 space-y-3">
           {primaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">{socialLoading === provider ? 'Connecting…' : <>{icon}<span>Continue with {label}</span></>}</button>)}
         </div>
-        <button type="button" onClick={() => setShowMoreProviders(value => !value)} className="mt-3 w-full text-xs text-slate-500 hover:text-slate-300">{showMoreProviders ? 'Hide other sign-in options' : 'More sign-in options'}</button>
-        {showMoreProviders && <div className="mt-3 grid grid-cols-3 gap-3">{secondaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} aria-label={`Continue with ${label}`} title={`Continue with ${label}`} className="flex items-center justify-center rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50">{icon}</button>)}</div>}
+        {secondaryProviders.length > 0 && <button type="button" onClick={() => setShowMoreProviders(value => !value)} className="mt-3 w-full text-xs text-slate-500 hover:text-slate-300">{showMoreProviders ? 'Hide other sign-in options' : 'More sign-in options'}</button>}
+        {secondaryProviders.length > 0 && showMoreProviders && <div className="mt-3 grid grid-cols-3 gap-3">{secondaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} aria-label={`Continue with ${label}`} title={`Continue with ${label}`} className="flex items-center justify-center rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50">{icon}</button>)}</div>}
         <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>Or continue with email</span><span className="h-px flex-1 bg-slate-800" /></div>
       </>}
 

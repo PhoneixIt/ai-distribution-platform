@@ -171,3 +171,13 @@ export async function deleteOpportunity(supabase: SupabaseClient, id: string): P
   const { error } = await supabase.from('opportunities').delete().eq('id', id)
   if (error) throw error
 }
+
+
+export { listEcosystemOrganizations, ensureEcosystemOrganization, updateEcosystemOrganizationRoles, normalizeOrganizationName, normalizeDomain } from './ecosystem-organizations'
+export type { EcosystemOrganization, EcosystemOrganizationInput } from './ecosystem-organizations'
+export { listEcosystemConnections, createEcosystemConnection, updateEcosystemConnection } from './ecosystem-connections'
+export type { EcosystemConnection } from './ecosystem-connections'
+export { listExternalIdentities, findExternalIdentity, upsertExternalIdentity } from './ecosystem-identities'
+export type { EcosystemExternalIdentity } from './ecosystem-identities'
+export { listEcosystemOrganizationAliases, createEcosystemOrganizationAlias } from './ecosystem-aliases'
+export type { EcosystemOrganizationAlias } from './ecosystem-aliases'

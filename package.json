@@ -11,7 +11,9 @@
     "smoke": "node scripts/smoke-test.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:e2e": "playwright test",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -21,7 +23,8 @@
     "exa-js": "^2.7.0",
     "next": "16.3.5",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "@vercel/speed-insights": "^2.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -31,6 +34,18 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@playwright/test": "^1.63.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "@jbabin91/tsc-files": "^0.8.4"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ],
+    "*.{ts,tsx}": [
+      "tsc-files"
+    ]
   }
 }

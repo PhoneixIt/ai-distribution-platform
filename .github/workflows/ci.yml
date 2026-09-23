@@ -19,7 +19,7 @@ jobs:
           cache: npm
 
       # Regenerate the lockfile from package.json so CI stays valid when dependency ranges change.
-      - run: npm install --package-lock-only
+      - run: npm install --package-lock-only --ignore-scripts
       - run: npm ci
 
       - name: Dependency audit
@@ -55,6 +55,17 @@ jobs:
         run: npm run smoke
         env:
           BASE_URL: http://127.0.0.1:3000
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright E2E
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SUPABASE_OAUTH_PROVIDERS: google
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
       - name: Stop production server
         if: always()
