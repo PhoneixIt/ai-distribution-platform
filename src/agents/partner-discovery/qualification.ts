@@ -20,13 +20,16 @@ function normalize(value: string): string {
  */
 function matchesRequestedValue(values: string[], requestedValue: string): boolean {
   const requested = normalize(requestedValue)
+  const aliases: Record<string, string[]> = {
+    cybersecurity: ['cybersecurity', 'cyber security', 'information security', 'infosec', 'managed security', 'security operations', 'soc', 'siem', 'mdr', 'xdr'],
+    'mid-market': ['mid-market', 'mid market', 'midsize', 'mid-sized', 'mittelstand', 'sme', 'smb'],
+    mssp: ['mssp', 'managed security service provider', 'managed security services', 'managed soc', 'mdr'],
+    msp: ['msp', 'managed service provider', 'managed services'],
+  }
+  const requestedAliases = aliases[requested] || [requested]
   return values.some((value) => {
     const normalized = normalize(value)
-    return (
-      normalized === requested ||
-      normalized.includes(requested) ||
-      requested.includes(normalized)
-    )
+    return requestedAliases.some((alias) => normalized === alias || normalized.includes(alias) || alias.includes(normalized))
   })
 }
 
@@ -182,8 +185,11 @@ function evaluate(
   ) {
     return { state: 'matched', criterion: item }
   }
+  // Missing evidence is not the same as a contradiction. A candidate should
+  // not be rejected merely because a public source did not state the requested
+  // attribute explicitly.
   return {
-    state: explicitValues.length ? 'unmet' : 'unknown',
+    state: 'unknown',
     criterion: item,
   }
 }
@@ -449,14 +455,20 @@ export function qualifyCandidate(
   let status: QualificationResult['status']
   if (exclusion) {
     status = 'not_qualified'
-  } else if (unmetCriteria.length > 0) {
-    status = 'not_qualified'
   } else {
+    const hardMismatch = evaluated.some(
+      (item) =>
+        item.state === 'unmet' &&
+        (item.criterion.key === 'country' || item.criterion.key === 'partnerType')
+    )
     const matchRate = matchedCriteria.length / evaluated.length
-    status =
-      matchRate >= QUALIFICATION_THRESHOLDS.qualified
-        ? 'qualified'
-        : 'needs_review'
+    if (hardMismatch || score < 60) {
+      status = 'not_qualified'
+    } else if (score >= QUALIFICATION_THRESHOLDS.qualified) {
+      status = 'qualified'
+    } else {
+      status = 'needs_review'
+    }
   }
 
   // Calculate confidence
