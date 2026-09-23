@@ -40,7 +40,9 @@ export async function POST(request: Request, context: Context) {
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: {\n      Authorization: 'Bearer ' + apiKey,\n      'Content-Type': 'application/json',\n      'Idempotency-Key': 'portai-mission-draft-' + draftId,\n    },
+    headers: {
+      Authorization: 'Bearer ' + apiKey,\n      'Content-Type': 'application/json',
+      'Idempotency-Key': 'portai-mission-draft-' + draftId,\n    },
     body: JSON.stringify({ from, to: [to], subject: draft.data.subject, text: draft.data.body }),
   })
   const raw = await response.text()
