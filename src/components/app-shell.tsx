@@ -26,13 +26,13 @@ export function useWorkspaceRole() {
 }
 
 const ecosystemItems = [
-  { href: '/partners', label: 'Partners' },
   { href: '/vendors', label: 'Vendors' },
   { href: '/distributors', label: 'Distributors' },
+  { href: '/partners', label: 'Partners' },
   { href: '/customers', label: 'Customers' },
   { href: '/products', label: 'Products & solutions' },
   { href: '/opportunities', label: 'Opportunities' },
-  { href: '/engagements', label: 'Engagements' },
+  { href: '/engagements', label: 'Relationships' },
 ]
 
 const rolePriorities: Record<WorkspaceRole, string[]> = {
@@ -47,29 +47,40 @@ const rolePriorities: Record<WorkspaceRole, string[]> = {
 function getNavigation(profile: WorkspaceProfile) {
   const priority = rolePriorities[profile.primaryType]
   const orderedItems = [...ecosystemItems].sort((left, right) => priority.indexOf(left.href) - priority.indexOf(right.href))
-  const dashboardLabel = profile.primaryType === 'other' ? 'Workspace dashboard' : `${profile.label} dashboard`
+  const dashboardLabel = profile.primaryType === 'other' ? 'Workspace dashboard' : 'Home'
 
   return [
-    {
-      label: `${profile.label} workspace`,
-      items: [{ href: '/app', label: dashboardLabel }, ...orderedItems],
-    },
-    {
-      label: 'Shared AI operating layer',
-      items: [
-        { href: '/workflow', label: 'Missions & workflow' },
-        { href: '/workforce', label: 'AI Workforce' },
-        { href: '/discovery', label: 'Discover ecosystem' },
-        { href: '/matches', label: 'AI matching' },
-      ],
-    },
-    {
-      label: 'Administration',
-      items: [
-        { href: '/pricing', label: 'Plans & usage' },
-        { href: '/settings', label: 'Settings' },
-      ],
-    },
+    { label: 'Workspace', items: [{ href: '/app', label: dashboardLabel }, ...orderedItems] },
+    { label: 'AI & discovery', items: [
+      { href: '/workflow', label: 'Missions' },
+      { href: '/discovery', label: 'Discover' },
+      { href: '/matches', label: 'AI matching' },
+      { href: '/workforce', label: 'AI assistant' },
+    ]},
+    { label: 'Business', items: [
+      { href: '/opportunities', label: 'Opportunities' },
+      { href: '/engagements', label: 'Relationships' },
+      { href: '#', label: 'Deal registration', comingSoon: true },
+      { href: '#', label: 'Co-selling', comingSoon: true },
+      { href: '#', label: 'Account mapping', comingSoon: true },
+    ]},
+    { label: 'Growth', items: [
+      { href: '#', label: 'Onboarding', comingSoon: true },
+      { href: '#', label: 'Training & certifications', comingSoon: true },
+      { href: '#', label: 'Campaigns & MDF', comingSoon: true },
+      { href: '#', label: 'Partner performance', comingSoon: true },
+    ]},
+    { label: 'Revenue & intelligence', items: [
+      { href: '/pricing', label: 'Pricing' },
+      { href: '#', label: 'Pipeline & revenue', comingSoon: true },
+      { href: '#', label: 'Ecosystem insights', comingSoon: true },
+      { href: '#', label: 'Marketplace', comingSoon: true },
+    ]},
+    { label: 'Administration', items: [
+      { href: '/settings', label: 'Settings' },
+      { href: '#', label: 'Integrations', comingSoon: true },
+      { href: '#', label: 'Users & roles', comingSoon: true },
+    ]},
   ]
 }
 
@@ -189,8 +200,14 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
                   <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{group.label}</p>
                   <div className="mt-2 space-y-1">
                     {group.items.map(item => {
-                      const active = pathname === item.href || (item.href !== '/app' && pathname.startsWith(`${item.href}/`))
-                      return <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`block rounded-lg px-3 py-2.5 text-sm font-medium ${active ? 'bg-blue-600/15 text-blue-300' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}>{item.label}</Link>
+                      const active = !('comingSoon' in item) && (pathname === item.href || (item.href !== '/app' && pathname.startsWith(item.href + '/')))
+                      if ('comingSoon' in item && item.comingSoon) {
+                        return <div key={item.label} className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-slate-400">
+                          <span>{item.label}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">Soon</span>
+                        </div>
+                      }
+                      return <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`block rounded-lg px-3 py-2.5 text-sm font-medium ${active ? 'bg-blue-600/10 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>{item.label}</Link>
                     })}
                   </div>
                 </div>
