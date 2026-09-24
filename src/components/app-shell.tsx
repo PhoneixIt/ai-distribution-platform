@@ -157,7 +157,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
     return <div className="grid min-h-screen place-items-center bg-[#f7f9fc] px-5 text-slate-900">
       <div className="max-w-md text-center">
         <div className="text-sm text-slate-500">{shellError ? 'Your workspace could not load.' : 'Loading workspace…'}</div>
-        {shellError && <><p className="mt-2 text-xs text-red-300">{shellError}</p><button onClick={() => window.location.reload()} className="mt-4 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Try again</button></>}
+        {shellError && <><p className="mt-2 text-xs text-red-700">{shellError}</p><button onClick={() => window.location.reload()} className="mt-4 rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700">Try again</button></>}
       </div>
     </div>
   }
@@ -219,7 +219,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
             </div>
             <div className="absolute bottom-4 left-4 right-4 text-[11px] text-slate-500">{effectiveTitle || 'Workspace'}</div>
           </aside>
-          {mobileOpen && <button className="fixed inset-0 top-[61px] z-20 bg-slate-900/20 lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation" />}
+          {mobileOpen && <button className="fixed inset-0 top-[61px] z-20 bg-slate-900/10 lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation" />}
           <main className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
             {(effectiveTitle || subtitle) && (
               <div className="mb-7">
