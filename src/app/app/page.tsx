@@ -11,10 +11,10 @@ type Recent = { id: string; title: string; status: string; stage: string; estima
 type DashboardData = { stats: Stats; recent: Recent[] }
 
 const nodes = [
-  ['Vendors', 'Supply & technology', '/vendors'],
-  ['Distributors', 'Market reach', '/distributors'],
-  ['Partners', 'Delivery capability', '/partners'],
-  ['Customers', 'Demand & requirements', '/customers'],
+  ['Vendors', 'Products & technology', '/vendors'],
+  ['Distributors', 'Channel reach', '/distributors'],
+  ['Partners', 'Partner network', '/partners'],
+  ['Customers', 'Customer demand', '/customers'],
 ]
 
 export default function AppDashboard() {
@@ -27,7 +27,7 @@ export default function AppDashboard() {
   const { stats, recent } = data
 
   return (
-    <AppShell title="Ecosystem overview" subtitle="Your role-focused workspace for ecosystem activity and shared AI-assisted work.">
+    <AppShell title="Ecosystem overview" subtitle="Your role-focused PortAi workspace for finding, connecting and growing through the technology ecosystem.">
       <DashboardLoader onData={handleData} onError={handleError} />
       {error && <div className="mb-6 rounded-2xl border border-red-900/60 bg-red-950/20 p-4 text-sm text-red-300">{error}</div>}
 
@@ -55,8 +55,8 @@ export default function AppDashboard() {
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">AI workforce</p>
-          <h2 className="mt-2 text-xl font-semibold">Specialists behind the ecosystem.</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">Market intelligence, partner, vendor, sales, commercial and operations capabilities can coordinate around the same objective.</p>
+          <h2 className="mt-2 text-xl font-semibold">AI working behind the scenes.</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">PortAi coordinates research, matching, relationships and next actions behind one simple workspace.</p>
           <Link href="/workforce" className="mt-5 inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold hover:bg-blue-500">Run AI workforce</Link>
         </div>
       </section>
@@ -159,7 +159,7 @@ function DashboardHero() {
               </Link>
             ))}
           </div>
-          <div className="my-4 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>shared intelligence</span><span className="h-px flex-1 bg-slate-800" /></div>
+          <div className="my-4 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>PortAi ecosystem</span><span className="h-px flex-1 bg-slate-800" /></div>
           <div className="rounded-2xl border border-blue-900/50 bg-blue-950/20 p-4 text-center">
             <p className="text-sm font-semibold text-blue-200">Discover → Research → Verify → Match → Engage</p>
             <p className="mt-1 text-xs text-slate-500">The workspace adapts to your role. The AI operating layer stays shared.</p>
