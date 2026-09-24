@@ -11,7 +11,7 @@ type WorkspaceProfile = ReturnType<typeof getOrganizationProfile> & {
   organizationType: string
   organizationRoles: string[]
 }
-type NavigationItem = { href: string; label: string; icon: string }\ntype WorkspaceStatusResponse = {
+type WorkspaceStatusResponse = {
   status: 'new' | 'needs_setup' | 'configured'
   workspace: { organization_type: string | null; organization_roles: string[] | null } | null
   error?: string
@@ -26,66 +26,52 @@ export function useWorkspaceRole() {
 }
 
 const ecosystemItems = [
-  { href: '/partners', label: 'Partners', icon: 'P' },
-  { href: '/vendors', label: 'Vendors', icon: 'V' },
-  { href: '/distributors', label: 'Distributors', icon: 'D' },
-  { href: '/customers', label: 'Customers', icon: 'C' },
-  { href: '/products', label: 'Products & solutions', icon: 'S' },
-]
-
-const commercialItems = [
-  { href: '/opportunities', label: 'Opportunities', icon: 'O' },
-  { href: '/engagements', label: 'Engagements', icon: 'E' },
-  { href: '/pricing', label: 'Pricing & economics', icon: '$' },
+  { href: '/partners', label: 'Partners' },
+  { href: '/vendors', label: 'Vendors' },
+  { href: '/distributors', label: 'Distributors' },
+  { href: '/customers', label: 'Customers' },
+  { href: '/products', label: 'Products & solutions' },
+  { href: '/opportunities', label: 'Opportunities' },
+  { href: '/engagements', label: 'Engagements' },
 ]
 
 const rolePriorities: Record<WorkspaceRole, string[]> = {
-  vendor: ['/partners', '/distributors', '/products', '/customers', '/opportunities', '/engagements'],
-  distributor: ['/vendors', '/partners', '/customers', '/products', '/opportunities', '/engagements'],
-  partner: ['/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
-  customer: ['/vendors', '/distributors', '/partners', '/products', '/opportunities', '/engagements'],
+  vendor: ['/partners', '/distributors', '/customers', '/products', '/opportunities', '/engagements', '/vendors'],
+  distributor: ['/vendors', '/partners', '/customers', '/products', '/opportunities', '/engagements', '/distributors'],
+  partner: ['/vendors', '/distributors', '/customers', '/opportunities', '/engagements', '/partners', '/products'],
+  customer: ['/vendors', '/distributors', '/partners', '/opportunities', '/engagements', '/products', '/customers'],
   other: ['/partners', '/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
   unconfigured: ['/partners', '/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
 }
 
-
 function getNavigation(profile: WorkspaceProfile) {
   const priority = rolePriorities[profile.primaryType]
-  const orderedEcosystem = [...ecosystemItems].sort((left, right) => priority.indexOf(left.href) - priority.indexOf(right.href))
-  const orderedCommercial = [...commercialItems].sort((left, right) => priority.indexOf(left.href) - priority.indexOf(right.href))
-  const dashboardLabel = profile.primaryType === 'other' ? 'Workspace dashboard' : profile.label + ' dashboard'
+  const orderedItems = [...ecosystemItems].sort((left, right) => priority.indexOf(left.href) - priority.indexOf(right.href))
+  const dashboardLabel = profile.primaryType === 'other' ? 'Workspace dashboard' : `${profile.label} dashboard`
 
   return [
     {
-      label: 'Home',
-      items: [{ href: '/app', label: dashboardLabel, icon: '⌂' }],
+      label: `${profile.label} workspace`,
+      items: [{ href: '/app', label: dashboardLabel }, ...orderedItems],
     },
     {
-      label: 'Plan & intelligence',
+      label: 'Shared AI operating layer',
       items: [
-        { href: '/workflow', label: 'Missions & workflow', icon: 'M' },
-        { href: '/discovery', label: 'Discover ecosystem', icon: '⌕' },
-        { href: '/matches', label: 'AI matching', icon: '✦' },
-        { href: '/workforce', label: 'AI Workforce', icon: 'AI' },
+        { href: '/workflow', label: 'Missions & workflow' },
+        { href: '/workforce', label: 'AI Workforce' },
+        { href: '/discovery', label: 'Discover ecosystem' },
+        { href: '/matches', label: 'AI matching' },
       ],
-    },
-    {
-      label: 'Ecosystem',
-      items: orderedEcosystem,
-    },
-    {
-      label: 'Revenue & relationships',
-      items: orderedCommercial,
     },
     {
       label: 'Administration',
       items: [
-        { href: '/settings', label: 'Settings', icon: '⚙' },
+        { href: '/pricing', label: 'Plans & usage' },
+        { href: '/settings', label: 'Settings' },
       ],
     },
   ]
 }
-
 
 export default function AppShell({ children, title, subtitle }: AppShellProps) {
   const router = useRouter()
@@ -204,7 +190,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
                   <div className="mt-2 space-y-1">
                     {group.items.map(item => {
                       const active = pathname === item.href || (item.href !== '/app' && pathname.startsWith(`${item.href}/`))
-                      return <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${active ? 'bg-blue-600/15 text-blue-300' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}><span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-slate-800 bg-slate-950 text-[10px] font-bold text-slate-500">{item.icon}</span><span>{item.label}</span></Link>
+                      return <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`block rounded-lg px-3 py-2.5 text-sm font-medium ${active ? 'bg-blue-600/15 text-blue-300' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}>{item.label}</Link>
                     })}
                   </div>
                 </div>
