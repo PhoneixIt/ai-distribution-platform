@@ -2,27 +2,31 @@ import { NextResponse } from 'next/server'
 import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
 import { createMissionDossierRecord, getDiscoveryMissionStage } from '@/lib/missions/dossiers'
+import { parseDiscoveryIntent } from '@/lib/missions/discovery-intent'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 
 const MAX_CANDIDATES = 100
 
 function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDiscoveryRequest {
+  const objective = String(input.objective || '').trim()
+  const inferred = parseDiscoveryIntent(objective)
   const partnerTypes = Array.isArray(input.partnerTypes)
     ? input.partnerTypes.map((value) => String(value).trim()).filter(Boolean)
     : []
 
   return {
-    country: String(input.country || '').trim(),
+    objective,
+    country: String(input.country || '').trim() || inferred.country || '',
     market: input.market ? String(input.market).trim() : undefined,
-    partnerTypes,
-    technologyFocus: String(input.technologyFocus || '').trim(),
+    partnerTypes: partnerTypes.length ? partnerTypes : inferred.partnerTypes,
+    technologyFocus: String(input.technologyFocus || '').trim() || inferred.technologyFocus || '',
     industry: input.industry ? String(input.industry).trim() : undefined,
-    customerSegment: input.customerSegment ? String(input.customerSegment).trim() : undefined,
+    customerSegment: input.customerSegment ? String(input.customerSegment).trim() : inferred.customerSegment,
     serviceOrCapability: input.serviceOrCapability ? String(input.serviceOrCapability).trim() : undefined,
     vendorPartnership: input.vendorPartnership ? String(input.vendorPartnership).trim() : undefined,
     certification: input.certification ? String(input.certification).trim() : undefined,
     companySize: input.companySize ? String(input.companySize).trim() : undefined,
-    desiredCandidateCount: Math.min(MAX_CANDIDATES, Math.max(1, Number(input.desiredCandidateCount) || 10)),
+    desiredCandidateCount: Math.min(MAX_CANDIDATES, Math.max(1, Number(input.desiredCandidateCount) || inferred.desiredCandidateCount || 10)),
   }
 }
 
@@ -45,8 +49,11 @@ export async function POST(request: Request) {
 
   const missionId = typeof (input as Record<string, unknown>).missionId === 'string' ? String((input as Record<string, unknown>).missionId).trim() : ''
   const discoveryRequest = normalizeRequest(input)
-  if (!discoveryRequest.country || !discoveryRequest.technologyFocus) return NextResponse.json({ error: 'Country and technology focus are required.' }, { status: 400 })
-  if (!discoveryRequest.partnerTypes.length) return NextResponse.json({ error: 'At least one partner type is required.' }, { status: 400 })
+  if (!discoveryRequest.country || !discoveryRequest.technologyFocus || !discoveryRequest.partnerTypes.length) {
+    return NextResponse.json({
+      error: 'Discovery needs a target country, technology focus, and at least one partner type. Add them to the objective or enter them in the filters.',
+    }, { status: 400 })
+  }
 
   let mission: { id: string; org_id: string } | null = null
   if (missionId) {
@@ -214,7 +221,7 @@ export async function POST(request: Request) {
       const missionFailureUpdate = await supabase.from('missions').update({ status: 'failed', current_stage: 'failed', error_message: message, discovery_run_id: run.id }).eq('id', mission.id)
       if (missionFailureUpdate.error) console.error('Failed to mark mission as failed.', { missionId: mission.id, error: missionFailureUpdate.error })
     }
-    return NextResponse.json({ runId: run.id, error: message }, { status: 500 })
+    return NextResponse.json({ runId: run.id, missionStage: mission ? 'failed' : null, error: message }, { status: 500 })
   }
 }
 

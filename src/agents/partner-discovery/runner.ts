@@ -68,6 +68,12 @@ function reportCandidate(
   }
 }
 
+export function countFullyResearchedCandidates(
+  candidates: Pick<PartnerDiscoveryReportCandidate, 'candidate'>[]
+) {
+  return candidates.filter((item) => item.candidate.researchStatus === 'researched').length
+}
+
 function markResearchFailure(candidate: PartnerCandidate, error: unknown) {
   const message = error instanceof Error ? error.message : 'Unknown research error.'
 
@@ -147,9 +153,7 @@ export async function runPartnerDiscovery(
     request,
     searchQueries: discovery.searchQueries,
     candidatesDiscovered: discovery.candidates.length,
-    candidatesResearched: reportCandidates.filter(
-      (item) => item.candidate.researchStatus !== 'unresearched'
-    ).length,
+    candidatesResearched: countFullyResearchedCandidates(reportCandidates),
     candidatesQualified: finalRankedCandidates.filter(
       (item) => item.qualification.status === 'qualified'
     ),
