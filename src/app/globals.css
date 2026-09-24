@@ -17,9 +17,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-html {
-  background: var(--background);
-}
+html { background: var(--background); }
 
 body {
   background:
@@ -38,22 +36,19 @@ body {
   color: #0f172a;
 }
 
-/* PortAi light/futuristic workspace foundation.
-   Existing screens still use legacy dark utility classes; these compatibility
-   overrides keep the product visually coherent while those screens are migrated. */
+/* Compatibility layer while legacy dark screens are migrated to the PortAi design system. */
 .bg-slate-950 { background-color: #f8fafc !important; }
 .bg-slate-900 { background-color: #ffffff !important; }
 .bg-slate-900\/60 { background-color: rgba(255,255,255,.86) !important; }
 .bg-slate-900\/70 { background-color: rgba(255,255,255,.92) !important; }
 .bg-slate-950\/95 { background-color: rgba(248,250,252,.94) !important; }
 .border-slate-800, .border-slate-800\/90, .border-slate-700 { border-color: #e2e8f0 !important; }
-.text-slate-400 { color: #64748b !important; }
-.text-slate-500 { color: #64748b !important; }
+.text-slate-400, .text-slate-500 { color: #64748b !important; }
 .text-slate-600 { color: #94a3b8 !important; }
 .text-slate-300 { color: #334155 !important; }
 .text-white { color: #0f172a !important; }
-.hover\\:bg-slate-900:hover { background-color: #f1f5f9 !important; }
-.hover\\:text-white:hover { color: #0f172a !important; }
+.hover\:bg-slate-900:hover { background-color: #f1f5f9 !important; }
+.hover\:text-white:hover { color: #0f172a !important; }
 .bg-blue-600 { background: linear-gradient(135deg, #2563eb, #4f46e5) !important; }
-.hover\\:bg-blue-500:hover { background: linear-gradient(135deg, #1d4ed8, #4338ca) !important; }
+.hover\:bg-blue-500:hover { background: linear-gradient(135deg, #1d4ed8, #4338ca) !important; }
 .bg-blue-600.text-white, .bg-blue-600 .text-white { color: #ffffff !important; }
