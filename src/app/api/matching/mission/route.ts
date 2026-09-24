@@ -132,7 +132,8 @@ async function getWorkspace() {
 
 export async function GET() {
   const { supabase, orgId, response } = await getWorkspace()
-  if (response || !supabase || !orgId) return response
+  if (response) return response
+  if (!supabase || !orgId) return NextResponse.json({ error: 'Workspace is unavailable.' }, { status: 500 })
 
   const { data, error } = await supabase
     .from('missions')
