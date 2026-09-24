@@ -111,7 +111,12 @@ export async function GET(_request: Request, context: Context) {
   const { supabase, user, error: authError } = await getAuthenticatedServerClient()
   if (authError || !user || user.is_anonymous) return NextResponse.json({ error: authError?.message || 'Authentication required.' }, { status: 401 })
   const { id } = await context.params
-  const result = await supabase.from('mission_outreach_drafts').select('*,mission_approvals(*)').eq('mission_id', id).order('created_at')
+  const [result, dossierResult] = await Promise.all([
+    supabase.from('mission_outreach_drafts').select('*,mission_approvals(*)').eq('mission_id', id).order('created_at'),
+    supabase.from('mission_dossiers').select('*').eq('mission_id', id).order('created_at'),
+  ])
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 })
-  return NextResponse.json({ drafts: result.data || [] })
+  if (dossierResult.error) return NextResponse.json({ error: dossierResult.error.message }, { status: 500 })
+  return NextResponse.json({ drafts: result.data || [], dossiers: dossierResult.data || [] })
 }
+
