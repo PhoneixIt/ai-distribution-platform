@@ -1,4 +1,5 @@
 export type PartnerDiscoveryRequest = {
+  objective?: string
   country: string
   market?: string
   partnerTypes: string[]
