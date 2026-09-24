@@ -1,4 +1,4 @@
-import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
+import AppShell from '@/components/app-shell'
 import { PartnerDirectory } from '@/components/partners/PartnerDirectory'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 import { getPartners } from '@/lib/supabase/services'
@@ -6,7 +6,7 @@ import type { PartnerRecord } from '@/lib/supabase/services'
 
 export const metadata = {
   title: 'Partners | PortAi',
-  description: 'Browse and manage channel partners in your directory',
+  description: 'Find, review and manage channel partners in your PortAi ecosystem.',
 }
 
 export default async function PartnersPage() {
@@ -23,8 +23,11 @@ export default async function PartnersPage() {
   }
 
   return (
-    <AuthenticatedLayout>
+    <AppShell
+      title="Partners"
+      subtitle="Find, review and grow the relationships that move technology to market."
+    >
       <PartnerDirectory initialPartners={loadError ? [] : partners} error={loadError || undefined} />
-    </AuthenticatedLayout>
+    </AppShell>
   )
 }
