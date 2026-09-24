@@ -7,9 +7,6 @@ import { MOCK_CANDIDATES } from './__fixtures__/mock-candidates'
 import type { PartnerCandidate, PartnerDiscoveryAgent, PartnerDiscoveryDependencies, PartnerDiscoveryRequest, PartnerDiscoveryResult } from './types'
 
 function validateRequest(request: PartnerDiscoveryRequest): void {
-  if (!request.country.trim()) throw new Error('Partner discovery requires a country.')
-  if (!request.technologyFocus.trim()) throw new Error('Partner discovery requires a technology focus.')
-  if (request.partnerTypes.length === 0) throw new Error('Partner discovery requires at least one partner type.')
   if (!Number.isInteger(request.desiredCandidateCount) || request.desiredCandidateCount < 1) {
     throw new Error('Desired candidate count must be a positive integer.')
   }
