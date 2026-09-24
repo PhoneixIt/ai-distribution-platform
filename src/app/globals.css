@@ -1,8 +1,59 @@
 @import "tailwindcss";
 
-:root { --background: #020617; --foreground: #f8fafc; }
-@theme inline { --color-background: var(--background); --color-foreground: var(--foreground); --font-sans: var(--font-geist-sans); --font-mono: var(--font-geist-mono); }
-html { background: #020617; }
-body { background: #020617; color: #f8fafc; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif; }
+:root {
+  --background: #f7f9fc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --border: #e2e8f0;
+  --primary: #2563eb;
+  --accent: #7c3aed;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background:
+    radial-gradient(circle at 85% -10%, rgba(124, 58, 237, .08), transparent 28rem),
+    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, .07), transparent 24rem),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
 * { box-sizing: border-box; }
-::selection { background: rgba(37, 99, 235, .35); color: white; }
+
+::selection {
+  background: rgba(37, 99, 235, .18);
+  color: #0f172a;
+}
+
+/* PortAi light/futuristic workspace foundation.
+   Existing screens still use legacy dark utility classes; these compatibility
+   overrides keep the product visually coherent while those screens are migrated. */
+.bg-slate-950 { background-color: #f8fafc !important; }
+.bg-slate-900 { background-color: #ffffff !important; }
+.bg-slate-900\/60 { background-color: rgba(255,255,255,.86) !important; }
+.bg-slate-900\/70 { background-color: rgba(255,255,255,.92) !important; }
+.bg-slate-950\/95 { background-color: rgba(248,250,252,.94) !important; }
+.border-slate-800, .border-slate-800\/90, .border-slate-700 { border-color: #e2e8f0 !important; }
+.text-slate-400 { color: #64748b !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-slate-600 { color: #94a3b8 !important; }
+.text-slate-300 { color: #334155 !important; }
+.text-white { color: #0f172a !important; }
+.hover\\:bg-slate-900:hover { background-color: #f1f5f9 !important; }
+.hover\\:text-white:hover { color: #0f172a !important; }
+.bg-blue-600 { background: linear-gradient(135deg, #2563eb, #4f46e5) !important; }
+.hover\\:bg-blue-500:hover { background: linear-gradient(135deg, #1d4ed8, #4338ca) !important; }
+.bg-blue-600.text-white, .bg-blue-600 .text-white { color: #ffffff !important; }
