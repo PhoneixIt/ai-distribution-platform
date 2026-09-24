@@ -203,12 +203,15 @@ export default function DiscoveryPage() {
             </div>
 
             <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">Qualified ecosystem candidates</h2>
                   <p className="mt-1 text-sm text-slate-500">Candidates are ranked by current fit signals. Open a result to inspect evidence, gaps and qualification details before adding it to the shared network.</p>
                 </div>
-                <span className="text-sm text-slate-500">{report.finalRankedCandidates.length} results</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-slate-500">{report.finalRankedCandidates.length} results</span>
+                  {missionId ? <Link href={`/missions/${missionId}`} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-blue-500">Open mission</Link> : null}
+                </div>
               </div>
             </div>
 
