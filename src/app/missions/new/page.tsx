@@ -26,10 +26,6 @@ const presets = [
 export default function NewMissionPage() {
   const router = useRouter()
   const [objective, setObjective] = useState('')
-  useEffect(() => {
-    const value = new URLSearchParams(window.location.search).get('objective')
-    if (value) setObjective(value)
-  }, [])
   const [vendorName, setVendorName] = useState('')
   const [productName, setProductName] = useState('')
   const [technologyFocus, setTechnologyFocus] = useState('')
