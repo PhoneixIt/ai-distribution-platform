@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import AppShell from '@/components/app-shell'
 
 const presets = [
@@ -25,8 +25,11 @@ const presets = [
 
 export default function NewMissionPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [objective, setObjective] = useState(() => searchParams.get('objective') || '')
+  const [objective, setObjective] = useState('')
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get('objective')
+    if (value) setObjective(value)
+  }, [])
   const [vendorName, setVendorName] = useState('')
   const [productName, setProductName] = useState('')
   const [technologyFocus, setTechnologyFocus] = useState('')
