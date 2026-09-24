@@ -1,8 +1,50 @@
 @import "tailwindcss";
 
-:root { --background: #f7f9fc; --foreground: #0f172a; --surface: #ffffff; --surface-muted: #f1f5f9; --border: #e2e8f0; --primary: #2563eb; --accent: #7c3aed; }
-@theme inline { --color-background: var(--background); --color-foreground: var(--foreground); --font-sans: var(--font-geist-sans); --font-mono: var(--font-geist-mono); }
+:root {
+  --background: #f7f9fc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --border: #e2e8f0;
+  --primary: #2563eb;
+  --accent: #7c3aed;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 html { background: #f7f9fc; color-scheme: light; }
 body { background: #f7f9fc; color: #0f172a; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif; }
 * { box-sizing: border-box; }
-::selection { background: rgba(37, 99, 235, .35); color: white; }
+::selection { background: rgba(37, 99, 235, .22); color: #0f172a; }
+
+/* Shared PortAi light visual foundation.
+   Compatibility rules keep legacy screens coherent while they migrate
+   to the same component-level design language. */
+[class*="bg-slate-950"] { background-color: #f7f9fc !important; }
+[class*="bg-slate-900"] { background-color: #ffffff !important; }
+[class*="bg-slate-800"] { background-color: #f1f5f9 !important; }
+[class*="border-slate-900"],
+[class*="border-slate-800"],
+[class*="border-slate-700"] { border-color: #e2e8f0 !important; }
+[class*="text-white"] { color: #0f172a !important; }
+[class*="text-slate-200"] { color: #334155 !important; }
+[class*="text-slate-300"] { color: #475569 !important; }
+[class*="text-slate-400"],
+[class*="text-slate-500"] { color: #64748b !important; }
+[class*="text-slate-600"] { color: #94a3b8 !important; }
+[class*="text-slate-700"] { color: #334155 !important; }
+
+input, textarea, select { color: #0f172a; }
+input::placeholder, textarea::placeholder { color: #94a3b8; }
+button, a { -webkit-tap-highlight-color: transparent; }
+
+.portai-surface {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+}
