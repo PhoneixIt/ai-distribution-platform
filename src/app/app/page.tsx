@@ -6,7 +6,7 @@ import AppShell, { useWorkspaceRole } from '@/components/app-shell'
 import { getPartnerSubtypeLabel, type WorkspaceRole } from '@/lib/organization-roles'
 import DashboardLoader from './dashboard-loader'
 
-type Stats = { partners: number; vendors: number; distributors: number; customers: number; products: number; opportunities: number; matches: number }
+type Stats = { partners: number; vendors: number; distributors: number; customers: number; opportunities: number; matches: number }
 type Recent = { id: string; title: string; status: string; stage: string; estimated_value: number | null }
 type DashboardData = { stats: Stats; recent: Recent[] }
 
@@ -18,7 +18,7 @@ const nodes = [
 ]
 
 export default function AppDashboard() {
-  const [data, setData] = useState<DashboardData>({ stats: { partners: 0, vendors: 0, distributors: 0, customers: 0, products: 0, opportunities: 0, matches: 0 }, recent: [] })
+  const [data, setData] = useState<DashboardData>({ stats: { partners: 0, vendors: 0, distributors: 0, customers: 0, opportunities: 0, matches: 0 }, recent: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -33,7 +33,6 @@ export default function AppDashboard() {
 
       <DashboardHero />
       <DashboardStats stats={stats} loading={loading} />
-      <QuickActions stats={stats} />
 
       <section className="mt-7 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -173,121 +172,48 @@ function DashboardHero() {
 
 function DashboardStats({ stats, loading }: { stats: Stats; loading: boolean }) {
   const profile = useWorkspaceRole()
-  const roleMetrics: Record<WorkspaceRole, Array<[string, number, string]>> = {
-    vendor: [
-      ['Partners', stats.partners, '/partners'],
-      ['Distributors', stats.distributors, '/distributors'],
-      ['Products', stats.products, '/products'],
-      ['Customer demand', stats.customers, '/customers'],
-      ['Opportunities', stats.opportunities, '/opportunities'],
-      ['AI matches', stats.matches, '/matches'],
-    ],
-    distributor: [
-      ['Vendors', stats.vendors, '/vendors'],
-      ['Channel partners', stats.partners, '/partners'],
-      ['Customers', stats.customers, '/customers'],
-      ['Products', stats.vendors, '/products'],
-      ['Opportunities', stats.opportunities, '/opportunities'],
-      ['AI matches', stats.matches, '/matches'],
-    ],
-    partner: [
-      ['Vendor relationships', stats.vendors, '/vendors'],
-      ['Distributors', stats.distributors, '/distributors'],
-      ['Customers', stats.customers, '/customers'],
-      ['Products', stats.vendors, '/products'],
-      ['Opportunities', stats.opportunities, '/opportunities'],
-      ['AI matches', stats.matches, '/matches'],
-    ],
-    customer: [
-      ['Vendor options', stats.vendors, '/vendors'],
-      ['Distributor options', stats.distributors, '/distributors'],
-      ['Partners', stats.partners, '/partners'],
-      ['Solutions', stats.products, '/products'],
-      ['Opportunities', stats.opportunities, '/opportunities'],
-      ['AI matches', stats.matches, '/matches'],
-    ],
-    other: [
-      ['Partners', stats.partners, '/partners'],
-      ['Vendors', stats.vendors, '/vendors'],
-      ['Distributors', stats.distributors, '/distributors'],
-      ['Customers', stats.customers, '/customers'],
-      ['Opportunities', stats.opportunities, '/opportunities'],
-      ['AI matches', stats.matches, '/matches'],
-    ],
-    unconfigured: [
-      ['Partners', stats.partners, '/partners'],
-      ['Vendors', stats.vendors, '/vendors'],
-      ['Distributors', stats.distributors, '/distributors'],
-      ['Customers', stats.customers, '/customers'],
-      ['Opportunities', stats.opportunities, '/opportunities'],
-      ['AI matches', stats.matches, '/matches'],
-    ],
+  const partnerLabel: Record<WorkspaceRole, string> = {
+    vendor: 'Partner relationships',
+    distributor: 'Channel partners',
+    partner: 'Partner relationships',
+    customer: 'Service partners',
+    other: 'Partner relationships',
+    unconfigured: 'Partner relationships',
   }
+  const vendorLabel: Record<WorkspaceRole, string> = {
+    vendor: 'Vendor connections',
+    distributor: 'Vendor relationships',
+    partner: 'Vendor relationships',
+    customer: 'Vendor options',
+    other: 'Vendor relationships',
+    unconfigured: 'Vendor relationships',
+  }
+  const distributorLabel: Record<WorkspaceRole, string> = {
+    vendor: 'Distributor relationships',
+    distributor: 'Distributor connection',
+    partner: 'Distributor relationships',
+    customer: 'Distributor options',
+    other: 'Distributor relationships',
+    unconfigured: 'Distributor relationships',
+  }
+  const metrics: Array<[string, number, string]> = [
+    [partnerLabel[profile.primaryType], stats.partners, '/partners'],
+    [vendorLabel[profile.primaryType], stats.vendors, '/vendors'],
+    [distributorLabel[profile.primaryType], stats.distributors, '/distributors'],
+    ['Customers', stats.customers, '/customers'],
+    ['Opportunities', stats.opportunities, '/opportunities'],
+    ['Matches', stats.matches, '/matches'],
+  ]
 
   return (
     <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-      {roleMetrics[profile.primaryType].map(([label, value, href]) => (
-        <Link key={label} href={href} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition hover:border-blue-700/60 hover:bg-slate-900">
+      {metrics.map(([label, value, href]) => (
+        <Link key={label} href={href} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition hover:border-slate-700 hover:bg-slate-900">
           <p className="text-xs text-slate-500">{label}</p>
           <p className="mt-2 text-2xl font-semibold tracking-tight">{loading ? '—' : value}</p>
-          <p className="mt-1 text-[11px] text-blue-400/70">Open workspace →</p>
+          <p className="mt-1 text-[11px] text-slate-600">Open →</p>
         </Link>
       ))}
-    </section>
-  )
-}
-
-function QuickActions({ stats }: { stats: Stats }) {
-  const profile = useWorkspaceRole()
-  const actions: Record<WorkspaceRole, Array<[string, string, string]>> = {
-    vendor: [
-      ['Find partners', 'Discover qualified channel partners for a product or market.', '/discovery'],
-      ['Add a product', 'Put a real solution into the catalog so matching can use it.', '/products/new'],
-      ['Create opportunity', 'Turn customer demand into a trackable channel opportunity.', '/opportunities'],
-    ],
-    distributor: [
-      ['Find vendors', 'Discover technology companies and products to add to your portfolio.', '/discovery'],
-      ['Find partners', 'Build regional reseller and service coverage.', '/partners'],
-      ['Create opportunity', 'Capture customer demand and route it through the ecosystem.', '/opportunities'],
-    ],
-    partner: [
-      ['Find vendors', 'Discover programs and solutions that fit your capabilities.', '/discovery'],
-      ['Explore opportunities', 'Review demand that may fit your services and certifications.', '/opportunities'],
-      ['Find distributors', 'Explore distribution relationships for market reach.', '/distributors'],
-    ],
-    customer: [
-      ['Find a solution', 'Describe the technology need and let PortAi research the ecosystem.', '/discovery'],
-      ['Explore products', 'Browse available technology solutions and capabilities.', '/products'],
-      ['Create opportunity', 'Turn a real technology requirement into a coordinated request.', '/opportunities'],
-    ],
-    other: [
-      ['Start a mission', 'Describe the business outcome PortAi should accomplish.', '/missions/new'],
-      ['Discover ecosystem', 'Search the network using natural language and evidence.', '/discovery'],
-      ['Open opportunities', 'Review demand and commercial activity.', '/opportunities'],
-    ],
-    unconfigured: [
-      ['Start a mission', 'Describe the business outcome PortAi should accomplish.', '/missions/new'],
-      ['Discover ecosystem', 'Search the network using natural language and evidence.', '/discovery'],
-      ['Configure workspace', 'Set your organization role and workspace identity.', '/settings'],
-    ],
-  }
-  return (
-    <section className="mt-6">
-      <div className="mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Next actions</p>
-        <h2 className="mt-1 text-lg font-semibold">Do something useful now</h2>
-      </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        {actions[profile.primaryType].map(([title, copy, href]) => (
-          <Link key={title} href={href} className="group rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-blue-700/60 hover:bg-slate-900/90">
-            <div className="flex items-start justify-between gap-3">
-              <div><h3 className="font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p></div>
-              <span className="text-blue-400 transition group-hover:translate-x-0.5">→</span>
-            </div>
-          </Link>
-        ))}
-      </div>
-      {stats.opportunities === 0 && <p className="mt-3 text-xs text-slate-600">No opportunity pipeline yet. PortAi can create one from a customer need, partner match or mission result.</p>}
     </section>
   )
 }
