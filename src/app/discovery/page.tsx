@@ -41,6 +41,7 @@ type Report = {
 }
 
 export default function DiscoveryPage() {
+  const [objective, setObjective] = useState('')
   const [country, setCountry] = useState('Germany')
   const [technology, setTechnology] = useState('Cybersecurity')
   const [partnerTypes, setPartnerTypes] = useState('MSSP')
@@ -62,12 +63,12 @@ export default function DiscoveryPage() {
     setMissionId(null)
     setMissionStage('defined')
     try {
-      const objective = `Find qualified ${partnerTypes} partners for ${technology} in ${country}${customerSegment ? ` serving ${customerSegment}` : ''}.`
+      const missionObjective = objective.trim() || 'Find qualified ' + partnerTypes + ' partners for ' + technology + ' in ' + country + (customerSegment ? ' serving ' + customerSegment : '') + '.'
       const missionResponse = await fetch('/api/missions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          objective,
+          objective: missionObjective,
           country,
           technologyFocus: technology,
           partnerTypes: partnerTypes.split(',').map((value) => value.trim()).filter(Boolean),
@@ -130,7 +131,7 @@ export default function DiscoveryPage() {
           <div>
             <Link href="/app" className="text-sm text-blue-400 hover:text-blue-300">â† Workspace overview</Link>
             <h1 className="mt-3 text-3xl font-bold">Discover the ecosystem</h1>
-            <p className="mt-2 max-w-3xl text-slate-400">Start with a market, technology and partner objective. PortAi searches broadly, researches candidates, makes evidence visible and ranks channel fit before you add a company to your network.</p>
+            <p className="mt-2 max-w-3xl text-slate-400">Start with what you need in normal language, then add filters if you want more control. PortAi searches broadly, researches candidates, explains the fit and keeps evidence visible.</p>
           </div>
           <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs text-slate-400">
             <span className="font-medium text-slate-300">Mission</span>{missionId ? ` Â· ${missionId.slice(0, 8)}` : ' Â· ready'}
@@ -139,7 +140,12 @@ export default function DiscoveryPage() {
         </div>
 
         <form onSubmit={runDiscovery} className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <label className="block">
+            <span className="text-sm font-medium text-slate-200">What are you trying to find?</span>
+            <textarea value={objective} onChange={(event) => setObjective(event.target.value)} rows={2} placeholder="Example: Find cybersecurity MSPs in Germany that serve mid-market customers and could sell a backup solution." className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none focus:border-blue-500" />
+            <span className="mt-1 block text-xs text-slate-600">Use plain language. The filters below can narrow the search without replacing your objective.</span>
+          </label>
+          <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <label className="text-sm text-slate-300">Country<input value={country} onChange={(event) => setCountry(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-500" /></label>
             <label className="text-sm text-slate-300">Technology<input value={technology} onChange={(event) => setTechnology(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-500" /></label>
             <label className="text-sm text-slate-300">Partner types<input value={partnerTypes} onChange={(event) => setPartnerTypes(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-500" placeholder="MSSP, MSP, Reseller" /></label>
