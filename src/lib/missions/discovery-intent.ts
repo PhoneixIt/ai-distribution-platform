@@ -44,12 +44,12 @@ function cleanCountry(value: string) {
   const kept: string[] = []
 
   for (const token of tokens) {
-    const normalized = token.replace(/[.,!?;:]+$/g, '').toLowerCase()
+    const normalized = token.replace(/[.,!?;:]$/g, '').toLowerCase()
     if (stopWords.has(normalized)) break
     kept.push(token)
   }
 
-  return kept.join(' ').replace(/[.,!?;:]+$/g, '').trim()
+  return kept.join(' ').replace(/[.,!?;:]$/g, '').trim()
 }
 
 function parsePartnerTypes(objective: string) {
