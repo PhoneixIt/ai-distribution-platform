@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import AppShell from '@/components/app-shell'
+import { parseDiscoveryIntent } from '@/lib/missions/discovery-intent'
 
 type Mission = {
   id: string
@@ -91,7 +92,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
           technologyFocus: mission.technology_focus,
           partnerTypes: mission.partner_types,
           customerSegment: mission.customer_segment,
-          desiredCandidateCount: 100,
+          desiredCandidateCount: parseDiscoveryIntent(mission.objective).desiredCandidateCount || mission.candidate_count || 25,
         }),
       })
       const payload = await response.json()
