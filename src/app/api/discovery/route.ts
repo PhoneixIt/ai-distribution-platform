@@ -26,7 +26,7 @@ function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDisco
     vendorPartnership: input.vendorPartnership ? String(input.vendorPartnership).trim() : undefined,
     certification: input.certification ? String(input.certification).trim() : undefined,
     companySize: input.companySize ? String(input.companySize).trim() : undefined,
-    desiredCandidateCount: Math.min(MAX_CANDIDATES, Math.max(1, Number(input.desiredCandidateCount) || inferred.desiredCandidateCount || 10)),
+    desiredCandidateCount: Math.min(MAX_CANDIDATES, Math.max(1, Number(input.desiredCandidateCount) || inferred.desiredCandidateCount || 25)),
   }
 }
 
