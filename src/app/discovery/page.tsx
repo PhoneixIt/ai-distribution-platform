@@ -142,16 +142,16 @@ export default function DiscoveryPage() {
         <form onSubmit={runDiscovery} className="rounded-xl border border-slate-200 bg-white p-6">
           <label className="block">
             <span className="text-sm font-medium text-slate-800">What are you trying to find?</span>
-            <textarea value={objective} onChange={(event) => setObjective(event.target.value)} rows={2} placeholder="Example: Find cybersecurity MSPs in Germany that serve mid-market customers and could sell a backup solution." className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-white outline-none focus:border-blue-500" />
+            <textarea value={objective} onChange={(event) => setObjective(event.target.value)} rows={2} placeholder="Example: Find cybersecurity MSPs in Germany that serve mid-market customers and could sell a backup solution." className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-blue-500" />
             <span className="mt-1 block text-xs text-slate-500">Use plain language. The filters below can narrow the search without replacing your objective.</span>
           </label>
           <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <label className="text-sm text-slate-700">Country<input value={country} onChange={(event) => setCountry(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-white outline-none focus:border-blue-500" /></label>
-            <label className="text-sm text-slate-700">Technology<input value={technology} onChange={(event) => setTechnology(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-white outline-none focus:border-blue-500" /></label>
-            <label className="text-sm text-slate-700">Partner types<input value={partnerTypes} onChange={(event) => setPartnerTypes(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-white outline-none focus:border-blue-500" placeholder="MSSP, MSP, Reseller" /></label>
-            <label className="text-sm text-slate-700">Customer segment<input value={customerSegment} onChange={(event) => setCustomerSegment(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-white outline-none focus:border-blue-500" /></label>
+            <label className="text-sm text-slate-700">Country<input value={country} onChange={(event) => setCountry(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500" /></label>
+            <label className="text-sm text-slate-700">Technology<input value={technology} onChange={(event) => setTechnology(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500" /></label>
+            <label className="text-sm text-slate-700">Partner types<input value={partnerTypes} onChange={(event) => setPartnerTypes(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500" placeholder="MSSP, MSP, Reseller" /></label>
+            <label className="text-sm text-slate-700">Customer segment<input value={customerSegment} onChange={(event) => setCustomerSegment(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500" /></label>
             <label className="text-sm text-slate-700">Results
-              <select value={count} onChange={(event) => setCount(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-white outline-none focus:border-blue-500">
+              <select value={count} onChange={(event) => setCount(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500">
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -161,7 +161,7 @@ export default function DiscoveryPage() {
           </div>
           <div className="mt-4 flex flex-col gap-3 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
             <p>â€œBroadest availableâ€ means as many relevant companies as this discovery run can surface, not a claim that every company in the country exists in the results.</p>
-            <button disabled={loading} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Discovering & researching...' : 'Run ecosystem discovery'}</button>
+            <button disabled={loading} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Discovering & researching...' : 'Run ecosystem discovery'}</button>
           </div>
           {error && <p className="mt-4 rounded-lg border border-red-200 bg-red-950/40 p-3 text-sm text-red-700">{error}</p>}
         </form>
@@ -256,8 +256,8 @@ export default function DiscoveryPage() {
                       <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="text-xs text-slate-500">Research: {item.candidate.researchStatus} Â· Evidence confidence: {confidence}%</div>
                         <div className="flex items-center gap-3">
-                          <a href={item.candidate.website} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-blue-500 hover:text-white">Visit website</a>
-                          <button onClick={() => promote(item.candidateId)} disabled={!item.candidateId || promoting === item.candidateId || isPromoted} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">
+                          <a href={item.candidate.website} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-blue-500 hover:text-slate-900">Visit website</a>
+                          <button onClick={() => promote(item.candidateId)} disabled={!item.candidateId || promoting === item.candidateId || isPromoted} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">
                             {isPromoted ? 'Added to network' : promoting === item.candidateId ? 'Saving...' : 'Add to network'}
                           </button>
                         </div>
