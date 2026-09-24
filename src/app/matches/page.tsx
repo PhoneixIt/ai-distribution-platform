@@ -72,6 +72,8 @@ export default function MatchesPage() {
     }
   }
 
+  // Data-fetching effect: state updates happen after the async request resolves.
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => {
     void loadMissions()
   }, [])
