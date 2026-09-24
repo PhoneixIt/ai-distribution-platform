@@ -11,10 +11,10 @@ type Recent = { id: string; title: string; status: string; stage: string; estima
 type DashboardData = { stats: Stats; recent: Recent[] }
 
 const nodes = [
-  ['Vendors', 'Supply & technology', '/vendors'],
-  ['Distributors', 'Market reach', '/distributors'],
-  ['Partners', 'Delivery capability', '/partners'],
-  ['Customers', 'Demand & requirements', '/customers'],
+  ['Vendors', 'Products & technology', '/vendors'],
+  ['Distributors', 'Channel reach', '/distributors'],
+  ['Partners', 'Partner network', '/partners'],
+  ['Customers', 'Customer demand', '/customers'],
 ]
 
 export default function AppDashboard() {
@@ -27,53 +27,53 @@ export default function AppDashboard() {
   const { stats, recent } = data
 
   return (
-    <AppShell title="Ecosystem overview" subtitle="Your role-focused workspace for ecosystem activity and shared AI-assisted work.">
+    <AppShell title="Ecosystem overview" subtitle="Your role-focused PortAi workspace for finding, connecting and growing through the technology ecosystem.">
       <DashboardLoader onData={handleData} onError={handleError} />
-      {error && <div className="mb-6 rounded-2xl border border-red-900/60 bg-red-950/20 p-4 text-sm text-red-300">{error}</div>}
+      {error && <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
       <DashboardHero />
       <DashboardStats stats={stats} loading={loading} />
 
       <section className="mt-7 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Missions</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Missions</p>
               <h2 className="mt-2 text-xl font-semibold">Work from objectives, not modules.</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">A mission is the unit of work in PortAi. It can start with supply, demand, a market question or a relationship objective and move through the ecosystem.</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">A mission is the unit of work in PortAi. It can start with supply, demand, a market question or a relationship objective and move through the ecosystem.</p>
             </div>
-            <Link href="/workflow" className="shrink-0 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-blue-500">Open missions</Link>
+            <Link href="/workflow" className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-500">Open missions</Link>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {[
               ['Find', 'Discover the right companies, products or capabilities.'],
               ['Connect', 'Match supply, channel capability and demand.'],
               ['Move', 'Prepare next actions and keep approved work moving.'],
-            ].map(([title, copy]) => <div key={title} className="rounded-xl border border-slate-800 bg-slate-950 p-4"><p className="text-sm font-semibold">{title}</p><p className="mt-2 text-xs leading-5 text-slate-500">{copy}</p></div>)}
+            ].map(([title, copy]) => <div key={title} className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold">{title}</p><p className="mt-2 text-xs leading-5 text-slate-500">{copy}</p></div>)}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">AI workforce</p>
-          <h2 className="mt-2 text-xl font-semibold">Specialists behind the ecosystem.</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">Market intelligence, partner, vendor, sales, commercial and operations capabilities can coordinate around the same objective.</p>
-          <Link href="/workforce" className="mt-5 inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold hover:bg-blue-500">Run AI workforce</Link>
+          <h2 className="mt-2 text-xl font-semibold">AI working behind the scenes.</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">PortAi coordinates research, matching, relationships and next actions behind one simple workspace.</p>
+          <Link href="/workforce" className="mt-5 inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Run AI workforce</Link>
         </div>
       </section>
 
-      <section className="mt-7 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+      <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Ecosystem activity</p><h2 className="mt-1 text-lg font-semibold">Opportunities moving through the network</h2></div>
-          <Link href="/opportunities" className="text-sm text-blue-400 hover:text-blue-300">View opportunities →</Link>
+          <Link href="/opportunities" className="text-sm text-blue-700 hover:text-blue-700">View opportunities →</Link>
         </div>
         {recent.length === 0 ? (
-          <div className="mt-5 grid gap-4 rounded-2xl border border-dashed border-slate-800 p-8 text-center md:grid-cols-3 md:text-left">
-            <div><p className="text-sm font-medium text-slate-300">No opportunities yet</p><p className="mt-1 text-xs leading-5 text-slate-600">Opportunities can originate from customer demand, vendor needs or ecosystem matches.</p></div>
-            <Link href="/discovery" className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300 hover:border-blue-500">Start discovering →</Link>
-            <Link href="/opportunities" className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300 hover:border-blue-500">Create an opportunity →</Link>
+          <div className="mt-5 grid gap-4 rounded-2xl border border-dashed border-slate-200 p-8 text-center md:grid-cols-3 md:text-left">
+            <div><p className="text-sm font-medium text-slate-700">No opportunities yet</p><p className="mt-1 text-xs leading-5 text-slate-600">Opportunities can originate from customer demand, vendor needs or ecosystem matches.</p></div>
+            <Link href="/discovery" className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 hover:border-blue-500">Start discovering →</Link>
+            <Link href="/opportunities" className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 hover:border-blue-500">Create an opportunity →</Link>
           </div>
         ) : (
-          <div className="mt-5 divide-y divide-slate-800">{recent.map(item => <div key={item.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-slate-200">{item.title}</p><p className="mt-1 text-xs capitalize text-slate-500">{item.stage.replaceAll('_', ' ')} · {item.status}</p></div><span className="text-sm text-slate-400">{item.estimated_value ? '$' + Number(item.estimated_value).toLocaleString() : 'Value not set'}</span></div>)}</div>
+          <div className="mt-5 divide-y divide-slate-200">{recent.map(item => <div key={item.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-slate-700">{item.title}</p><p className="mt-1 text-xs capitalize text-slate-500">{item.stage.replaceAll('_', ' ')} · {item.status}</p></div><span className="text-sm text-slate-600">{item.estimated_value ? '$' + Number(item.estimated_value).toLocaleString() : 'Value not set'}</span></div>)}</div>
         )}
       </section>
 
@@ -82,7 +82,7 @@ export default function AppDashboard() {
           ['Evidence first', 'Research, facts, gaps and recommendations stay distinguishable so users can understand why a match exists.'],
           ['Human control', 'External actions and important commitments remain subject to the appropriate approval boundary.'],
           ['Network effect', 'Every verified relationship can make future discovery, matching and ecosystem intelligence more useful.'],
-        ].map(([title, copy]) => <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"><h3 className="text-sm font-semibold">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{copy}</p></div>)}
+        ].map(([title, copy]) => <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="text-sm font-semibold">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{copy}</p></div>)}
       </section>
     </AppShell>
   )
@@ -133,35 +133,35 @@ function DashboardHero() {
   const subtypeSummary = profile.partnerRoles.map(getPartnerSubtypeLabel).join(' · ')
 
   return (
-    <section className="rounded-[2rem] border border-blue-900/50 bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-950 p-6 lg:p-8">
+    <section className="rounded-[2rem] border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-violet-50 p-6 lg:p-8">
       <div className="grid gap-8 xl:grid-cols-[1fr_.9fr] xl:items-center">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-900/60 bg-blue-950/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-blue-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-blue-700">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-400" /> {profile.label} workspace
           </div>
           {subtypeSummary && <p className="mt-3 text-xs text-slate-500">Partner capabilities: {subtypeSummary}</p>}
           <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight lg:text-4xl">{copy.headline}</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">{copy.description}</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{copy.description}</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/workflow" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Start a mission</Link>
-            <Link href="/discovery" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-600">{copy.discoveryLabel}</Link>
-            <Link href="/workforce" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-600">Open AI Workforce</Link>
+            <Link href="/workflow" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">Start a mission</Link>
+            <Link href="/discovery" className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:border-slate-600">{copy.discoveryLabel}</Link>
+            <Link href="/workforce" className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:border-slate-600">Open AI Workforce</Link>
           </div>
           <p className="mt-4 text-xs text-slate-600">{copy.example}</p>
         </div>
 
-        <div className="relative rounded-3xl border border-slate-800 bg-slate-950/80 p-5">
+        <div className="relative rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
           <div className="grid grid-cols-2 gap-3">
             {nodes.map(([title, nodeCopy, href]) => (
-              <Link key={title} href={href} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-blue-900/70 hover:bg-slate-900/80">
+              <Link key={title} href={href} className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-blue-900/70 hover:bg-white/80">
                 <p className="text-sm font-semibold">{title}</p>
                 <p className="mt-1 text-xs text-slate-500">{nodeCopy}</p>
               </Link>
             ))}
           </div>
-          <div className="my-4 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>shared intelligence</span><span className="h-px flex-1 bg-slate-800" /></div>
-          <div className="rounded-2xl border border-blue-900/50 bg-blue-950/20 p-4 text-center">
-            <p className="text-sm font-semibold text-blue-200">Discover → Research → Verify → Match → Engage</p>
+          <div className="my-4 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>PortAi ecosystem</span><span className="h-px flex-1 bg-slate-800" /></div>
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center">
+            <p className="text-sm font-semibold text-blue-800">Discover → Research → Verify → Match → Engage</p>
             <p className="mt-1 text-xs text-slate-500">The workspace adapts to your role. The AI operating layer stays shared.</p>
           </div>
         </div>
@@ -208,7 +208,7 @@ function DashboardStats({ stats, loading }: { stats: Stats; loading: boolean }) 
   return (
     <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
       {metrics.map(([label, value, href]) => (
-        <Link key={label} href={href} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition hover:border-slate-700 hover:bg-slate-900">
+        <Link key={label} href={href} className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-200 hover:bg-white">
           <p className="text-xs text-slate-500">{label}</p>
           <p className="mt-2 text-2xl font-semibold tracking-tight">{loading ? '—' : value}</p>
           <p className="mt-1 text-[11px] text-slate-600">Open →</p>
