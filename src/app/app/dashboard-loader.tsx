@@ -34,12 +34,11 @@ export default function DashboardLoader({
 async function loadDashboard() {
   const { supabase, orgId } = await ensureWorkspace()
 
-  const [partners, vendors, distributors, customers, products, opportunities, matches] = await Promise.all([
+  const [partners, vendors, distributors, customers, opportunities, matches] = await Promise.all([
     supabase.from('distributor_partners').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('org_vendors').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('org_distributors').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('customers').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
-    supabase.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('opportunities').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('partner_matches').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
   ])
@@ -49,7 +48,6 @@ async function loadDashboard() {
     ['vendors', vendors.error],
     ['distributors', distributors.error],
     ['customers', customers.error],
-    ['products', products.error],
     ['opportunities', opportunities.error],
     ['partner matches', matches.error],
   ] as const
@@ -72,7 +70,6 @@ async function loadDashboard() {
       vendors: vendors.count ?? 0,
       distributors: distributors.count ?? 0,
       customers: customers.count ?? 0,
-      products: products.count ?? 0,
       opportunities: opportunities.count ?? 0,
       matches: matches.count ?? 0,
     },
