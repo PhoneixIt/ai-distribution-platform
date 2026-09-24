@@ -8,7 +8,7 @@ const resources = [
   ['AI Workforce', 'Explore the specialist workforce and the objective-driven interaction model.', '/ai-workforce'],
   ['Solutions', 'See how the platform maps to distributors, vendors, channel, sales, commercial and operations teams.', '/solutions'],
   ['Partners', 'Explore the partner intelligence and ecosystem operating model.', '/partners'],
-  ['Workspace', 'See the product that exists today and follow the platform as capabilities expand.', '/app'],
+  ['Workspace', 'See the complete product vision, with live workflows and clearly marked capabilities that are still being built.', '/app'],
 ]
 
 export default function ResourcesPage() {
@@ -45,7 +45,7 @@ export default function ResourcesPage() {
           <p className="text-xs uppercase tracking-widest text-blue-400">Product reality</p>
           <h2 className="mt-3 text-3xl font-semibold">Vision outside. Evidence inside.</h2>
           <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-500">
-            The public website communicates the full destination so visitors understand where the platform is going. The application itself should only expose capabilities that are actually implemented, connected and safe to use.
+            The public website communicates the full destination so visitors understand where the platform is going. The product experience shows the complete destination. Live capabilities are usable today; future capabilities are visible but clearly marked so visitors can understand where PortAi is going.
           </p>
         </div>
       </section>
