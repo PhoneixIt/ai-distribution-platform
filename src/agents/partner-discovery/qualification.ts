@@ -350,9 +350,9 @@ export function qualifyCandidate(
 
   // Evaluate all criteria
   const evaluated: EvaluatedCriterion[] = [
-    evaluateCountry(candidate, request),
+    ...(request.country.trim() ? [evaluateCountry(candidate, request)] : []),
     ...(request.partnerTypes.length ? [evaluatePartnerType(candidate, request)] : []),
-    evaluateTechnology(candidate, request),
+    ...(request.technologyFocus.trim() ? [evaluateTechnology(candidate, request)] : []),
   ]
 
   // Add optional criteria
