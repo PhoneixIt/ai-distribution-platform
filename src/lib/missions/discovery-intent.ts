@@ -36,10 +36,20 @@ const knownTechnologyPatterns: Array<{ pattern: RegExp; value: string }> = [
 ]
 
 function cleanCountry(value: string) {
-  return value
-    .replace(/\s+(?:that|who|which|serving|with|where|as|could|would|can|should|and|to|for|selling|targeting)\b[\s\S]*$/i, '')
-    .replace(/[.,!?;:]+$/g, '')
-    .trim()
+  const stopWords = new Set([
+    'that', 'who', 'which', 'serving', 'with', 'where', 'as', 'could',
+    'would', 'can', 'should', 'and', 'to', 'for', 'selling', 'targeting',
+  ])
+  const tokens = value.trim().split(/\s+/)
+  const kept: string[] = []
+
+  for (const token of tokens) {
+    const normalized = token.replace(/[.,!?;:]+$/g, '').toLowerCase()
+    if (stopWords.has(normalized)) break
+    kept.push(token)
+  }
+
+  return kept.join(' ').replace(/[.,!?;:]+$/g, '').trim()
 }
 
 function parsePartnerTypes(objective: string) {
