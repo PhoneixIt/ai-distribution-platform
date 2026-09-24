@@ -64,7 +64,7 @@ export default function DiscoveryPage() {
     ? partnerTypes.split(',').map((value) => value.trim()).filter(Boolean)
     : parsedIntent.partnerTypes
   const resolvedCustomerSegment = customerSegment.trim() || parsedIntent.customerSegment || ''
-  const resolvedCount = Math.min(100, Math.max(1, Number(count) || parsedIntent.desiredCandidateCount || 100))
+  const resolvedCount = Math.min(100, Math.max(1, Number(count) || parsedIntent.desiredCandidateCount || 25))
 
   async function runDiscovery(event: FormEvent) {
     event.preventDefault()
@@ -178,7 +178,7 @@ export default function DiscoveryPage() {
             <label className="text-sm text-slate-700">Customer segment<input value={customerSegment} onChange={(event) => setCustomerSegment(event.target.value)} placeholder={parsedIntent.customerSegment || 'e.g. Mid-market'} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500" /></label>
             <label className="text-sm text-slate-700">Results
               <select value={count} onChange={(event) => setCount(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500">
-                <option value="">Use objective ({parsedIntent.desiredCandidateCount || 100})</option>
+                <option value="">Use objective ({parsedIntent.desiredCandidateCount || 25})</option>
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
