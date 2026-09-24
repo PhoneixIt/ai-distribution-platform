@@ -72,6 +72,38 @@ function parsePartnerTypes(objective: string) {
 }
 
 function parseTechnologyFocus(objective: string, partnerTypes: string[]) {
+  const lower = objective.toLowerCase()
+  const markers = [
+    'specializing in ',
+    'specialising in ',
+    'focused on ',
+    'focus on ',
+    'expertise in ',
+    'experienced in ',
+    'proficient in ',
+  ]
+
+  for (const marker of markers) {
+    const index = lower.indexOf(marker)
+    if (index === -1) continue
+
+    const tail = objective.slice(index + marker.length)
+    const cutPoints = [
+      tail.toLowerCase().indexOf(' in '),
+      tail.toLowerCase().indexOf(' across '),
+      tail.toLowerCase().indexOf(' throughout '),
+      tail.toLowerCase().indexOf(' within '),
+      tail.toLowerCase().indexOf(' for '),
+      tail.toLowerCase().indexOf(' that '),
+      tail.toLowerCase().indexOf(' who '),
+      tail.toLowerCase().indexOf(' which '),
+      tail.search(/[,.!?;:]/),
+    ].filter((point) => point >= 0)
+    const end = cutPoints.length ? Math.min(...cutPoints) : tail.length
+    const phrase = tail.slice(0, end).trim()
+    if (phrase && phrase.length <= 100) return phrase
+  }
+
   const firstPartnerMatch = partnerTypePatterns
     .flatMap(({ pattern }) => [...objective.matchAll(pattern)].map((match) => match.index ?? objective.length))
     .sort((left, right) => left - right)[0]
@@ -79,8 +111,9 @@ function parseTechnologyFocus(objective: string, partnerTypes: string[]) {
   if (firstPartnerMatch !== undefined) {
     const phrase = objective.slice(0, firstPartnerMatch)
       .replace(/^\s*(?:please\s+)?(?:help me\s+)?(?:find|discover|identify|source|search for|look for|recommend|show me)\b/i, '')
-      .replace(/^\s*\d+\s*/, '')
+      .replace(/^\s*(?:up to\s+)?\d+\s*/, '')
       .replace(/\b(?:qualified|relevant|suitable|potential|prospective|top|best|target)\b/gi, ' ')
+      .replace(/\s+/g, ' ')
       .replace(/\b(?:channel|technology|service)\s*$/i, '')
       .replace(/[\s,.;:!?-]+$/g, '')
       .trim()
@@ -88,12 +121,11 @@ function parseTechnologyFocus(objective: string, partnerTypes: string[]) {
     if (phrase && phrase.length <= 80 && !/^(?:partners?|companies|vendors?)$/i.test(phrase)) return phrase
   }
 
-  if (!partnerTypes.length) return undefined
   for (const item of knownTechnologyPatterns) {
     const match = objective.match(item.pattern)
     if (match) return match[0].replace(/\s+/g, ' ').trim() || item.value
   }
-  return undefined
+  return partnerTypes.length ? undefined : undefined
 }
 
 function parseCustomerSegment(objective: string) {
