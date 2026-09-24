@@ -34,6 +34,9 @@ jobs:
       - name: Organization role validation tests
         run: npm run test:organization-roles
 
+      - name: Mission dossier persistence tests
+        run: npm run test:mission-dossiers
+
       - name: Production build
         run: npm run build
         env:
@@ -76,3 +79,4 @@ jobs:
           if [ -f /tmp/ai-distribution-platform.pid ]; then
             kill "$(cat /tmp/ai-distribution-platform.pid)" || true
           fi
+

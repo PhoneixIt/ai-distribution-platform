@@ -95,7 +95,7 @@ export default function DiscoveryPage() {
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Discovery failed.')
       setReport(payload.report as Report)
-      setMissionStage(payload.report?.finalRankedCandidates?.length ? 'dossier_ready' : 'scored')
+      setMissionStage(payload.missionStage || 'scored')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Discovery failed.')
     } finally {
@@ -128,12 +128,12 @@ export default function DiscoveryPage() {
       <div className="mx-auto max-w-7xl px-0 py-0">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <Link href="/app" className="text-sm text-blue-400 hover:text-blue-300">← Workspace overview</Link>
+            <Link href="/app" className="text-sm text-blue-400 hover:text-blue-300">â† Workspace overview</Link>
             <h1 className="mt-3 text-3xl font-bold">Discover the ecosystem</h1>
             <p className="mt-2 max-w-3xl text-slate-400">Start with a market, technology and partner objective. PortAi searches broadly, researches candidates, makes evidence visible and ranks channel fit before you add a company to your network.</p>
           </div>
           <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs text-slate-400">
-            <span className="font-medium text-slate-300">Mission</span>{missionId ? ` · ${missionId.slice(0, 8)}` : ' · ready'}
+            <span className="font-medium text-slate-300">Mission</span>{missionId ? ` Â· ${missionId.slice(0, 8)}` : ' Â· ready'}
             <span className="ml-2 text-blue-400">{missionStage.replaceAll('_', ' ')}</span>
           </div>
         </div>
@@ -149,12 +149,12 @@ export default function DiscoveryPage() {
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
-                <option value="100">100 — broadest available</option>
+                <option value="100">100 â€” broadest available</option>
               </select>
             </label>
           </div>
           <div className="mt-4 flex flex-col gap-3 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
-            <p>“Broadest available” means as many relevant companies as this discovery run can surface, not a claim that every company in the country exists in the results.</p>
+            <p>â€œBroadest availableâ€ means as many relevant companies as this discovery run can surface, not a claim that every company in the country exists in the results.</p>
             <button disabled={loading} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Discovering & researching...' : 'Run ecosystem discovery'}</button>
           </div>
           {error && <p className="mt-4 rounded-lg border border-red-900 bg-red-950/40 p-3 text-sm text-red-300">{error}</p>}
@@ -218,12 +218,12 @@ export default function DiscoveryPage() {
                         <div>
                           <h4 className="text-sm font-semibold text-slate-200">Why it matched</h4>
                           <ul className="mt-2 space-y-2 text-sm text-slate-400">
-                            {(item.qualification.reasons.length ? item.qualification.reasons : ['No additional reason recorded.']).map((reason) => <li key={reason}>• {reason}</li>)}
+                            {(item.qualification.reasons.length ? item.qualification.reasons : ['No additional reason recorded.']).map((reason) => <li key={reason}>â€¢ {reason}</li>)}
                           </ul>
                           {!!item.qualification.concerns.length && (
                             <>
                               <h4 className="mt-5 text-sm font-semibold text-slate-200">Needs verification</h4>
-                              <ul className="mt-2 space-y-2 text-sm text-slate-400">{item.qualification.concerns.map((concern) => <li key={concern}>• {concern}</li>)}</ul>
+                              <ul className="mt-2 space-y-2 text-sm text-slate-400">{item.qualification.concerns.map((concern) => <li key={concern}>â€¢ {concern}</li>)}</ul>
                             </>
                           )}
                         </div>
@@ -248,7 +248,7 @@ export default function DiscoveryPage() {
                       </div>
 
                       <div className="mt-5 flex flex-col gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="text-xs text-slate-500">Research: {item.candidate.researchStatus} · Evidence confidence: {confidence}%</div>
+                        <div className="text-xs text-slate-500">Research: {item.candidate.researchStatus} Â· Evidence confidence: {confidence}%</div>
                         <div className="flex items-center gap-3">
                           <a href={item.candidate.website} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:border-blue-500 hover:text-white">Visit website</a>
                           <button onClick={() => promote(item.candidateId)} disabled={!item.candidateId || promoting === item.candidateId || isPromoted} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">
@@ -262,7 +262,7 @@ export default function DiscoveryPage() {
               })}
             </div>
 
-            {!!report.skippedResults.length && <details className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-5"><summary className="cursor-pointer text-sm font-medium text-slate-300">Search notes ({report.skippedResults.length})</summary><p className="mt-2 text-xs text-slate-500">Duplicates and invalid pages are hidden from the main results so the list stays useful.</p><ul className="mt-3 max-h-72 space-y-1 overflow-auto text-sm text-slate-500">{report.skippedResults.map((item) => <li key={item}>• {item}</li>)}</ul></details>}
+            {!!report.skippedResults.length && <details className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-5"><summary className="cursor-pointer text-sm font-medium text-slate-300">Search notes ({report.skippedResults.length})</summary><p className="mt-2 text-xs text-slate-500">Duplicates and invalid pages are hidden from the main results so the list stays useful.</p><ul className="mt-3 max-h-72 space-y-1 overflow-auto text-sm text-slate-500">{report.skippedResults.map((item) => <li key={item}>â€¢ {item}</li>)}</ul></details>}
           </section>
         )}
       </div>
@@ -274,3 +274,4 @@ function Stat({ label, value }: { label: string; value: number }) { return <div 
 function Score({ label, value }: { label: string; value: number }) { return <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-center"><p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div> }
 function Fact({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border border-slate-800 bg-slate-950 p-3"><p className="text-xs uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-slate-200">{value}</p></div> }
 function Tag({ value }: { value: string }) { return <span className="rounded-full border border-slate-700 bg-slate-950 px-2.5 py-1 text-slate-400">{value}</span> }
+
