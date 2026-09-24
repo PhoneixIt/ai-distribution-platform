@@ -48,7 +48,7 @@ export default function WorkflowPage() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">{step.label}</p>
                 <h3 className="mt-1 text-lg font-semibold">{step.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{step.description}</p>
-                <Link href={step.href} className="mt-5 inline-flex rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-blue-500 hover:text-white">{step.action} →</Link>
+                <Link href={step.href} className="mt-5 inline-flex rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-blue-500 hover:text-slate-900">{step.action} →</Link>
               </div>
             </div>
           </article>
