@@ -20,13 +20,17 @@ export default function WorkflowPage() {
   useEffect(() => { void fetch('/api/missions').then((r) => r.json()).then((data) => setMissions(data.missions || [])).catch(() => {}) }, [])
 
   return (
-    <AppShell title="Missions" subtitle="Turn an ecosystem objective into a connected sequence of discovery, intelligence, matching and action.">
+    <AppShell title="Missions" subtitle="Tell PortAi what you want to accomplish. It turns your objective into evidence-backed discovery, matching and approved action.">
       <section className="rounded-2xl border border-blue-900/50 bg-gradient-to-br from-blue-950/40 to-slate-900 p-6 lg:p-8">
+        <div className="mb-5 rounded-2xl border border-blue-900/40 bg-slate-950/50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Outcome first</p>
+          <p className="mt-1 text-sm text-slate-300">You do not need to understand PortAi&apos;s internal agents or stages. Describe the business result; PortAi handles the workflow underneath.</p>
+        </div>
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">The operating loop</p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl">Discover → Research → Verify → Match → Engage → Learn</h2>
           <p className="mt-3 text-sm leading-6 text-slate-400">Every stage contributes context to the same mission. PortAi keeps evidence, relationships, recommendations and approved actions connected so the work can improve over time.</p>
-          <div className="mt-5"><Link href="/missions/new" className="inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold hover:bg-blue-500">Start a new mission →</Link></div>
+          <div className="mt-5 flex flex-wrap gap-3"><Link href="/missions/new" className="inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold hover:bg-blue-500">Start with an objective →</Link><Link href="/discovery" className="inline-flex rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:border-blue-500">Explore ecosystem search →</Link></div>
         </div>
       </section>
 
