@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import AppShell from '@/components/app-shell'
 
 const presets = [
@@ -25,7 +25,8 @@ const presets = [
 
 export default function NewMissionPage() {
   const router = useRouter()
-  const [objective, setObjective] = useState('')
+  const searchParams = useSearchParams()
+  const [objective, setObjective] = useState(() => searchParams.get('objective') || '')
   const [vendorName, setVendorName] = useState('')
   const [productName, setProductName] = useState('')
   const [technologyFocus, setTechnologyFocus] = useState('')
@@ -77,13 +78,13 @@ export default function NewMissionPage() {
   }
 
   return (
-    <AppShell title="Start a mission" subtitle="Describe the business outcome. PortAi will turn it into a controlled workflow for discovery, research, qualification and approved engagement.">
+    <AppShell title="Start a mission" subtitle="Tell PortAi what you want to accomplish. You can use normal business language — the platform handles the workflow underneath.">
       <div className="mx-auto max-w-4xl">
         <section className="rounded-3xl border border-blue-900/50 bg-gradient-to-br from-blue-950/30 to-slate-900 p-6 lg:p-8">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">Mission brief</p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight">What do you want PortAi to accomplish?</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-400">Start with the outcome in plain language. The optional fields help discovery become more precise, but you do not need to fill everything in.</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight">What should PortAi accomplish for you?</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">Start with the outcome. PortAi can turn a sentence like “Find 20 cybersecurity MSPs in Germany for my product” into discovery, verification, matching and a reviewable shortlist.</p>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
@@ -96,8 +97,8 @@ export default function NewMissionPage() {
 
           <form onSubmit={submit} className="mt-6 space-y-5">
             <label className="block">
-              <span className="text-sm font-medium text-slate-200">Mission objective <span className="text-blue-400">*</span></span>
-              <textarea required maxLength={4000} rows={5} value={objective} onChange={(event) => setObjective(event.target.value)} placeholder="Example: Find 10 qualified cybersecurity MSPs in Germany for a new vendor that serve mid-market customers." className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-blue-500" />
+              <span className="text-sm font-medium text-slate-200">Your objective <span className="text-blue-400">*</span></span>
+              <textarea required maxLength={4000} rows={5} value={objective} onChange={(event) => setObjective(event.target.value)} placeholder="Example: Find 20 qualified cybersecurity MSPs in Germany that could sell my product." className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-blue-500" />
               <span className="mt-1 block text-right text-[11px] text-slate-600">{objective.length}/4000</span>
             </label>
 
@@ -122,7 +123,7 @@ export default function NewMissionPage() {
             {error ? <div className="rounded-xl border border-red-900 bg-red-950/20 p-4 text-sm text-red-300">{error}</div> : null}
 
             <div className="flex flex-col-reverse gap-3 border-t border-slate-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-xl text-xs leading-5 text-slate-500">Creating a mission does not contact anyone or spend Apollo credits. External actions remain behind explicit approval.</p>
+              <p className="max-w-xl text-xs leading-5 text-slate-500">Creating a mission starts the controlled workflow; it does not contact anyone. External communication and consequential actions remain behind explicit approval.</p>
               <button disabled={running || !objective.trim()} className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{running ? 'Creating mission…' : 'Create mission →'}</button>
             </div>
           </form>
