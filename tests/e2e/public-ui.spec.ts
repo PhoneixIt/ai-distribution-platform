@@ -188,7 +188,7 @@ test.describe('role-based signup and workspace setup', () => {
 
       await page.goto('/app')
       await expect(page.getByRole('heading', { name: new RegExp(`${choice.label} workspace`, 'i') })).toBeVisible()
-      for (const label of ['Missions & workflow', 'AI Workforce', 'Discover ecosystem', 'AI matching', 'Settings']) {
+      for (const label of ['Missions', 'AI workforce', 'Discover', 'AI matching', 'Settings']) {
         await expect(page.getByRole('link', { name: label, exact: true })).toBeVisible()
       }
     })
