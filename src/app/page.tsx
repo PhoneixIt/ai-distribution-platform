@@ -45,45 +45,45 @@ export default async function Home() {
   if (user && !user.is_anonymous) redirect('/app')
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
+    <main className="min-h-screen bg-[#f7f9fc] text-slate-900">
+      <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black shadow-lg shadow-blue-950/30">P</span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black shadow-lg shadow-blue-200/40">P</span>
             <span className="text-sm font-semibold tracking-tight">PortAi</span>
           </Link>
-          <div className="hidden items-center gap-6 text-sm text-slate-400 lg:flex">
-            <Link href="/platform" className="transition hover:text-white">Platform</Link>
-            <Link href="/how-it-works" className="transition hover:text-white">How it works</Link>
-            <Link href="/ai-workforce" className="transition hover:text-white">AI Workforce</Link>
-            <Link href="/solutions" className="transition hover:text-white">Solutions</Link>
-            <Link href="/resources" className="transition hover:text-white">Resources</Link>
-            <Link href="/about" className="transition hover:text-white">About</Link>
+          <div className="hidden items-center gap-6 text-sm text-slate-500 lg:flex">
+            <Link href="/platform" className="transition hover:text-slate-900">Platform</Link>
+            <Link href="/how-it-works" className="transition hover:text-slate-900">How it works</Link>
+            <Link href="/ai-workforce" className="transition hover:text-slate-900">AI Workforce</Link>
+            <Link href="/solutions" className="transition hover:text-slate-900">Solutions</Link>
+            <Link href="/resources" className="transition hover:text-slate-900">Resources</Link>
+            <Link href="/about" className="transition hover:text-slate-900">About</Link>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/login" className="rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:text-white">Sign in</Link>
+            <Link href="/login" className="rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:text-slate-900">Sign in</Link>
             <Link href="/signup" className="rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-200">Get started</Link>
           </div>
         </div>
       </nav>
 
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_25%,rgba(37,99,235,0.16),transparent_34%),radial-gradient(circle_at_15%_60%,rgba(14,165,233,0.08),transparent_28%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_25%,rgba(37,99,235,0.10),transparent_34%),radial-gradient(circle_at_15%_60%,rgba(14,165,233,0.06),transparent_28%)]" />
         <div className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-24 pt-20 lg:grid-cols-[1fr_.92fr] lg:items-center lg:px-8 lg:pb-32 lg:pt-28">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-900/60 bg-blue-950/30 px-3 py-1.5 text-xs font-medium text-blue-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/60 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700">
               <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
               AI-native technology distribution
             </div>
             <h1 className="mt-6 max-w-4xl text-5xl font-semibold tracking-[-0.035em] sm:text-6xl lg:text-7xl">
               The AI-native ecosystem for technology distribution.
             </h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-400">
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-500">
               Connect vendors, distributors, partners and customers in one intelligent network. Discover opportunities, understand the ecosystem, match the right relationships and let AI progressively operate the work.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/signup" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold shadow-lg shadow-blue-950/30 transition hover:bg-blue-500">Create your workspace</Link>
-              <Link href="/platform" className="rounded-xl border border-slate-700 bg-slate-950/40 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-600 hover:bg-slate-900">Explore the platform</Link>
+              <Link href="/signup" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200/40 transition hover:bg-blue-500">Create your workspace</Link>
+              <Link href="/platform" className="rounded-xl border border-slate-200 bg-white/40 px-5 py-3 text-sm font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-white">Explore the platform</Link>
             </div>
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500">
               <span>Marketplace</span>
@@ -93,14 +93,14 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="relative rounded-[2rem] border border-slate-800 bg-slate-900/80 p-4 shadow-2xl shadow-black/30 backdrop-blur lg:p-5">
-            <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5 lg:p-6">
+          <div className="relative rounded-[2rem] border border-slate-200 bg-white/80 p-4 shadow-2xl shadow-slate-200/60 backdrop-blur lg:p-5">
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 lg:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Ecosystem mission</p>
-                  <p className="mt-2 text-base font-medium leading-6 text-slate-100">Find 10 qualified cybersecurity MSPs in Germany for a new vendor.</p>
+                  <p className="mt-2 text-base font-medium leading-6 text-slate-900">Find 10 qualified cybersecurity MSPs in Germany for a new vendor.</p>
                 </div>
-                <span className="shrink-0 rounded-full border border-blue-900 bg-blue-950/40 px-2.5 py-1 text-[10px] font-semibold text-blue-300">AI + human</span>
+                <span className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-700">AI + human</span>
               </div>
               <div className="mt-6 space-y-2">
                 {[
@@ -110,32 +110,32 @@ export default async function Home() {
                   ['04', 'Match', 'Channel fit and priority'],
                   ['05', 'Engage', 'Next action prepared for approval'],
                 ].map(([n, title, copy]) => (
-                  <div key={n} className="flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3">
-                    <span className="text-[10px] font-bold text-blue-400">{n}</span>
+                  <div key={n} className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/60 px-4 py-3">
+                    <span className="text-[10px] font-bold text-blue-700">{n}</span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-200">{title}</p>
+                      <p className="text-sm font-medium text-slate-800">{title}</p>
                       <p className="text-xs text-slate-500">{copy}</p>
                     </div>
-                    <span className="ml-auto text-xs text-slate-600">→</span>
+                    <span className="ml-auto text-xs text-slate-500">→</span>
                   </div>
                 ))}
               </div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4"><p className="text-[10px] uppercase tracking-wider text-slate-600">Network</p><p className="mt-1 text-sm font-semibold">Connected</p></div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4"><p className="text-[10px] uppercase tracking-wider text-slate-600">Evidence</p><p className="mt-1 text-sm font-semibold">Visible</p></div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4"><p className="text-[10px] uppercase tracking-wider text-slate-600">Actions</p><p className="mt-1 text-sm font-semibold">Controlled</p></div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-[10px] uppercase tracking-wider text-slate-500">Network</p><p className="mt-1 text-sm font-semibold">Connected</p></div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-[10px] uppercase tracking-wider text-slate-500">Evidence</p><p className="mt-1 text-sm font-semibold">Visible</p></div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-[10px] uppercase tracking-wider text-slate-500">Actions</p><p className="mt-1 text-sm font-semibold">Controlled</p></div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-slate-900 bg-slate-950/70">
+      <section className="border-y border-slate-200 bg-white/70">
         <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
           <div className="grid gap-4 md:grid-cols-4">
             {ecosystem.map(([title, copy], index) => (
-              <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-blue-400">0{index + 1}</span>
+              <div key={title} className="rounded-2xl border border-slate-200 bg-white/40 p-5">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-blue-700">0{index + 1}</span>
                 <h2 className="mt-4 font-semibold">{title}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p>
               </div>
@@ -146,9 +146,9 @@ export default async function Home() {
 
       <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28">
         <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">One ecosystem. One context.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">One ecosystem. One context.</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">The marketplace is the product. AI is the engine.</h2>
-          <p className="mt-5 text-base leading-7 text-slate-400">
+          <p className="mt-5 text-base leading-7 text-slate-500">
             Instead of another isolated PRM or another AI assistant, the platform is being built as a connected technology ecosystem. The network brings together supply, channel capability, customer demand and opportunities; the intelligence layer makes that network useful; the AI workforce helps operate it.
           </p>
         </div>
@@ -158,8 +158,8 @@ export default async function Home() {
             ['Ecosystem intelligence', 'A living context of companies, people, products, technologies, capabilities, relationships, markets and demand signals.'],
             ['AI workforce', 'Specialized AI capabilities coordinated around missions — from discovery and qualification to engagement, sales support and operations.'],
           ].map(([title, copy], index) => (
-            <div key={title} className="rounded-3xl border border-slate-800 bg-slate-900/40 p-7">
-              <span className="grid h-9 w-9 place-items-center rounded-xl border border-slate-800 bg-slate-950 text-xs font-bold text-blue-300">0{index + 1}</span>
+            <div key={title} className="rounded-3xl border border-slate-200 bg-white/40 p-7">
+              <span className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-xs font-bold text-blue-700">0{index + 1}</span>
               <h3 className="mt-6 text-lg font-semibold">{title}</h3>
               <p className="mt-3 text-sm leading-7 text-slate-500">{copy}</p>
             </div>
@@ -167,18 +167,18 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="border-y border-slate-900 bg-slate-950/70">
+      <section className="border-y border-slate-200 bg-white/70">
         <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28">
           <div className="grid gap-12 lg:grid-cols-[.72fr_1.28fr]">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">What the platform does</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">What the platform does</p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">From finding the right company to moving the relationship forward.</h2>
-              <p className="mt-5 text-base leading-7 text-slate-400">The operating cycle is designed to grow from intelligence into action without losing evidence, permissions or business context.</p>
+              <p className="mt-5 text-base leading-7 text-slate-500">The operating cycle is designed to grow from intelligence into action without losing evidence, permissions or business context.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {capabilities.map(([title, copy], index) => (
-                <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
-                  <span className="text-[11px] font-semibold text-blue-400">{String(index + 1).padStart(2, '0')}</span>
+                <div key={title} className="rounded-2xl border border-slate-200 bg-white/40 p-5">
+                  <span className="text-[11px] font-semibold text-blue-700">{String(index + 1).padStart(2, '0')}</span>
                   <h3 className="mt-3 font-semibold">{title}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p>
                 </div>
@@ -191,14 +191,14 @@ export default async function Home() {
       <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28">
         <div className="grid gap-12 lg:grid-cols-[.72fr_1.28fr] lg:items-start">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">AI workforce</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">AI workforce</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">A coordinated workforce built around the ecosystem.</h2>
-            <p className="mt-5 text-base leading-7 text-slate-400">People set the objectives, boundaries and commitments. AI handles more of the research, coordination and operational work as capabilities mature.</p>
-            <Link href="/ai-workforce" className="mt-7 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold transition hover:bg-blue-500">Explore AI Workforce</Link>
+            <p className="mt-5 text-base leading-7 text-slate-500">People set the objectives, boundaries and commitments. AI handles more of the research, coordination and operational work as capabilities mature.</p>
+            <Link href="/ai-workforce" className="mt-7 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500">Explore AI Workforce</Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {workforce.map(([title, copy]) => (
-              <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+              <div key={title} className="rounded-2xl border border-slate-200 bg-white/40 p-5">
                 <h3 className="font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p>
               </div>
@@ -207,17 +207,17 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="border-y border-slate-900 bg-slate-950/70">
+      <section className="border-y border-slate-200 bg-white/70">
         <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">Where we start</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Where we start</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Start with partner discovery. Build toward the full ecosystem.</h2>
-            <p className="mt-5 text-base leading-7 text-slate-400">The first product wedge proves the core loop: discover the right organizations, research them, verify the evidence, qualify the fit and prepare the engagement.</p>
+            <p className="mt-5 text-base leading-7 text-slate-500">The first product wedge proves the core loop: discover the right organizations, research them, verify the evidence, qualify the fit and prepare the engagement.</p>
           </div>
           <div className="mt-10 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {launchWedge.map(([n, title, copy]) => (
-              <div key={n} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-                <span className="text-xs font-bold text-blue-400">{n}</span>
+              <div key={n} className="rounded-2xl border border-slate-200 bg-white/40 p-6">
+                <span className="text-xs font-bold text-blue-700">{n}</span>
                 <h3 className="mt-4 font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{copy}</p>
               </div>
@@ -229,31 +229,31 @@ export default async function Home() {
       <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">The network effect</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">The network effect</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">More participants make the ecosystem more useful.</h2>
-            <p className="mt-5 text-base leading-7 text-slate-400">As the network grows, the platform can connect more supply, channel capability and customer demand — creating better matches and more opportunities, which in turn create more useful ecosystem intelligence.</p>
+            <p className="mt-5 text-base leading-7 text-slate-500">As the network grows, the platform can connect more supply, channel capability and customer demand — creating better matches and more opportunities, which in turn create more useful ecosystem intelligence.</p>
           </div>
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 lg:p-8">
+          <div className="rounded-3xl border border-slate-200 bg-white/50 p-6 lg:p-8">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {['Vendors', 'Partners', 'Customers', 'Opportunities'].map((item) => (
-                <div key={item} className="rounded-2xl border border-slate-800 bg-slate-950 p-5 text-center">
+                <div key={item} className="rounded-2xl border border-slate-200 bg-white p-5 text-center">
                   <p className="text-sm font-semibold">{item}</p>
                 </div>
               ))}
             </div>
-            <div className="my-5 flex items-center justify-center gap-3 text-xs text-slate-600">
+            <div className="my-5 flex items-center justify-center gap-3 text-xs text-slate-500">
               <span className="h-px flex-1 bg-slate-800" />
               <span>connected intelligence</span>
               <span className="h-px flex-1 bg-slate-800" />
             </div>
-            <div className="rounded-2xl border border-blue-900/50 bg-blue-950/20 p-5 text-center">
-              <p className="text-sm font-semibold text-blue-200">Better matching → more relationships → better intelligence</p>
+            <div className="rounded-2xl border border-blue-200/50 bg-blue-50 p-5 text-center">
+              <p className="text-sm font-semibold text-blue-800">Better matching → more relationships → better intelligence</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-slate-900 bg-slate-950/70">
+      <section className="border-y border-slate-200 bg-white/70">
         <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28">
           <div className="grid gap-10 lg:grid-cols-3">
             {[
@@ -271,18 +271,18 @@ export default async function Home() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
-        <div className="rounded-[2rem] border border-slate-800 bg-slate-900 px-6 py-14 text-center sm:px-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">Build the network</p>
+        <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-14 text-center sm:px-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Build the network</p>
           <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">Bring your distribution ecosystem into one intelligent workspace.</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-400">Start with the business context you have today. Build toward an ecosystem where technology, relationships and opportunities can move through one connected network.</p>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-500">Start with the business context you have today. Build toward an ecosystem where technology, relationships and opportunities can move through one connected network.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/signup" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold transition hover:bg-blue-500">Create your workspace</Link>
-            <Link href="/how-it-works" className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-600">See how it works</Link>
+            <Link href="/signup" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500">Create your workspace</Link>
+            <Link href="/how-it-works" className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 transition hover:border-slate-300">See how it works</Link>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-slate-900">
+      <footer className="border-t border-slate-200">
         <div className="mx-auto max-w-7xl px-5 py-12 lg:px-8">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
@@ -290,35 +290,35 @@ export default async function Home() {
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-xs font-black">P</span>
                 <span className="text-sm font-semibold">PortAi</span>
               </Link>
-              <p className="mt-4 max-w-xs text-sm leading-6 text-slate-600">An AI-native ecosystem for technology distribution.</p>
+              <p className="mt-4 max-w-xs text-sm leading-6 text-slate-500">An AI-native ecosystem for technology distribution.</p>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Platform</p>
-              <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <Link href="/platform" className="block transition hover:text-slate-300">Platform</Link>
-                <Link href="/how-it-works" className="block transition hover:text-slate-300">How it works</Link>
-                <Link href="/ai-workforce" className="block transition hover:text-slate-300">AI Workforce</Link>
-                <Link href="/solutions" className="block transition hover:text-slate-300">Solutions</Link>
+              <div className="mt-4 space-y-2 text-sm text-slate-500">
+                <Link href="/platform" className="block transition hover:text-slate-700">Platform</Link>
+                <Link href="/how-it-works" className="block transition hover:text-slate-700">How it works</Link>
+                <Link href="/ai-workforce" className="block transition hover:text-slate-700">AI Workforce</Link>
+                <Link href="/solutions" className="block transition hover:text-slate-700">Solutions</Link>
               </div>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Explore</p>
-              <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <Link href="/resources" className="block transition hover:text-slate-300">Resources</Link>
-                <Link href="/partners" className="block transition hover:text-slate-300">Partners</Link>
-                <Link href="/about" className="block transition hover:text-slate-300">About</Link>
+              <div className="mt-4 space-y-2 text-sm text-slate-500">
+                <Link href="/resources" className="block transition hover:text-slate-700">Resources</Link>
+                <Link href="/partners" className="block transition hover:text-slate-700">Partners</Link>
+                <Link href="/about" className="block transition hover:text-slate-700">About</Link>
               </div>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Workspace</p>
-              <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <Link href="/login" className="block transition hover:text-slate-300">Sign in</Link>
-                <Link href="/signup" className="block transition hover:text-slate-300">Create workspace</Link>
-                <Link href="/workforce" className="block transition hover:text-slate-300">Open AI Workforce</Link>
+              <div className="mt-4 space-y-2 text-sm text-slate-500">
+                <Link href="/login" className="block transition hover:text-slate-700">Sign in</Link>
+                <Link href="/signup" className="block transition hover:text-slate-700">Create workspace</Link>
+                <Link href="/workforce" className="block transition hover:text-slate-700">Open AI Workforce</Link>
               </div>
             </div>
           </div>
-          <div className="mt-10 flex flex-col gap-2 border-t border-slate-900 pt-6 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-10 flex flex-col gap-2 border-t border-slate-200 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <span>PortAi</span>
             <span>People manage the business. AI helps operate the work.</span>
           </div>
