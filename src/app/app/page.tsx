@@ -6,7 +6,7 @@ import AppShell, { useWorkspaceRole } from '@/components/app-shell'
 import { getPartnerSubtypeLabel, type WorkspaceRole } from '@/lib/organization-roles'
 import DashboardLoader from './dashboard-loader'
 
-type Stats = { partners: number; vendors: number; distributors: number; customers: number; opportunities: number; matches: number }
+type Stats = { partners: number; vendors: number; distributors: number; customers: number; products: number; opportunities: number; matches: number }
 type Recent = { id: string; title: string; status: string; stage: string; estimated_value: number | null }
 type DashboardData = { stats: Stats; recent: Recent[] }
 
@@ -18,7 +18,7 @@ const nodes = [
 ]
 
 export default function AppDashboard() {
-  const [data, setData] = useState<DashboardData>({ stats: { partners: 0, vendors: 0, distributors: 0, customers: 0, opportunities: 0, matches: 0 }, recent: [] })
+  const [data, setData] = useState<DashboardData>({ stats: { partners: 0, vendors: 0, distributors: 0, customers: 0, products: 0, opportunities: 0, matches: 0 }, recent: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -177,7 +177,7 @@ function DashboardStats({ stats, loading }: { stats: Stats; loading: boolean }) 
     vendor: [
       ['Partners', stats.partners, '/partners'],
       ['Distributors', stats.distributors, '/distributors'],
-      ['Products', stats.vendors, '/products'],
+      ['Products', stats.products, '/products'],
       ['Customer demand', stats.customers, '/customers'],
       ['Opportunities', stats.opportunities, '/opportunities'],
       ['AI matches', stats.matches, '/matches'],
@@ -202,7 +202,7 @@ function DashboardStats({ stats, loading }: { stats: Stats; loading: boolean }) 
       ['Vendor options', stats.vendors, '/vendors'],
       ['Distributor options', stats.distributors, '/distributors'],
       ['Partners', stats.partners, '/partners'],
-      ['Solutions', stats.vendors, '/products'],
+      ['Solutions', stats.products, '/products'],
       ['Opportunities', stats.opportunities, '/opportunities'],
       ['AI matches', stats.matches, '/matches'],
     ],
