@@ -38,6 +38,27 @@ type Dossier = {
   recommended_action: Record<string, unknown>
 }
 
+type Candidate = {
+  id: string
+  company_name: string
+  website: string | null
+  country: string | null
+  description: string | null
+  partner_types: string[]
+  technologies: string[]
+  customer_segments: string[]
+  services: string[]
+  fit_score: number | null
+  qualification_status: string
+  qualification_score: number | null
+  qualification_reasons: string[]
+  concerns: string[]
+  research_status: string
+  research_confidence: number | null
+  evidence: unknown[]
+  rank: number
+}
+
 const stageLabel: Record<string, string> = {
   defined: 'Ready to run',
   researching: 'Researching',
@@ -60,21 +81,25 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
   const [mission, setMission] = useState<Mission | null>(null)
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [dossiers, setDossiers] = useState<Dossier[]>([])
+  const [candidates, setCandidates] = useState<Candidate[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
 
   async function load(id: string) {
-    const [missionResponse, draftResponse] = await Promise.all([
+    const [missionResponse, draftResponse, candidateResponse] = await Promise.all([
       fetch('/api/missions', { cache: 'no-store' }),
       fetch('/api/missions/' + id + '/drafts', { cache: 'no-store' }),
+      fetch('/api/missions/' + id + '/candidates', { cache: 'no-store' }),
     ])
 
     const missionsPayload = await missionResponse.json()
     const draftsPayload = await draftResponse.json()
+    const candidatesPayload = await candidateResponse.json()
 
     if (!missionResponse.ok) throw new Error(missionsPayload.error || 'Could not load missions.')
     if (!draftResponse.ok) throw new Error(draftsPayload.error || 'Could not load mission details.')
+    if (!candidateResponse.ok) throw new Error(candidatesPayload.error || 'Could not load discovery results.')
 
     const found = (missionsPayload.missions || []).find((item: Mission) => item.id === id)
     if (!found) throw new Error('Mission not found.')
@@ -82,6 +107,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     setMission(found)
     setDrafts(draftsPayload.drafts || [])
     setDossiers(draftsPayload.dossiers || [])
+    setCandidates(candidatesPayload.candidates || [])
   }
 
   useEffect(() => {
@@ -272,6 +298,66 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
       {mission.error_message ? <Alert tone="error">Mission needs attention: {mission.error_message}</Alert> : null}
       {error ? <Alert tone="error">{error}</Alert> : null}
       {notice ? <Alert tone="info">{notice}</Alert> : null}
+
+      {candidates.length > 0 ? (
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Discovery results</p>
+              <h3 className="mt-1 text-xl font-semibold text-slate-950">Companies PortAi found</h3>
+              <p className="mt-1 text-sm text-slate-500">These are the actual companies returned by this mission's discovery run. Open a result to inspect fit, qualification and evidence.</p>
+            </div>
+            <Link href="/discovery" className="text-sm font-medium text-blue-700 hover:text-blue-800">Open full discovery →</Link>
+          </div>
+          <div className="mt-5 space-y-3">
+            {candidates.map((candidate) => (
+              <article key={candidate.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-xs font-semibold text-slate-600">{candidate.rank}</span>
+                      <h4 className="text-lg font-semibold text-slate-950">{candidate.company_name}</h4>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{candidate.qualification_status.replaceAll('_', ' ')}</span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{candidate.description || 'No verified company description recorded.'}</p>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                      {[candidate.country, ...candidate.partner_types.slice(0, 3), ...candidate.customer_segments.slice(0, 2)].filter(Boolean).map((value) => <span key={value} className="rounded-full border border-slate-200 bg-white px-2.5 py-1">{value}</span>)}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 lg:w-72">
+                    <Metric label="Fit" value={candidate.fit_score ?? '—'} />
+                    <Metric label="Match" value={candidate.qualification_score ?? '—'} />
+                    <Metric label="Trust" value={candidate.research_confidence != null ? Math.round(candidate.research_confidence * 100) + '%' : '—'} />
+                  </div>
+                </div>
+                <details className="mt-4 border-t border-slate-200 pt-4">
+                  <summary className="cursor-pointer text-sm font-medium text-blue-700">View intelligence & evidence</summary>
+                  <div className="mt-4 grid gap-5 lg:grid-cols-2">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">Why it matched</p>
+                      <ul className="mt-2 space-y-1 text-sm text-slate-600">{candidate.qualification_reasons.length ? candidate.qualification_reasons.map((reason, index) => <li key={index}>• {reason}</li>) : <li>No qualification reasons recorded.</li>}</ul>
+                      {candidate.concerns.length ? <><p className="mt-4 text-sm font-semibold text-slate-800">Needs verification</p><ul className="mt-2 space-y-1 text-sm text-slate-600">{candidate.concerns.map((item, index) => <li key={index}>• {item}</li>)}</ul></> : null}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">Company intelligence</p>
+                      <dl className="mt-2 space-y-2 text-sm text-slate-600">
+                        <div><dt className="inline font-medium text-slate-800">Technologies:</dt> <dd className="inline">{candidate.technologies.join(', ') || 'Unknown'}</dd></div>
+                        <div><dt className="inline font-medium text-slate-800">Services:</dt> <dd className="inline">{candidate.services.join(', ') || 'Unknown'}</dd></div>
+                        <div><dt className="inline font-medium text-slate-800">Research:</dt> <dd className="inline">{candidate.research_status}</dd></div>
+                      </dl>
+                    </div>
+                  </div>
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Evidence</p>
+                    {candidate.evidence.length ? <ul className="mt-2 space-y-2 text-sm text-slate-600">{candidate.evidence.slice(0, 8).map((item, index) => <li key={index}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>)}</ul> : <p className="mt-2 text-sm text-slate-500">No evidence recorded.</p>}
+                  </div>
+                  {candidate.website ? <a href={candidate.website} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-medium text-blue-700 hover:text-blue-800">{candidate.website} ↗</a> : null}
+                </details>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {stage === 'no_results' ? (
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
