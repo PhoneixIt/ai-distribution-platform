@@ -64,10 +64,6 @@ export default function NewMissionPage() {
     event.preventDefault()
     const clean = objective.trim()
     if (!clean || clean.length > 4000) return
-    if (!resolvedCountry || !resolvedTechnology || !resolvedPartnerTypes.length) {
-      setError('Add a target country, technology focus, and at least one partner type, or include them in your objective. PortAi needs these details to search and qualify candidates.')
-      return
-    }
     setRunning(true)
     setError('')
     try {
@@ -115,7 +111,7 @@ export default function NewMissionPage() {
             <label className="block">
               <span className="text-sm font-medium text-slate-800">Your objective <span className="text-blue-700">*</span></span>
               <textarea required maxLength={4000} rows={5} value={objective} onChange={(event) => setObjective(event.target.value)} placeholder="Example: Find 20 qualified cybersecurity MSPs in Germany that could sell my product." className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-blue-500" />
-              {(inferred.country || inferred.technologyFocus || inferred.partnerTypes.length || inferred.customerSegment) ? <p className="mt-2 text-xs text-blue-700">Detected: {[inferred.technologyFocus, inferred.partnerTypes.join(', '), inferred.country, inferred.customerSegment].filter(Boolean).join(' · ')}. Review or edit these details below.</p> : <p className="mt-2 text-xs text-slate-500">Add country, technology and partner type below if they are not clear from your objective.</p>}
+              {(inferred.country || inferred.technologyFocus || inferred.partnerTypes.length || inferred.customerSegment) ? <p className="mt-2 text-xs text-blue-700">Detected: {[inferred.technologyFocus, inferred.partnerTypes.join(', '), inferred.country, inferred.customerSegment].filter(Boolean).join(' · ')}. Review or edit anything PortAi inferred.</p> : <p className="mt-2 text-xs text-slate-500">Start with the outcome. PortAi can use the objective itself when structured details are not yet known.</p>}
               <span className="mt-1 block text-right text-[11px] text-slate-500">{objective.length}/4000</span>
             </label>
 
@@ -140,7 +136,7 @@ export default function NewMissionPage() {
             {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
 
             <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-xl text-xs leading-5 text-slate-500">Creating a mission starts the controlled workflow; it does not contact anyone. External communication and consequential actions remain behind explicit approval.</p>
+              <p className="max-w-xl text-xs leading-5 text-slate-500">Start with the objective. Country, technology, partner type and customer segment are optional context; PortAi uses what is known and preserves the mission if more research context is needed.</p>
               <button disabled={running || !objective.trim()} className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{running ? 'Creating mission…' : 'Create mission →'}</button>
             </div>
           </form>
