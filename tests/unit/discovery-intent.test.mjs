@@ -35,3 +35,14 @@ test('leaves broad regions and unsupported intent details unresolved for the use
     desiredCandidateCount: undefined,
   })
 })
+
+
+test('extracts a business need from a customer objective without inventing a country', () => {
+  assert.deepEqual(parseDiscoveryIntent('I need secure remote access for 2,000 employees across three countries.'), {
+    country: undefined,
+    technologyFocus: 'secure remote access',
+    partnerTypes: [],
+    customerSegment: undefined,
+    desiredCandidateCount: undefined,
+  })
+})
