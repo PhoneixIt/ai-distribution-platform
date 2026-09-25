@@ -118,8 +118,22 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
           },
         })
         if (authError) throw authError
-        if (data.session) { router.replace('/onboarding'); router.refresh(); return }
-        setMessage('Account created. Check your email to confirm the account, then sign in.')
+        if (data.session) {
+          const response = await fetch('/api/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              organization_type: organizationType,
+              organization_roles: organizationType === 'partner' ? partnerRoles : [],
+            }),
+          })
+          const setup = await response.json() as { status?: string; error?: string }
+          if (!response.ok || setup.status !== 'configured') throw new Error(setup.error || 'Could not configure your workspace.')
+          router.replace('/app')
+          router.refresh()
+          return
+        }
+        setMessage('Account created. Check your email to confirm the account, then sign in. Your selected role will be used to configure your workspace.')
         return
       }
       if (mode === 'forgot') {
