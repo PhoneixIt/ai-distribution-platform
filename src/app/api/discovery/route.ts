@@ -1,3 +1,5 @@
+export const maxDuration = 300
+
 import { NextResponse } from 'next/server'
 import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
