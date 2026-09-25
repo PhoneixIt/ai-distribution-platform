@@ -69,7 +69,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('missions')
-    .select('id,objective,vendor_name,product_name,market,country,partner_types,technology_focus,customer_segment,status,current_stage,candidate_count,discovery_run_id,ai_run_id,error_message,created_at,updated_at,completed_at')
+    .select('id,objective,vendor_name,product_name,market,country,partner_types,technology_focus,customer_segment,status,current_stage,candidate_count,discovery_run_id,ai_run_id,result_summary,error_message,created_at,updated_at,completed_at')
     .order('created_at', { ascending: false })
     .limit(20)
 

@@ -140,7 +140,9 @@ export function createResilientWebSearchProvider(primary: WebSearchProvider, fal
   return {
     async search(request) {
       try {
-        return await primary.search(request)
+        const primaryResults = await primary.search(request)
+        if (primaryResults.length > 0) return primaryResults
+        return await fallback.search(request)
       } catch (primaryError) {
         try {
           return await fallback.search(request)
