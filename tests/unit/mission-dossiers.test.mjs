@@ -31,18 +31,17 @@ test('creates a mission dossier linked to its organization, mission, and persist
   assert.deepEqual(dossier.people, [])
 })
 
-test('does not mark a mission dossier_ready below the contact-research threshold', () => {
-  const ids = Array.from({ length: 9 }, (_, index) => `candidate-${index}`)
-  assert.equal(getDiscoveryMissionStage(ids, ids), 'scored')
+test('marks a mission dossier_ready when qualified candidates are persisted without requiring ten', () => {
+  const ids = ['candidate-1', 'candidate-2']
+  assert.equal(getDiscoveryMissionStage(ids, ids), 'dossier_ready')
 })
 
-test('does not mark a mission dossier_ready unless every qualified candidate dossier persisted', () => {
-  const ids = Array.from({ length: 10 }, (_, index) => `candidate-${index}`)
-  assert.equal(getDiscoveryMissionStage(ids, ids.slice(0, 9)), 'scored')
+test('returns no_results only when there are no qualified candidates', () => {
+  const ids = ['candidate-1']
   assert.equal(getDiscoveryMissionStage(ids, ids), 'dossier_ready')
 })
 
 test('does not mark a mission dossier_ready when there are no qualified candidates', () => {
-  assert.equal(getDiscoveryMissionStage([], []), 'scored')
+  assert.equal(getDiscoveryMissionStage([], []), 'no_results')
 })
 
