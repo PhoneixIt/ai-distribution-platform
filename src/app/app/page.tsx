@@ -20,6 +20,14 @@ const roleCopy: Record<WorkspaceRole, { headline: string; description: string; d
 }
 
 export default function AppDashboard() {
+  return (
+    <AppShell title="Ecosystem overview" subtitle="Your role-focused PortAi workspace for finding, connecting and growing through the technology ecosystem.">
+      <DashboardContent />
+    </AppShell>
+  )
+}
+
+function DashboardContent() {
   const [data, setData] = useState<DashboardData>({ stats: { partners: 0, vendors: 0, distributors: 0, customers: 0, opportunities: 0, matches: 0, discoveryRuns: 0, qualifiedCandidates: 0 }, recent: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -29,8 +37,6 @@ export default function AppDashboard() {
   const copyProfile = profilePlaceholder
   const openOpportunities = recent.filter(item => !['closed', 'won', 'lost'].includes(item.status.toLowerCase())).length
 
-  return (
-    <AppShell title="Ecosystem overview" subtitle="Your role-focused PortAi workspace for finding, connecting and growing through the technology ecosystem.">
       <DashboardLoader onData={handleData} onError={handleError} />
       {error && <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
@@ -65,10 +71,7 @@ export default function AppDashboard() {
           {recent.length ? <div className="mt-4 divide-y divide-slate-200">{recent.slice(0, 4).map(item => <Link href="/opportunities" key={item.id} className="flex items-center justify-between gap-3 py-3 hover:bg-slate-50"><div><p className="text-sm font-medium text-slate-700">{item.title}</p><p className="mt-1 text-xs capitalize text-slate-500">{item.stage.replaceAll('_', ' ')} · {item.status}</p></div><span className="text-xs text-blue-700">Review →</span></Link>)}</div> : <Link href="/discovery" className="mt-4 block rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-700 hover:border-blue-300">Start discovering →</Link>}
         </div>
       </section>
-    </AppShell>
-  )
 }
-
 function NextAction({ profile, stats, openOpportunities }: { profile: WorkspaceRole; stats: DashboardData['stats']; openOpportunities: number }) {
   const action = actionFor(profile, stats, openOpportunities)
   return <div className="mt-3"><p className="text-base font-semibold text-slate-900">{action.title}</p><p className="mt-1 text-sm leading-5 text-slate-600">{action.detail}</p><Link href={action.href} className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{action.cta}</Link></div>
