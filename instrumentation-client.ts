@@ -5,5 +5,4 @@ Sentry.init({
   enabled: Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN),
   tracesSampleRate: 0.1,
   sendDefaultPii: false,
-  onRouterTransitionStart: Sentry.captureRouterTransitionStart,
 });
