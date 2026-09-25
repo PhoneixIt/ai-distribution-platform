@@ -26,8 +26,7 @@ export default function AppDashboard() {
   const handleData = useCallback((nextData: DashboardData) => { setData(nextData); setLoading(false) }, [])
   const handleError = useCallback((message: string) => { setError(message); setLoading(false) }, [])
   const { stats, recent } = data
-  const profile = useWorkspaceRole()
-  const copy = roleCopy[profile.primaryType]
+  const copyProfile = profilePlaceholder
   const openOpportunities = recent.filter(item => !['closed', 'won', 'lost'].includes(item.status.toLowerCase())).length
 
   return (
