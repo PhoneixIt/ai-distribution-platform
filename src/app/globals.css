@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f9fc;
+  --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff;
-  --surface-muted: #f1f5f9;
+  --surface-muted: #f8fafc;
   --border: #e2e8f0;
   --primary: #2563eb;
   --accent: #7c3aed;
@@ -26,7 +26,7 @@ body {
 * { box-sizing: border-box; }
 ::selection { background: rgba(37, 99, 235, .18); color: var(--foreground); }
 
-input, textarea, select { color: #0f172a; }
+input, textarea, select { color: #0f172a; background-color: #ffffff; }
 input::placeholder, textarea::placeholder { color: #64748b; }
 button, a { -webkit-tap-highlight-color: transparent; }
 
@@ -35,3 +35,30 @@ button, a { -webkit-tap-highlight-color: transparent; }
   border: 1px solid #e2e8f0;
   box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
 }
+
+/* Global light-theme compatibility for existing Tailwind utility usage. */
+.bg-slate-950 { background-color: #ffffff !important; }
+.bg-slate-900 { background-color: #ffffff !important; }
+.bg-slate-800 { background-color: #f8fafc !important; }
+.bg-slate-700 { background-color: #f1f5f9 !important; }
+.bg-slate-950\/90, .bg-slate-950\/95 { background-color: rgba(255,255,255,.95) !important; }
+.bg-slate-900\/50, .bg-slate-900\/30, .bg-slate-900\/60 { background-color: rgba(255,255,255,.98) !important; }
+.bg-slate-800\/50, .bg-slate-800\/30 { background-color: rgba(248,250,252,.98) !important; }
+.text-white { color: #0f172a !important; }
+.text-slate-100 { color: #0f172a !important; }
+.text-slate-200 { color: #1e293b !important; }
+.text-slate-300 { color: #334155 !important; }
+.text-slate-400 { color: #475569 !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-slate-600 { color: #475569 !important; }
+.border-slate-800 { border-color: #e2e8f0 !important; }
+.border-slate-700 { border-color: #cbd5e1 !important; }
+.border-slate-600 { border-color: #cbd5e1 !important; }
+.border-slate-900 { border-color: #e2e8f0 !important; }
+.hover\\:bg-slate-800:hover { background-color: #f1f5f9 !important; }
+.hover\\:bg-slate-700:hover { background-color: #e2e8f0 !important; }
+.hover\\:text-white:hover { color: #0f172a !important; }
+.hover\\:text-slate-300:hover { color: #0f172a !important; }
+.shadow-black\\/20, .shadow-black\\/30 { --tw-shadow-color: rgba(15,23,42,.08) !important; }
+.bg-blue-600.text-white, .bg-blue-500.text-white { color: #ffffff !important; }
+.bg-blue-600 { box-shadow: 0 4px 12px rgba(37,99,235,.16); }
