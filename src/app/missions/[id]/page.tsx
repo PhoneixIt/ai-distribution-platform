@@ -226,9 +226,15 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
 
   const summary = mission.result_summary || {}
   const stage = mission.current_stage
+  const returnedCount = Number(summary.returned ?? mission.candidate_count ?? 0)
+  const discoveredCount = Number(summary.discovered ?? 0)
+  const qualifiedCount = Number(summary.qualified ?? 0)
   const isReady = stage === 'defined' || stage === 'failed'
-  const isResultsReady = stage === 'dossier_ready'
+  const isLegacyDiscoveryComplete = stage === 'scored'
+  const isResultsReady = stage === 'dossier_ready' || (isLegacyDiscoveryComplete && returnedCount > 0)
+  const isNoResults = stage === 'no_results' || (isLegacyDiscoveryComplete && returnedCount === 0 && discoveredCount === 0)
   const isContactsReady = stage === 'contacts_researched' || stage === 'draft_ready'
+  const displayStatus = isLegacyDiscoveryComplete ? 'discovery complete' : mission.status.replaceAll('_', ' ')
 
   return (
     <AppShell title="Mission" subtitle="Give PortAi an objective. The platform handles discovery, intelligence and the next permitted actions while keeping consequential communication under your control.">
@@ -249,11 +255,11 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
         </div>
 
         <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Metric label="Discovered" value={summary.discovered ?? 0} />
-          <Metric label="Qualified" value={summary.qualified ?? 0} />
-          <Metric label="Selected" value={mission.candidate_count} />
+          <Metric label="Discovered" value={discoveredCount} />
+          <Metric label="Qualified" value={qualifiedCount} />
+          <Metric label="Candidates found" value={returnedCount} />
           <Metric label="Contacts" value={summary.contacts_found ?? 0} />
-          <Metric label="Status" value={mission.status.replaceAll('_', ' ')} />
+          <Metric label="Status" value={displayStatus} />
         </div>
       </section>
 
@@ -262,16 +268,18 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Next action</p>
             <h3 className="mt-1 text-lg font-semibold text-slate-950">
-              {isReady ? 'Run the mission' : isResultsReady ? 'Research contacts for the qualified results' : isContactsReady ? 'Prepare the next commercial action' : 'PortAi is processing this mission'}
+              {isReady ? 'Run the mission' : isNoResults ? 'Discovery returned no companies' : isResultsReady ? 'Research contacts for the qualified results' : isContactsReady ? 'Prepare the next commercial action' : 'PortAi is processing this mission'}
             </h3>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
               {isReady
                 ? 'Start the objective-driven discovery workflow. No external communication is sent by this action.'
-                : isResultsReady
-                  ? 'Contact enrichment is optional and only runs when a provider is configured.'
-                  : isContactsReady
-                    ? 'Generate reviewable drafts from researched contacts before any external communication.'
-                    : 'The current stage and evidence remain visible here while PortAi works.'}
+                : isNoResults
+                  ? 'The discovery run completed, but the configured search providers returned no company records. PortAi did not invent or fabricate a shortlist.'
+                  : isResultsReady
+                    ? 'Contact enrichment is optional and only runs when a provider is configured.'
+                    : isContactsReady
+                      ? 'Generate reviewable drafts from researched contacts before any external communication.'
+                      : 'The current stage and evidence remain visible here while PortAi works.'}
             </p>
           </div>
 
@@ -359,11 +367,11 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
         </section>
       ) : null}
 
-      {stage === 'no_results' ? (
+      {isNoResults ? (
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Discovery result</p>
-          <h3 className="mt-2 text-xl font-semibold text-slate-950">No qualified matches found</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-600">PortAi did not find enough evidence to qualify a result for this objective. The mission is not being treated as a technical failure.</p>
+          <h3 className="mt-2 text-xl font-semibold text-slate-950">No companies returned by discovery</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">The discovery run completed without returning company records. This is a discovery-provider result, not evidence that no suitable companies exist. PortAi should retry with the resilient search path before treating the objective as exhausted.</p>
         </section>
       ) : null}
 
