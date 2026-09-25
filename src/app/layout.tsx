@@ -31,7 +31,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-[#f7f9fc] text-slate-900">
+      <body className="flex min-h-full flex-col bg-white text-slate-900">
         {children}
         {process.env.VERCEL ? <Analytics /> : null}
         {process.env.VERCEL ? <SpeedInsights /> : null}
