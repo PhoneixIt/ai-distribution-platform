@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { getOpenAIToken } from '@/lib/ai/openai'
+import { getOpenAIToken, getOpenAIBaseUrl, getOpenAIModel } from '@/lib/ai/openai'
 
 export type WorkforceObjective = {
   objective: string
@@ -29,7 +29,7 @@ export type WorkforceTaskDefinition = {
   dependsOnTaskIds?: string[]
 }
 
-const DEFAULT_AGENT_MODEL = process.env.OPENAI_AGENT_MODEL || 'gpt-5.6-luna'
+const DEFAULT_AGENT_MODEL = getOpenAIModel()
 
 function assertObjective(objective: string) {
   const value = objective.trim()
@@ -125,7 +125,7 @@ export async function startOpenAIAgentSession(
 ) {
   const apiKey = await getOpenAIToken()
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch(getOpenAIBaseUrl() + '/responses', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
