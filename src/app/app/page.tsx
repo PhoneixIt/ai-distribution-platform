@@ -34,9 +34,12 @@ function DashboardContent() {
   const handleData = useCallback((nextData: DashboardData) => { setData(nextData); setLoading(false) }, [])
   const handleError = useCallback((message: string) => { setError(message); setLoading(false) }, [])
   const { stats, recent } = data
-  const copyProfile = profilePlaceholder
+  const profile = useWorkspaceRole()
+  const copy = roleCopy[profile.primaryType] ?? roleCopy.other
   const openOpportunities = recent.filter(item => !['closed', 'won', 'lost'].includes(item.status.toLowerCase())).length
 
+  return (
+    <>
       <DashboardLoader onData={handleData} onError={handleError} />
       {error && <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
@@ -71,6 +74,8 @@ function DashboardContent() {
           {recent.length ? <div className="mt-4 divide-y divide-slate-200">{recent.slice(0, 4).map(item => <Link href="/opportunities" key={item.id} className="flex items-center justify-between gap-3 py-3 hover:bg-slate-50"><div><p className="text-sm font-medium text-slate-700">{item.title}</p><p className="mt-1 text-xs capitalize text-slate-500">{item.stage.replaceAll('_', ' ')} · {item.status}</p></div><span className="text-xs text-blue-700">Review →</span></Link>)}</div> : <Link href="/discovery" className="mt-4 block rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-700 hover:border-blue-300">Start discovering →</Link>}
         </div>
       </section>
+    </>
+  )
 }
 function NextAction({ profile, stats, openOpportunities }: { profile: WorkspaceRole; stats: DashboardData['stats']; openOpportunities: number }) {
   const action = actionFor(profile, stats, openOpportunities)
