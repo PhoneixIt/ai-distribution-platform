@@ -46,8 +46,8 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
     return () => window.clearTimeout(timer)
   }, [])
 
-  const title = mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Create your workspace' : mode === 'forgot' ? 'Reset your password' : 'Choose a new password'
-  const description = mode === 'login' ? 'Sign in to your channel intelligence workspace.' : mode === 'signup' ? 'Choose the workspace that fits your organization.' : mode === 'forgot' ? 'We will send a secure reset link to your email.' : 'Set a new password for your account.'
+  const title = mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Create your PortAi workspace' : mode === 'forgot' ? 'Reset your password' : 'Choose a new password'
+  const description = mode === 'login' ? 'Sign in to your PortAi ecosystem workspace.' : mode === 'signup' ? 'First choose how your organization operates in the technology ecosystem, then create your account.' : mode === 'forgot' ? 'We will send a secure reset link to your email.' : 'Set a new password for your account.'
 
   async function signInWithProvider(provider: Provider) {
     setError('')
@@ -154,7 +154,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1><p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
 
       {mode === 'signup' && <fieldset className="mt-6 space-y-3">
-        <legend className="text-sm font-medium text-slate-700">What type of organization are you?</legend>
+        <legend className="text-sm font-semibold text-slate-900">Step 1 · Choose your primary role</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {PRIMARY_ORGANIZATION_TYPES.map(({ value, label, description: roleDescription }) => (
             <label key={value} className={`cursor-pointer rounded-xl border p-3 transition ${organizationType === value ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
@@ -175,10 +175,10 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
           ))}
         </div>
         {organizationType === 'partner' && <fieldset className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <legend className="px-1 text-xs font-medium text-slate-300">Partner subtypes <span className="font-normal text-slate-500">(optional; choose any that apply)</span></legend>
+          <legend className="px-1 text-xs font-medium text-slate-700">Partner subtypes <span className="font-normal text-slate-500">(optional; choose any that apply)</span></legend>
           <div className="grid gap-2 sm:grid-cols-2">
             {PARTNER_SUBTYPES.map(({ value, label: subtypeLabel }) => (
-              <label key={value} className="flex items-center gap-2 text-xs text-slate-400">
+              <label key={value} className="flex items-center gap-2 text-xs text-slate-600">
                 <input
                   type="checkbox"
                   value={value}
@@ -199,7 +199,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
         </div>
         {secondaryProviders.length > 0 && <button type="button" onClick={() => setShowMoreProviders(value => !value)} className="mt-3 w-full text-xs text-slate-500 hover:text-slate-300">{showMoreProviders ? 'Hide other sign-in options' : 'More sign-in options'}</button>}
         {secondaryProviders.length > 0 && showMoreProviders && <div className="mt-3 grid grid-cols-3 gap-3">{secondaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} aria-label={`Continue with ${label}`} title={`Continue with ${label}`} className="flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-3 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50">{icon}</button>)}</div>}
-        <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-200" /><span>Or continue with email</span><span className="h-px flex-1 bg-slate-800" /></div>
+        <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-slate-500"><span className="h-px flex-1 bg-slate-200" /><span>Or continue with email</span><span className="h-px flex-1 bg-slate-800" /></div>
       </>}
 
       <form id="auth-form" onSubmit={submit} className="space-y-4">
