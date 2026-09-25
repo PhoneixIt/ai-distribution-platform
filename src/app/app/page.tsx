@@ -21,7 +21,7 @@ const roleCopy: Record<WorkspaceRole, { headline: string; description: string; d
 
 export default function AppDashboard() {
   return (
-    <AppShell title="Ecosystem overview"><DashboardContent /></AppShell>
+    <AppShell title="Ecosystem overview">
       <DashboardContent />
     </AppShell>
   )
