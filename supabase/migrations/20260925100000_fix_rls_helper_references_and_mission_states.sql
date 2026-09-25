@@ -11,28 +11,28 @@ begin
     from pg_policies
     where schemaname = 'public'
       and (
-        coalesce(qual, '') ~ '(^|[^.[:alnum:]_])is_org_member\\('
-        or coalesce(with_check, '') ~ '(^|[^.[:alnum:]_])is_org_member\\('
-        or coalesce(qual, '') ~ '(^|[^.[:alnum:]_])is_org_admin\\('
-        or coalesce(with_check, '') ~ '(^|[^.[:alnum:]_])is_org_admin\\('
-        or coalesce(qual, '') ~ '(^|[^.[:alnum:]_])is_org_owner\\('
-        or coalesce(with_check, '') ~ '(^|[^.[:alnum:]_])is_org_owner\\('
+        coalesce(qual, '') ~ '(^|[^.[:alnum:]_])is_org_member\('
+        or coalesce(with_check, '') ~ '(^|[^.[:alnum:]_])is_org_member\('
+        or coalesce(qual, '') ~ '(^|[^.[:alnum:]_])is_org_admin\('
+        or coalesce(with_check, '') ~ '(^|[^.[:alnum:]_])is_org_admin\('
+        or coalesce(qual, '') ~ '(^|[^.[:alnum:]_])is_org_owner\('
+        or coalesce(with_check, '') ~ '(^|[^.[:alnum:]_])is_org_owner\('
       )
   loop
     new_qual := policy_row.qual;
     new_check := policy_row.with_check;
 
     if new_qual is not null then
-      new_qual := regexp_replace(new_qual, '(^|[^.[:alnum:]_])is_org_member\\(', '\\1private.is_org_member(', 'g');
-      new_qual := regexp_replace(new_qual, '(^|[^.[:alnum:]_])is_org_admin\\(', '\\1private.is_org_admin(', 'g');
-      new_qual := regexp_replace(new_qual, '(^|[^.[:alnum:]_])is_org_owner\\(', '\\1private.is_org_owner(', 'g');
+      new_qual := regexp_replace(new_qual, '(^|[^.[:alnum:]_])is_org_member\(', '\1private.is_org_member(', 'g');
+      new_qual := regexp_replace(new_qual, '(^|[^.[:alnum:]_])is_org_admin\(', '\1private.is_org_admin(', 'g');
+      new_qual := regexp_replace(new_qual, '(^|[^.[:alnum:]_])is_org_owner\(', '\1private.is_org_owner(', 'g');
       execute format('alter policy %I on public.%I using (%s)', policy_row.policyname, policy_row.tablename, new_qual);
     end if;
 
     if new_check is not null then
-      new_check := regexp_replace(new_check, '(^|[^.[:alnum:]_])is_org_member\\(', '\\1private.is_org_member(', 'g');
-      new_check := regexp_replace(new_check, '(^|[^.[:alnum:]_])is_org_admin\\(', '\\1private.is_org_admin(', 'g');
-      new_check := regexp_replace(new_check, '(^|[^.[:alnum:]_])is_org_owner\\(', '\\1private.is_org_owner(', 'g');
+      new_check := regexp_replace(new_check, '(^|[^.[:alnum:]_])is_org_member\(', '\1private.is_org_member(', 'g');
+      new_check := regexp_replace(new_check, '(^|[^.[:alnum:]_])is_org_admin\(', '\1private.is_org_admin(', 'g');
+      new_check := regexp_replace(new_check, '(^|[^.[:alnum:]_])is_org_owner\(', '\1private.is_org_owner(', 'g');
       execute format('alter policy %I on public.%I with check (%s)', policy_row.policyname, policy_row.tablename, new_check);
     end if;
   end loop;
