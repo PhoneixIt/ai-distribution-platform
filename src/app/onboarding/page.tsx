@@ -129,102 +129,50 @@ export default function OnboardingPage() {
     }
 
     void load()
-    return () => { active = false }
-  }, [router, saveSelection])
-
-  function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError('')
-    if (!organizationType) {
-      setError('Choose your organization type to continue.')
-      return
-    }
-
-    const selection = parseOrganizationSelection({
-      organization_type: organizationType,
-      organization_roles: organizationType === 'partner' ? partnerRoles : [],
-    })
-    if (!selection) {
-      setError('Choose a valid organization type and partner subtypes.')
-      return
-    }
-    void saveSelection(selection)
+    if (loading) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-slate-50 px-5 text-slate-900">
+        <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-xl shadow-slate-200/60">
+          <span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-sm font-black text-white">P</span>
+          <h1 className="mt-5 text-xl font-semibold">Preparing your PortAi workspace</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Applying your selected organization role and opening the right workspace.</p>
+          <div role="status" className="mt-6 text-xs text-slate-400">Loading workspace…</div>
+        </section>
+      </main>
+    )
   }
 
   return (
     <main className="min-h-screen bg-slate-50 px-5 py-10 text-slate-900">
       <div className="mx-auto max-w-2xl">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-600 text-xs font-black text-white">P</span> PortAi
-        </Link>
-
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900"><span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-600 text-xs font-black text-white">P</span> PortAi</Link>
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Workspace setup</p>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight">What kind of organization do you represent?</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">This helps PortAi shape your workspace. Your team, data, and shared AI operating layer stay together in one platform.</p>
-
-          {loading ? <div role="status" className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-400">Loading your workspace setup…</div> : (
-            <form onSubmit={submit} className="mt-7 space-y-5">
-              <fieldset className="space-y-3">
-                <legend className="text-sm font-medium text-slate-700">Primary organization type</legend>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {PRIMARY_ORGANIZATION_TYPES.map(({ value, label, description }) => (
-                    <label key={value} className={`cursor-pointer rounded-xl border p-4 transition ${organizationType === value ? 'border-blue-500 bg-blue-950/30' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                      <span className="flex items-start gap-3">
-                        <input
-                          className={`${inputClass} mt-1`}
-                          type="radio"
-                          name="organization_type"
-                          value={value}
-                          checked={organizationType === value}
-                          onChange={() => { setOrganizationType(value); if (value !== 'partner') setPartnerRoles([]) }}
-                          required
-                        />
-                        <span><span className="block text-sm font-semibold text-slate-900">{label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{description}</span></span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              {organizationType === 'partner' && <fieldset className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <legend className="px-1 text-xs font-medium text-slate-700">Partner subtypes <span className="font-normal text-slate-500">(optional; choose any that apply)</span></legend>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {PARTNER_SUBTYPES.map(({ value, label }) => (
-                    <label key={value} className="flex items-center gap-2 text-sm text-slate-400">
-                      <input
-                        type="checkbox"
-                        value={value}
-                        checked={partnerRoles.includes(value)}
-                        onChange={() => setPartnerRoles(current => current.includes(value) ? current.filter(role => role !== value) : [...current, value])}
-                        className={inputClass}
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>}
-
-              {organizationType && roleDetails[organizationType] && <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-                <p className="text-sm font-semibold text-blue-900">{roleDetails[organizationType].headline}</p>
-                <p className="mt-1 text-xs leading-5 text-blue-800">{roleDetails[organizationType].description}</p>
-                <p className="mt-2 text-xs font-semibold text-blue-700">{roleDetails[organizationType].action} →</p>
-              </div>}
-
-              {error && <div role="alert" className="rounded-lg border border-red-900/60 bg-red-950/20 p-3 text-sm text-red-300">{error}</div>}
-              <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs leading-5 text-slate-500">Your primary role shapes the workspace. Additional organization roles can be added later.</p>
-                <button type="submit" disabled={saving || !organizationType} className="shrink-0 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">
-                  {saving ? 'Saving workspace…' : 'Continue to PortAi'}
-                </button>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Choose your organization role</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Select the primary perspective PortAi should use for this organization.</p>
+          <form onSubmit={submit} className="mt-7 space-y-5">
+            <fieldset className="space-y-3"><legend className="text-sm font-medium text-slate-700">Primary organization type</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {PRIMARY_ORGANIZATION_TYPES.map(({ value, label, description }) => (
+                  <label key={value} className={`cursor-pointer rounded-xl border p-4 transition ${organizationType === value ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                    <span className="flex items-start gap-3"><input className="accent-blue-500 mt-1" type="radio" name="organization_type" value={value} checked={organizationType === value} onChange={() => { setOrganizationType(value); if (value !== 'partner') setPartnerRoles([]) }} required />
+                    <span><span className="block text-sm font-semibold text-slate-900">{label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{description}</span></span></span>
+                  </label>
+                ))}
               </div>
-            </form>
-          )}
-
+            </fieldset>
+            {organizationType === 'partner' && <fieldset className="rounded-xl border border-slate-200 bg-slate-50 p-4"><legend className="px-1 text-xs font-medium text-slate-700">Partner subtypes <span className="font-normal text-slate-500">(optional)</span></legend>
+              <div className="grid gap-3 sm:grid-cols-2">{PARTNER_SUBTYPES.map(({ value, label }) => <label key={value} className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" value={value} checked={partnerRoles.includes(value)} onChange={() => setPartnerRoles(current => current.includes(value) ? current.filter(role => role !== value) : [...current, value])} className="accent-blue-500" />{label}</label>)}</div>
+            </fieldset>}
+            {organizationType && roleDetails[organizationType] && <div className="rounded-xl border border-blue-100 bg-blue-50 p-4"><p className="text-sm font-semibold text-blue-900">{roleDetails[organizationType].headline}</p><p className="mt-1 text-xs leading-5 text-blue-800">{roleDetails[organizationType].description}</p></div>}
+            {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+            <div className="flex items-center justify-between border-t border-slate-200 pt-5"><p className="text-xs leading-5 text-slate-500">Your primary role determines your PortAi perspective.</p><button type="submit" disabled={saving || !organizationType} className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving workspace…' : 'Continue to PortAi'}</button></div>
+          </form>
         </section>
       </div>
     </main>
   )
+
 }
 
 function clearPendingSelection() {
