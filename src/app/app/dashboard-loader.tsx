@@ -5,53 +5,28 @@ import { ensureWorkspace } from '@/lib/supabase/workspace'
 
 type DashboardData = Awaited<ReturnType<typeof loadDashboard>>
 
-export default function DashboardLoader({
-  onData,
-  onError,
-}: {
-  onData: (data: DashboardData) => void
-  onError: (message: string) => void
-}) {
+export default function DashboardLoader({ onData, onError }: { onData: (data: DashboardData) => void; onError: (message: string) => void }) {
   useEffect(() => {
     let active = true
-
-    loadDashboard()
-      .then((data) => {
-        if (active) onData(data)
-      })
-      .catch((error) => {
-        if (active) onError(error instanceof Error ? error.message : 'Could not load your workspace.')
-      })
-
-    return () => {
-      active = false
-    }
+    loadDashboard().then(data => { if (active) onData(data) }).catch(error => { if (active) onError(error instanceof Error ? error.message : 'Could not load your workspace.') })
+    return () => { active = false }
   }, [onData, onError])
-
   return null
 }
 
 async function loadDashboard() {
   const { supabase, orgId } = await ensureWorkspace()
-
-  const [partners, vendors, distributors, customers, opportunities, matches] = await Promise.all([
+  const [partners, vendors, distributors, customers, opportunities, matches, discoveryRuns, qualifiedCandidates] = await Promise.all([
     supabase.from('distributor_partners').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('org_vendors').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('org_distributors').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('customers').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('opportunities').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
     supabase.from('partner_matches').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+    supabase.from('discovery_runs').select('id', { count: 'exact', head: true }),
+    supabase.from('discovery_candidates').select('id', { count: 'exact', head: true }).eq('qualification_status', 'qualified'),
   ])
-
-  const results = [
-    ['partners', partners.error],
-    ['vendors', vendors.error],
-    ['distributors', distributors.error],
-    ['customers', customers.error],
-    ['opportunities', opportunities.error],
-    ['partner matches', matches.error],
-  ] as const
-
+  const results = [['partners', partners.error], ['vendors', vendors.error], ['distributors', distributors.error], ['customers', customers.error], ['opportunities', opportunities.error], ['partner matches', matches.error], ['discovery runs', discoveryRuns.error], ['qualified candidates', qualifiedCandidates.error]] as const
   const failed = results.find(([, error]) => error)
   if (failed?.[1]) throw new Error(`Could not load ${failed[0]}: ${failed[1].message}`)
 
@@ -61,7 +36,6 @@ async function loadDashboard() {
     .eq('org_id', orgId)
     .order('created_at', { ascending: false })
     .limit(6)
-
   if (recentError) throw new Error(`Could not load recent opportunities: ${recentError.message}`)
 
   return {
@@ -72,6 +46,8 @@ async function loadDashboard() {
       customers: customers.count ?? 0,
       opportunities: opportunities.count ?? 0,
       matches: matches.count ?? 0,
+      discoveryRuns: discoveryRuns.count ?? 0,
+      qualifiedCandidates: qualifiedCandidates.count ?? 0,
     },
     recent: recentData ?? [],
   }
