@@ -78,7 +78,7 @@ function getNavigation(profile: WorkspaceProfile) {
     ]},
     { label: 'Administration', items: [
       { href: '/settings', label: 'Settings' },
-      { href: '#', label: 'Integrations', comingSoon: true },
+      { href: '/integrations', label: 'Integrations' },
       { href: '#', label: 'Users & roles', comingSoon: true },
     ]},
   ]
