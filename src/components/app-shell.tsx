@@ -25,72 +25,103 @@ export function useWorkspaceRole() {
   return profile
 }
 
-const ecosystemItems = [
-  { href: '/vendors', label: 'Vendors' },
-  { href: '/distributors', label: 'Distributors' },
-  { href: '/partners', label: 'Partners' },
-  { href: '/customers', label: 'Customers' },
-  { href: '/products', label: 'Products & solutions' },
-  { href: '/opportunities', label: 'Opportunities' },
-  { href: '/engagements', label: 'Relationships' },
+type NavItem = { href: string; label: string; comingSoon?: boolean }
+
+const sharedNavigation: Array<{ label: string; items: NavItem[] }> = [
+  { label: 'Work', items: [
+    { href: '/workflow', label: 'Missions' },
+    { href: '/discovery', label: 'Discover' },
+    { href: '/network', label: 'Network' },
+    { href: '/opportunities', label: 'Opportunities' },
+  ]},
+  { label: 'Intelligence', items: [{ href: '/insights', label: 'Insights' }] },
+  { label: 'AI', items: [{ href: '/workforce', label: 'AI Workforce' }] },
+  { label: 'Organization', items: [{ href: '/vendors', label: 'My Company' }, { href: '/settings', label: 'Settings' }] },
 ]
 
-const rolePriorities: Record<WorkspaceRole, string[]> = {
-  vendor: ['/partners', '/distributors', '/opportunities', '/customers', '/products', '/engagements', '/vendors'],
-  distributor: ['/vendors', '/partners', '/opportunities', '/customers', '/products', '/engagements', '/distributors'],
-  partner: ['/vendors', '/distributors', '/customers', '/opportunities', '/engagements', '/partners', '/products'],
-  customer: ['/products', '/vendors', '/partners', '/opportunities', '/engagements', '/distributors', '/customers'],
-  other: ['/partners', '/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
-  unconfigured: ['/partners', '/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
-}
-
-const roleLabels: Record<WorkspaceRole, Record<string, string>> = {
-  vendor: { '/partners': 'Partners', '/distributors': 'Distributors', '/opportunities': 'Opportunities', '/customers': 'Customers', '/products': 'Products & solutions', '/engagements': 'Relationships', '/vendors': 'My company' },
-  distributor: { '/vendors': 'Vendors', '/partners': 'Partners', '/opportunities': 'Opportunities', '/customers': 'Customers', '/products': 'Products & portfolio', '/engagements': 'Vendor & partner relationships', '/distributors': 'My company' },
-  partner: { '/vendors': 'Vendors', '/distributors': 'Distributors', '/customers': 'Customers', '/opportunities': 'Opportunities', '/engagements': 'Relationships', '/partners': 'My profile & partners', '/products': 'Products & solutions' },
-  customer: { '/products': 'Products & solutions', '/vendors': 'Vendors', '/partners': 'Implementation partners', '/opportunities': 'Proposals & opportunities', '/engagements': 'Relationships', '/distributors': 'Distributors', '/customers': 'My organization' },
-  other: {},
-  unconfigured: {},
+const roleWorkspace: Record<WorkspaceRole, {
+  objective: string
+  network: NavItem[]
+  primaryEntities: string
+}> = {
+  vendor: {
+    objective: 'Grow My Channel',
+    primaryEntities: 'Partners, distributors, customers, products and opportunities',
+    network: [
+      { href: '/partners', label: 'Partners' },
+      { href: '/distributors', label: 'Distributors' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/products', label: 'Products & solutions' },
+      { href: '/opportunities', label: 'Opportunities' },
+    ],
+  },
+  distributor: {
+    objective: 'Grow My Ecosystem',
+    primaryEntities: 'Vendors, products, partners, customers and opportunities',
+    network: [
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/products', label: 'Products & portfolio' },
+      { href: '/partners', label: 'Partners' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/opportunities', label: 'Opportunities' },
+    ],
+  },
+  partner: {
+    objective: 'Grow My Technology Business',
+    primaryEntities: 'Vendors, distributors, customers, technologies and opportunities',
+    network: [
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/distributors', label: 'Distributors' },
+      { href: '/customers', label: 'Customers' },
+      { href: '/products', label: 'Products & solutions' },
+      { href: '/opportunities', label: 'Opportunities' },
+    ],
+  },
+  customer: {
+    objective: 'Solve My Technology Need',
+    primaryEntities: 'Solutions, vendors, distributors, implementation partners and opportunities',
+    network: [
+      { href: '/products', label: 'Solutions' },
+      { href: '/vendors', label: 'Vendors' },
+      { href: '/distributors', label: 'Distributors' },
+      { href: '/partners', label: 'Implementation partners' },
+      { href: '/opportunities', label: 'Opportunities' },
+    ],
+  },
+  other: {
+    objective: 'Work with the technology ecosystem',
+    primaryEntities: 'Organizations, products and opportunities',
+    network: [
+      { href: '/vendors', label: 'Organizations' },
+      { href: '/products', label: 'Products & solutions' },
+      { href: '/opportunities', label: 'Opportunities' },
+    ],
+  },
+  unconfigured: {
+    objective: 'Set up your PortAi workspace',
+    primaryEntities: 'Ecosystem',
+    network: [],
+  },
 }
 
 function getNavigation(profile: WorkspaceProfile) {
-  const priority = rolePriorities[profile.primaryType]
-  const orderedItems = [...ecosystemItems].sort((left, right) => priority.indexOf(left.href) - priority.indexOf(right.href)).map(item => ({ ...item, label: roleLabels[profile.primaryType][item.href] ?? item.label }))
-  const dashboardLabel = profile.primaryType === 'other' ? 'Workspace dashboard' : 'Home'
-
+  const config = roleWorkspace[profile.primaryType] ?? roleWorkspace.other
   return [
-    { label: 'Workspace', items: [{ href: '/app', label: dashboardLabel }, ...orderedItems] },
-    { label: 'AI & discovery', items: [
-      { href: '/workflow', label: 'Missions' },
-      { href: '/discovery', label: 'Discover' },
-      { href: '/matches', label: 'AI matching' },
-      { href: '/workforce', label: 'AI assistant' },
-    ]},
-    { label: 'Business', items: [
-      { href: '/opportunities', label: 'Opportunities' },
-      { href: '/engagements', label: 'Relationships' },
-      { href: '#', label: 'Deal registration', comingSoon: true },
-      { href: '#', label: 'Co-selling', comingSoon: true },
-      { href: '#', label: 'Account mapping', comingSoon: true },
-    ]},
-    { label: 'Growth', items: [
-      { href: '#', label: 'Onboarding', comingSoon: true },
-      { href: '#', label: 'Training & certifications', comingSoon: true },
-      { href: '#', label: 'Campaigns & MDF', comingSoon: true },
-      { href: '#', label: 'Partner performance', comingSoon: true },
-    ]},
-    { label: 'Revenue & intelligence', items: [
-      { href: '/pricing', label: 'Pricing' },
-      { href: '#', label: 'Pipeline & revenue', comingSoon: true },
-      { href: '#', label: 'Ecosystem insights', comingSoon: true },
-      { href: '#', label: 'Marketplace', comingSoon: true },
-    ]},
-    { label: 'Administration', items: [
-      { href: '/settings', label: 'Settings' },
-      { href: '#', label: 'Integrations', comingSoon: true },
-      { href: '#', label: 'Users & roles', comingSoon: true },
-    ]},
+    { label: 'Workspace', items: [{ href: '/app', label: 'Home' }] },
+    { label: 'Work', items: sharedNavigation[0].items },
+    { label: 'Network', items: config.network },
+    { label: 'Intelligence', items: sharedNavigation[1].items },
+    { label: 'AI', items: sharedNavigation[2].items },
+    { label: 'Organization', items: sharedNavigation[3].items },
   ]
+}
+
+export function getWorkspaceObjective(role: WorkspaceRole) {
+  return roleWorkspace[role]?.objective ?? roleWorkspace.other.objective
+}
+
+export function getWorkspaceEntities(role: WorkspaceRole) {
+  return roleWorkspace[role]?.primaryEntities ?? roleWorkspace.other.primaryEntities
 }
 
 export default function AppShell({ children, title, subtitle }: AppShellProps) {
@@ -172,7 +203,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
   }
 
   const groups = getNavigation(profile)
-  const effectiveTitle = title === 'Ecosystem overview' ? `${profile.label} workspace` : title
+  const effectiveTitle = title === 'Ecosystem overview' ? `${getWorkspaceObjective(profile.primaryType)}` : title
 
   return (
     <WorkspaceRoleContext.Provider value={profile}>
@@ -224,7 +255,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
             </nav>
             <div className="mt-8 rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-semibold text-slate-700">One shared AI operating layer</p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">Missions, AI workforce, discovery, matching, and approvals stay available across every organization workspace.</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">Missions, discovery, intelligence, AI workforce and approvals are shared across every PortAi workspace.</p>
             </div>
             <div className="absolute bottom-4 left-4 right-4 text-[11px] text-slate-500">{effectiveTitle || 'Workspace'}</div>
           </aside>
