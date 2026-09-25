@@ -36,7 +36,7 @@ const sharedNavigation: Array<{ label: string; items: NavItem[] }> = [
   ]},
   { label: 'Intelligence', items: [{ href: '/insights', label: 'Insights' }] },
   { label: 'AI', items: [{ href: '/workforce', label: 'AI Workforce' }] },
-  { label: 'Organization', items: [{ href: '/vendors', label: 'My Company' }, { href: '/settings', label: 'Settings' }] },
+  { label: 'Organization', items: [{ href: '/company', label: 'My Company' }, { href: '/settings', label: 'Settings' }] },
 ]
 
 const roleWorkspace: Record<WorkspaceRole, {
