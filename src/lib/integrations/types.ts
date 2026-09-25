@@ -3,7 +3,7 @@ export type IntegrationLayer =
   | 'calendar' | 'meetings' | 'commercial' | 'automation' | 'infrastructure'
 
 export type IntegrationMode = 'native' | 'connect' | 'automation' | 'planned'
-export type IntegrationStatus = 'ready' | 'configured' | 'available' | 'planned'
+export type IntegrationStatus = 'ready' | 'configured' | 'available' | 'planned' | 'unavailable'
 
 export type PortAiCapability = {
   id: string
