@@ -66,6 +66,7 @@ const stageLabel: Record<string, string> = {
   verifying: 'Verifying',
   qualifying: 'Qualifying',
   matching: 'Matching',
+  scored: 'Discovery complete',
   dossier_ready: 'Results ready',
   contacts_researched: 'Contacts researched',
   draft_ready: 'Draft ready',
