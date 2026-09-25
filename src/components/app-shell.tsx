@@ -25,47 +25,33 @@ export function useWorkspaceRole() {
   return profile
 }
 
-const ecosystemItems = [
-  { href: '/vendors', label: 'Vendors' },
-  { href: '/distributors', label: 'Distributors' },
-  { href: '/partners', label: 'Partners' },
-  { href: '/customers', label: 'Customers' },
-  { href: '/products', label: 'Products & solutions' },
-]
-
-const rolePriorities: Record<WorkspaceRole, string[]> = {
-  vendor: ['/partners', '/distributors', '/customers', '/products', '/vendors'],
-  distributor: ['/vendors', '/partners', '/customers', '/products', '/distributors'],
-  partner: ['/vendors', '/distributors', '/customers', '/partners', '/products'],
-  customer: ['/vendors', '/distributors', '/partners', '/products', '/customers'],
-  other: ['/partners', '/vendors', '/distributors', '/customers', '/products'],
-  unconfigured: ['/partners', '/vendors', '/distributors', '/customers', '/products'],
+const roleWorkspaceCopy: Record<WorkspaceRole, { label: string; objective: string; networkLabel: string }> = {
+  vendor: { label: 'Grow My Channel', objective: 'Grow my channel and ecosystem revenue.', networkLabel: 'Channel network' },
+  distributor: { label: 'Grow My Ecosystem', objective: 'Grow my vendor portfolio and partner ecosystem.', networkLabel: 'Ecosystem network' },
+  partner: { label: 'Grow My Technology Business', objective: 'Grow my technology business.', networkLabel: 'Technology network' },
+  customer: { label: 'Solve My Technology Need', objective: 'Find and execute the right technology solution.', networkLabel: 'Solution network' },
+  other: { label: 'Ecosystem workspace', objective: 'Coordinate technology ecosystem work.', networkLabel: 'Ecosystem network' },
+  unconfigured: { label: 'Workspace setup', objective: 'Set up your PortAi workspace.', networkLabel: 'Ecosystem network' },
 }
 
 function getNavigation(profile: WorkspaceProfile) {
-  const priority = rolePriorities[profile.primaryType]
-  const orderedItems = [...ecosystemItems].sort((left, right) => priority.indexOf(left.href) - priority.indexOf(right.href))
-  const dashboardLabel = profile.primaryType === 'other' ? 'Workspace dashboard' : 'Home'
-
+  const roleCopy = roleWorkspaceCopy[profile.primaryType]
   return [
-    { label: 'Home', items: [{ href: '/app', label: dashboardLabel }] },
-    { label: 'AI & discovery', items: [
+    { label: 'WORK', items: [
       { href: '/workflow', label: 'Missions' },
       { href: '/discovery', label: 'Discover' },
-      { href: '/matches', label: 'AI matching' },
-      { href: '/workforce', label: 'AI workforce' },
-    ]},
-    { label: 'Ecosystem', items: orderedItems },
-    { label: 'Business', items: [
+      { href: '/network', label: roleCopy.networkLabel },
       { href: '/opportunities', label: 'Opportunities' },
-      { href: '/engagements', label: 'Relationships' },
     ]},
-    { label: 'Intelligence', items: [
-      { href: '/pricing', label: 'Pricing' },
+    { label: 'INTELLIGENCE', items: [
+      { href: '/insights', label: 'Insights' },
     ]},
-    { label: 'Administration', items: [
+    { label: 'AI', items: [
+      { href: '/workforce', label: 'AI Workforce' },
+    ]},
+    { label: 'ORGANIZATION', items: [
+      { href: '/company', label: 'My Company' },
       { href: '/settings', label: 'Settings' },
-      { href: '/integrations', label: 'Integrations' },
     ]},
   ]
 }
@@ -149,7 +135,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
   }
 
   const groups = getNavigation(profile)
-  const effectiveTitle = title === 'Ecosystem overview' ? `${profile.label} workspace` : title
+  const effectiveTitle = title === 'Ecosystem overview' ? roleWorkspaceCopy[profile.primaryType].label : title
 
   return (
     <WorkspaceRoleContext.Provider value={profile}>
@@ -162,7 +148,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-sm font-black">P</span>
                 <span>
                   <span className="block text-sm font-semibold">PortAi</span>
-                  <span className="hidden text-[11px] text-slate-500 sm:block">{profile.label} workspace</span>
+                  <span className="hidden text-[11px] text-slate-500 sm:block">{roleWorkspaceCopy[profile.primaryType].label}</span>
                 </span>
               </Link>
             </div>
@@ -171,7 +157,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
                 <button onClick={() => router.back()} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-500 hover:border-slate-300 hover:text-slate-900" aria-label="Go back">← Back</button>
                 <button onClick={() => router.forward()} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-500 hover:border-slate-300 hover:text-slate-900" aria-label="Go forward">Forward →</button>
               </div>
-              <Link href="/missions/new" className="hidden rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold hover:bg-blue-500 sm:block">Start a mission</Link>
+              <Link href="/missions/new" className="hidden rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 sm:block">Start a mission</Link>
               <div className="hidden max-w-48 truncate text-right text-xs text-slate-500 md:block">{email}</div>
               <button onClick={signOut} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-slate-300 hover:text-slate-900">Sign out</button>
             </div>
@@ -199,9 +185,9 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
                 </div>
               ))}
             </nav>
-            <div className="mt-8 rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-semibold text-slate-700">One shared AI operating layer</p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">Missions, AI workforce, discovery, matching, and approvals stay available across every organization workspace.</p>
+            <div className="mt-8 rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+              <p className="text-xs font-semibold text-blue-900">{roleWorkspaceCopy[profile.primaryType].objective}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">Give PortAi an objective. The platform coordinates discovery, intelligence, matching and approved actions behind it.</p>
             </div>
             <div className="absolute bottom-4 left-4 right-4 text-[11px] text-slate-500">{effectiveTitle || 'Workspace'}</div>
           </aside>
