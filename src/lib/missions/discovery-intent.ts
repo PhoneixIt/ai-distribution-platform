@@ -39,6 +39,7 @@ function cleanCountry(value: string) {
   const stopWords = new Set([
     'that', 'who', 'which', 'serving', 'with', 'where', 'as', 'could',
     'would', 'can', 'should', 'and', 'to', 'for', 'selling', 'targeting',
+    'employees', 'employee', 'countries', 'country', 'regions', 'region', 'markets',
   ])
   const tokens = value.trim().split(/\s+/)
   const kept: string[] = []
@@ -125,7 +126,30 @@ function parseTechnologyFocus(objective: string, partnerTypes: string[]) {
     const match = objective.match(item.pattern)
     if (match) return match[0].replace(/\s+/g, ' ').trim() || item.value
   }
-  return partnerTypes.length ? undefined : undefined
+
+  const needMarkers = [
+    /\b(?:i|we)\s+(?:need|require|want|am looking for|are looking for)\s+(?:a|an|the)?\s*/i,
+    /\b(?:find|source|identify|recommend)\s+(?:a|an|the)?\s*/i,
+  ]
+  for (const marker of needMarkers) {
+    const match = objective.match(marker)
+    if (!match || match.index === undefined) continue
+    const tail = objective.slice(match.index + match[0].length)
+    const cutPoints = [
+      tail.toLowerCase().indexOf(' across '),
+      tail.toLowerCase().indexOf(' throughout '),
+      tail.toLowerCase().indexOf(' within '),
+      tail.toLowerCase().indexOf(' in '),
+      tail.toLowerCase().indexOf(' for '),
+      tail.toLowerCase().indexOf(' that '),
+      tail.search(/[,.!?;:]/),
+    ].filter((point) => point >= 0)
+    const end = cutPoints.length ? Math.min(...cutPoints) : tail.length
+    const phrase = tail.slice(0, end).trim()
+    if (phrase && phrase.length <= 100) return phrase
+  }
+
+  return undefined
 }
 
 function parseCustomerSegment(objective: string) {
