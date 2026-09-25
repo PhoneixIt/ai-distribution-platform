@@ -7,9 +7,9 @@ import { getOrganizationProfile, getPartnerSubtypeLabel } from '@/lib/organizati
 
 function Status({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
       <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-medium text-slate-300">{value}</p>
+      <p className="mt-1 text-sm font-medium text-slate-700">{value}</p>
     </div>
   )
 }
@@ -72,44 +72,44 @@ export default function SettingsPage() {
       subtitle="Manage your profile, workspace and connected operating capabilities."
     >
       <div className="grid max-w-3xl gap-5">
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
           <h2 className="font-semibold">Profile</h2>
           <p className="mt-1 text-sm text-slate-500">The name shown inside your workspace.</p>
-          <label className="mt-5 block text-sm text-slate-300">
+          <label className="mt-5 block text-sm text-slate-700">
             Full name
             <input
               value={name}
               maxLength={160}
               onChange={(event) => setName(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 outline-none focus:border-blue-500"
             />
           </label>
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold">Workspace</h2>
               <p className="mt-1 text-sm text-slate-500">Your private operating workspace.</p>
             </div>
-            <span className="rounded-full border border-blue-900 bg-blue-950/30 px-3 py-1 text-xs text-blue-300 capitalize">
+            <span className="rounded-full border border-blue-900 bg-blue-50 px-3 py-1 text-xs text-blue-700 capitalize">
               {plan}
             </span>
           </div>
-          <label className="mt-5 block text-sm text-slate-300">
+          <label className="mt-5 block text-sm text-slate-700">
             Workspace name
             <input
               value={workspace}
               maxLength={160}
               onChange={(event) => setWorkspace(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 outline-none focus:border-blue-500"
             />
           </label>
-          <div className="mt-5 border-t border-slate-800 pt-5">
+          <div className="mt-5 border-t border-slate-200 pt-5">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-medium text-slate-300">Organization type</h3>
-              <span className="rounded-full border border-blue-900 bg-blue-950/30 px-3 py-1 text-xs text-blue-300">{organizationProfile.label}</span>
-              {organizationProfile.partnerRoles.map(role => <span key={role} className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-400">{getPartnerSubtypeLabel(role)}</span>)}
+              <h3 className="text-sm font-medium text-slate-700">Organization type</h3>
+              <span className="rounded-full border border-blue-900 bg-blue-50 px-3 py-1 text-xs text-blue-700">{organizationProfile.label}</span>
+              {organizationProfile.partnerRoles.map(role => <span key={role} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500">{getPartnerSubtypeLabel(role)}</span>)}
             </div>
             <p className="mt-2 text-xs leading-5 text-slate-500">This role shapes your workspace navigation. Contact a workspace owner to request a role change; existing organization identity and relationships are preserved.</p>
           </div>
@@ -119,11 +119,11 @@ export default function SettingsPage() {
           >
             Save changes
           </button>
-          {saved ? <span className="ml-3 text-sm text-emerald-400">Saved</span> : null}
-          {error ? <div className="mt-4 text-sm text-red-300">{error}</div> : null}
+          {saved ? <span className="ml-3 text-sm text-emerald-700">Saved</span> : null}
+          {error ? <div className="mt-4 text-sm text-red-700">{error}</div> : null}
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
           <h2 className="font-semibold">Operating capabilities</h2>
           <p className="mt-1 text-sm text-slate-500">
             AI actions stay inside explicit approval boundaries. Provider connections are used only when configured for your workspace.

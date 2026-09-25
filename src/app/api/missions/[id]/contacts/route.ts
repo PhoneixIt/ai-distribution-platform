@@ -35,13 +35,12 @@ export async function POST(_request: Request, context: Context) {
     .order('rank', { ascending: true })
     .limit(10)
   if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
-  if (!candidates?.length) return NextResponse.json({ error: 'No qualified candidates are available for contact research.' }, { status: 409 })
-  if (candidates.length < 10) {
+  if (!candidates?.length) return NextResponse.json({ error: 'No qualified candidates are available for contact research.', code: 'NO_RESULTS' }, { status: 409 })
+  if (!process.env.APOLLO_API_KEY) {
     return NextResponse.json({
-      error: 'Mission requires 10 qualified candidates before contact research can start.',
-      qualifiedCandidates: candidates.length,
-      required: 10
-    }, { status: 409 })
+      error: 'Contact enrichment is not configured for this workspace. Discovery and qualification are complete; connect an approved enrichment provider before researching contacts.',
+      code: 'ENRICHMENT_NOT_CONFIGURED',
+    }, { status: 503 })
   }
 
   const domains = candidates.map((row) => domainFromWebsite(row.website)).filter((x): x is string => Boolean(x))

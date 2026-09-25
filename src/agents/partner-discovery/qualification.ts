@@ -350,9 +350,9 @@ export function qualifyCandidate(
 
   // Evaluate all criteria
   const evaluated: EvaluatedCriterion[] = [
-    evaluateCountry(candidate, request),
+    ...(request.country.trim() ? [evaluateCountry(candidate, request)] : []),
     ...(request.partnerTypes.length ? [evaluatePartnerType(candidate, request)] : []),
-    evaluateTechnology(candidate, request),
+    ...(request.technologyFocus.trim() ? [evaluateTechnology(candidate, request)] : []),
   ]
 
   // Add optional criteria
@@ -449,6 +449,8 @@ export function qualifyCandidate(
   let status: QualificationResult['status']
   if (exclusion) {
     status = 'not_qualified'
+  } else if (evaluated.length === 0) {
+    status = 'needs_review'
   } else if (unmetCriteria.length > 0) {
     status = 'not_qualified'
   } else {
@@ -461,8 +463,9 @@ export function qualifyCandidate(
 
   // Calculate confidence
   const explicitCriteria = matchedCriteria.length + unmetCriteria.length
-  const confidence =
-    Math.round(((explicitCriteria / evaluated.length) * 100) / 100)
+  const confidence = evaluated.length
+    ? Math.round(((explicitCriteria / evaluated.length) * 100) / 100)
+    : 0
 
   return {
     status,

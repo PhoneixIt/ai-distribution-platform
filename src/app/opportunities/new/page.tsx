@@ -2,8 +2,8 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
-import { ButtonPrimary, Card } from '@/components/ui'
+import AppShell from '@/components/app-shell'
+import { ButtonPrimary, ButtonSecondary, Card } from '@/components/ui'
 import { getAuthenticatedClient } from '@/lib/supabase/client'
 
 export default function CreateOpportunityPage() {
@@ -96,11 +96,11 @@ export default function CreateOpportunityPage() {
   }
 
   return (
-    <AuthenticatedLayout>
+    <AppShell title="Create an opportunity" subtitle="Capture a customer need and match it with relevant channel partners.">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Create Opportunity</h1>
-          <p className="mt-1 text-slate-400">Define a sales opportunity and match it with channel partners.</p>
+          <p className="mt-1 text-slate-500">Define a sales opportunity and match it with channel partners.</p>
         </div>
 
         <Card className="max-w-2xl">
@@ -114,21 +114,21 @@ export default function CreateOpportunityPage() {
             <Field label="Customer Company Size"><input value={companySize} onChange={(event) => setCompanySize(event.target.value)} placeholder="e.g., Mid-market" className={input} /></Field>
             <Field label="Estimated Opportunity Value (USD)"><input type="number" min="0" value={value} onChange={(event) => setValue(event.target.value)} placeholder="e.g., 250000" className={input} /></Field>
 
-            {error && <div className="rounded-lg border border-red-900/60 bg-red-950/20 p-3 text-sm text-red-300">{error}</div>}
+            {error && <div className="rounded-lg border border-red-900/60 bg-red-950/20 p-3 text-sm text-red-700">{error}</div>}
 
             <div className="flex gap-3 pt-4">
               <ButtonPrimary type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create Opportunity'}</ButtonPrimary>
-              <ButtonPrimary href="/opportunities" className="bg-slate-700 hover:bg-slate-600">Cancel</ButtonPrimary>
+              <ButtonSecondary href="/opportunities">Cancel</ButtonSecondary>
             </div>
           </form>
         </Card>
       </div>
-    </AuthenticatedLayout>
+    </AppShell>
   )
 }
 
-const input = 'mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none'
+const input = 'mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:outline-none'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block text-sm font-medium text-slate-300">{label}{children}</label>
+  return <label className="block text-sm font-medium text-slate-700">{label}{children}</label>
 }

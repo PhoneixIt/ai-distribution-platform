@@ -148,16 +148,16 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
   const primaryProviders = enabledProviders.slice(0, 2)
   const secondaryProviders = enabledProviders.slice(2)
 
-  return <main className="min-h-screen bg-slate-950 text-white"><div className="mx-auto flex min-h-screen max-w-md items-center px-5 py-10"><div className="w-full">
-    <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"><span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-600 text-xs font-black">P</span> PortAi</Link>
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-7 shadow-2xl shadow-black/20">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1><p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
+  return <main className="min-h-screen bg-white text-slate-900"><div className="mx-auto flex min-h-screen max-w-md items-center px-5 py-10"><div className="w-full">
+    <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-600 text-xs font-black text-white">P</span> PortAi</Link>
+    <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/60">
+      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1><p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
 
       {mode === 'signup' && <fieldset className="mt-6 space-y-3">
-        <legend className="text-sm font-medium text-slate-300">What type of organization are you?</legend>
+        <legend className="text-sm font-medium text-slate-700">What type of organization are you?</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {PRIMARY_ORGANIZATION_TYPES.map(({ value, label, description: roleDescription }) => (
-            <label key={value} className={`cursor-pointer rounded-xl border p-3 transition ${organizationType === value ? 'border-blue-500 bg-blue-950/30' : 'border-slate-700 bg-slate-950 hover:border-slate-500'}`}>
+            <label key={value} className={`cursor-pointer rounded-xl border p-3 transition ${organizationType === value ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
               <span className="flex items-start gap-3">
                 <input
                   className="mt-1 accent-blue-500"
@@ -169,16 +169,16 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
                   onChange={() => { setOrganizationType(value); if (value !== 'partner') setPartnerRoles([]) }}
                   required
                 />
-                <span><span className="block text-sm font-semibold text-slate-100">{label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{roleDescription}</span></span>
+                <span><span className="block text-sm font-semibold text-slate-900">{label}</span><span className="mt-1 block text-xs leading-5 text-slate-600">{roleDescription}</span></span>
               </span>
             </label>
           ))}
         </div>
-        {organizationType === 'partner' && <fieldset className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-          <legend className="px-1 text-xs font-medium text-slate-300">Partner subtypes <span className="font-normal text-slate-500">(optional; choose any that apply)</span></legend>
+        {organizationType === 'partner' && <fieldset className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <legend className="px-1 text-xs font-medium text-slate-700">Partner subtypes <span className="font-normal text-slate-500">(optional; choose any that apply)</span></legend>
           <div className="grid gap-2 sm:grid-cols-2">
             {PARTNER_SUBTYPES.map(({ value, label: subtypeLabel }) => (
-              <label key={value} className="flex items-center gap-2 text-xs text-slate-400">
+              <label key={value} className="flex items-center gap-2 text-xs text-slate-600">
                 <input
                   type="checkbox"
                   value={value}
@@ -195,11 +195,11 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
 
       {showSocial && <>
         <div className="mt-7 space-y-3">
-          {primaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">{socialLoading === provider ? 'Connecting…' : <>{icon}<span>Continue with {label}</span></>}</button>)}
+          {primaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">{socialLoading === provider ? 'Connecting…' : <>{icon}<span>Continue with {label}</span></>}</button>)}
         </div>
-        {secondaryProviders.length > 0 && <button type="button" onClick={() => setShowMoreProviders(value => !value)} className="mt-3 w-full text-xs text-slate-500 hover:text-slate-300">{showMoreProviders ? 'Hide other sign-in options' : 'More sign-in options'}</button>}
-        {secondaryProviders.length > 0 && showMoreProviders && <div className="mt-3 grid grid-cols-3 gap-3">{secondaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} aria-label={`Continue with ${label}`} title={`Continue with ${label}`} className="flex items-center justify-center rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50">{icon}</button>)}</div>}
-        <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-slate-600"><span className="h-px flex-1 bg-slate-800" /><span>Or continue with email</span><span className="h-px flex-1 bg-slate-800" /></div>
+        {secondaryProviders.length > 0 && <button type="button" onClick={() => setShowMoreProviders(value => !value)} className="mt-3 w-full text-xs text-slate-600 hover:text-slate-800">{showMoreProviders ? 'Hide other sign-in options' : 'More sign-in options'}</button>}
+        {secondaryProviders.length > 0 && showMoreProviders && <div className="mt-3 grid grid-cols-3 gap-3">{secondaryProviders.map(({ provider, label, icon }) => <button key={provider} type="button" disabled={loading || socialLoading !== null} onClick={() => signInWithProvider(provider)} aria-label={`Continue with ${label}`} title={`Continue with ${label}`} className="flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-3 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50">{icon}</button>)}</div>}
+        <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-slate-500"><span className="h-px flex-1 bg-slate-200" /><span>Or continue with email</span><span className="h-px flex-1 bg-slate-200" /></div>
       </>}
 
       <form id="auth-form" onSubmit={submit} className="space-y-4">
@@ -208,20 +208,20 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' | 'forgot'
         {mode !== 'forgot' && mode !== 'reset' && <Field label="Password"><input required type="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)} className={input} placeholder="••••••••" /></Field>}
         {mode === 'reset' && <><Field label="New password"><input required type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} className={input} placeholder="At least 8 characters" /></Field><Field label="Confirm password"><input required type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} className={input} placeholder="Repeat your password" /></Field></>}
         {mode === 'signup' && <Field label="Confirm password"><input required type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} className={input} placeholder="Repeat your password" /></Field>}
-        <button disabled={loading || socialLoading !== null} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Working…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Update password'}</button>
+        <button disabled={loading || socialLoading !== null} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Working…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Update password'}</button>
       </form>
-      {error && <div className="mt-4 rounded-lg border border-red-900/60 bg-red-950/20 p-3 text-sm text-red-300">{error}</div>}
-      {message && <div className="mt-4 rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-3 text-sm text-emerald-300">{message}</div>}
-      <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm text-slate-500">
-        {mode === 'login' ? <><Link href="/signup" className="text-blue-400 hover:text-blue-300">Create account</Link><Link href="/forgot-password" className="hover:text-white">Forgot password?</Link></> : mode === 'signup' ? <Link href="/login" className="text-blue-400 hover:text-blue-300">Already have an account? Sign in</Link> : <Link href="/login" className="text-blue-400 hover:text-blue-300">Back to sign in</Link>}
+      {error && <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+      {message && <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</div>}
+      <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm text-slate-600">
+        {mode === 'login' ? <><Link href="/signup" className="text-blue-700 hover:text-blue-800">Create account</Link><Link href="/forgot-password" className="hover:text-slate-900">Forgot password?</Link></> : mode === 'signup' ? <Link href="/login" className="text-blue-700 hover:text-blue-800">Already have an account? Sign in</Link> : <Link href="/login" className="text-blue-700 hover:text-blue-800">Back to sign in</Link>}
       </div>
     </div>
-    <p className="mt-5 text-center text-xs leading-5 text-slate-600">Your organization role shapes your private workspace. Public company intelligence remains separate from your team&apos;s operating data.</p>
+    <p className="mt-5 text-center text-xs leading-5 text-slate-500">Your organization role shapes your private workspace. Public company intelligence remains separate from your team&apos;s operating data.</p>
   </div></div></main>
 }
 
-const input = 'mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-sm font-medium text-slate-300">{label}{children}</label> }
+const input = 'mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-sm font-medium text-slate-700">{label}{children}</label> }
 function getSafeNextPath(search: string) {
   const candidate = new URLSearchParams(search).get('next')
   return candidate && candidate.startsWith('/') && !candidate.startsWith('//') ? candidate : '/app'
