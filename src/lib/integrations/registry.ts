@@ -56,6 +56,11 @@ export function getPortAiIntegrationStatus() {
       : integration.connectorEnv
         ? Boolean(process.env[integration.connectorEnv])
         : integration.status === 'configured'
-    return { ...integration, runtimeStatus: configured ? 'configured' : integration.status }
+    const runtimeStatus = integration.env
+      ? (configured ? 'configured' : 'unavailable')
+      : configured
+        ? 'configured'
+        : integration.status
+    return { ...integration, runtimeStatus }
   })
 }
