@@ -113,16 +113,12 @@ export default function OnboardingPage() {
           organization_roles: auth.user.user_metadata?.organization_roles,
         })
 
-        if (setup.status === 'new' && (pending || authMetadata)) {
-          await saveSelection(pending ?? authMetadata!, false)
+        const suggestion = pending ?? authMetadata
+        if (suggestion) {
+          await saveSelection(suggestion, false)
           return
         }
 
-        const suggestion = setup.status === 'needs_setup' ? authMetadata : pending ?? authMetadata
-        if (suggestion) {
-          setOrganizationType(suggestion.organizationType)
-          setPartnerRoles(suggestion.organizationRoles)
-        }
         setLoading(false)
       } catch (cause) {
         if (active) {
