@@ -20,11 +20,11 @@ const routes: Record<string, string> = {
   'Products & solutions': '/products',
 }
 
-export default function NetworkPage() {
+function NetworkContent() {
   const profile = useWorkspaceRole()
   const focus = roleFocus[profile.primaryType]
   return (
-    <AppShell title={profile.primaryType === 'customer' ? 'Solution network' : 'Ecosystem network'} subtitle="Explore the relationships and capabilities PortAi can use to turn an objective into action.">
+    <div>
       <section className="grid gap-4 lg:grid-cols-2">
         {focus.map((label, index) => (
           <Link key={label} href={routes[label]} className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:shadow-md">
@@ -46,6 +46,14 @@ export default function NetworkPage() {
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">PortAi uses organizations, products, capabilities, evidence, relationships and market context as ecosystem intelligence that missions can act on.</p>
         <Link href="/missions/new" className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">Turn an objective into a mission</Link>
       </section>
+    </div>
+  )
+}
+
+export default function NetworkPage() {
+  return (
+    <AppShell title="Ecosystem network" subtitle="Explore the relationships and capabilities PortAi can use to turn an objective into action.">
+      <NetworkContent />
     </AppShell>
   )
 }
