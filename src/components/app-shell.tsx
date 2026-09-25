@@ -126,7 +126,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
   }
 
   if (loading || !profile) {
-    return <div className="grid min-h-screen place-items-center bg-[#f7f9fc] px-5 text-slate-900">
+    return <div className="grid min-h-screen place-items-center bg-white px-5 text-slate-900">
       <div className="max-w-md text-center">
         <div className="text-sm text-slate-500">{shellError ? 'Your workspace could not load.' : 'Loading workspace…'}</div>
         {shellError && <><p className="mt-2 text-xs text-red-300">{shellError}</p><button onClick={() => window.location.reload()} className="mt-4 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Try again</button></>}
@@ -139,8 +139,8 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
 
   return (
     <WorkspaceRoleContext.Provider value={profile}>
-      <div className="min-h-screen bg-[#f7f9fc] text-slate-900">
-        <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-[#f7f9fc]/95 backdrop-blur">
+      <div className="min-h-screen bg-white text-slate-900">
+        <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur">
           <div className="mx-auto flex max-w-[1500px] items-center justify-between px-4 py-3 lg:px-6">
             <div className="flex items-center gap-3">
               <button onClick={() => setMobileOpen(v => !v)} className="rounded-lg border border-slate-200 p-2 text-slate-700 lg:hidden" aria-label="Toggle navigation">☰</button>
@@ -153,10 +153,6 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
               </Link>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden items-center gap-1 sm:flex">
-                <button onClick={() => router.back()} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-500 hover:border-slate-300 hover:text-slate-900" aria-label="Go back">← Back</button>
-                <button onClick={() => router.forward()} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-500 hover:border-slate-300 hover:text-slate-900" aria-label="Go forward">Forward →</button>
-              </div>
               <Link href="/missions/new" className="hidden rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 sm:block">Start a mission</Link>
               <div className="hidden max-w-48 truncate text-right text-xs text-slate-500 md:block">{email}</div>
               <button onClick={signOut} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-slate-300 hover:text-slate-900">Sign out</button>
@@ -165,7 +161,7 @@ export default function AppShell({ children, title, subtitle }: AppShellProps) {
         </header>
 
         <div className="mx-auto flex max-w-[1500px]">
-          <aside className={`${mobileOpen ? 'block' : 'hidden'} fixed inset-y-[61px] left-0 z-30 w-72 border-r border-slate-200 bg-[#f7f9fc] px-4 py-5 lg:sticky lg:top-[61px] lg:block lg:h-[calc(100vh-61px)] lg:w-64 lg:shrink-0`}>
+          <aside className={`${mobileOpen ? 'block' : 'hidden'} fixed inset-y-[61px] left-0 z-30 w-72 border-r border-slate-200 bg-white px-4 py-5 lg:sticky lg:top-[61px] lg:block lg:h-[calc(100vh-61px)] lg:w-64 lg:shrink-0`}>
             <nav className="space-y-6">
               {groups.map(group => (
                 <div key={group.label}>
