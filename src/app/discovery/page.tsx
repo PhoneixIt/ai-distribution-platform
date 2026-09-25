@@ -43,10 +43,10 @@ type Report = {
 type Tab = 'best' | 'all' | 'saved'
 
 const NON_COMPANY_PATTERNS: Array<[RegExp, string]> = [
-  (/\bBSI\b|bundesregierung|bundesamt für sicherheit|verfassungsschutz/i, 'Government body'),
-  (/\bHDI\b|securance|insurance|versicherung/i, 'Insurer'),
-  (/research institute|research organization|universit|fraunhofer|institut/i, 'Research organization'),
-  (/cloudtango|cybersecurityintelligence|directory|aggregator|marketplace|listing/i, 'Directory / aggregator'),
+  [/\bBSI\b|bundesregierung|bundesamt für sicherheit|verfassungsschutz/i, 'Government body'],
+  [/\bHDI\b|securance|insurance|versicherung/i, 'Insurer'],
+  [/research institute|research organization|universit|fraunhofer|institut/i, 'Research organization'],
+  [/cloudtango|cybersecurityintelligence|directory|aggregator|marketplace|listing/i, 'Directory / aggregator'],
 ]
 
 function cleanDisplayName(item: Candidate) {
