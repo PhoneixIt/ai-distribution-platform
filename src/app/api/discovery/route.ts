@@ -49,10 +49,8 @@ export async function POST(request: Request) {
 
   const missionId = typeof (input as Record<string, unknown>).missionId === 'string' ? String((input as Record<string, unknown>).missionId).trim() : ''
   const discoveryRequest = normalizeRequest(input)
-  if (!discoveryRequest.country || !discoveryRequest.technologyFocus || !discoveryRequest.partnerTypes.length) {
-    return NextResponse.json({
-      error: 'Discovery needs a target country, technology focus, and at least one partner type. Add them to the objective or enter them in the filters.',
-    }, { status: 400 })
+  if (!discoveryRequest.objective) {
+    return NextResponse.json({ error: 'Discovery objective is required.', code: 'VALIDATION_ERROR' }, { status: 400 })
   }
 
   let mission: { id: string; org_id: string } | null = null
@@ -107,7 +105,11 @@ export async function POST(request: Request) {
       discovery_run_id: run.id,
       company_name: item.candidate.companyName,
       website: item.candidate.website || null,
-      company_type: item.candidate.partnerTypes.some((type) => /distributor/i.test(type)) ? 'distributor' : 'partner',
+      company_type: item.candidate.partnerTypes.some((type) => /distributor/i.test(type))
+        ? 'distributor'
+        : item.candidate.partnerTypes.length
+          ? 'partner'
+          : 'unknown',
       country: item.candidate.country || null,
       description: item.candidate.description || null,
       partner_types: item.candidate.partnerTypes,
@@ -176,6 +178,7 @@ export async function POST(request: Request) {
     const missionStage = mission
       ? getDiscoveryMissionStage(dossierCandidateIds, persistedDossierCandidateIds)
       : null
+    const missionCompleted = missionStage === 'dossier_ready' || missionStage === 'no_results'
 
     const runUpdate = await supabase.from('discovery_runs').update({
       status: 'completed',
@@ -190,7 +193,7 @@ export async function POST(request: Request) {
     if (mission) {
       const missionUpdate = await supabase.from('missions').update({
         discovery_run_id: run.id,
-        status: 'running',
+        status: missionCompleted ? 'completed' : 'running',
         current_stage: missionStage,
         candidate_count: report.finalRankedCandidates.length,
         result_summary: {
@@ -200,7 +203,7 @@ export async function POST(request: Request) {
           qualified: report.candidatesQualified.length,
           needs_review: report.candidatesNeedingReview.length,
         },
-        completed_at: null,
+        completed_at: missionCompleted ? new Date().toISOString() : null,
       }).eq('id', mission.id)
       if (missionUpdate.error) throw missionUpdate.error
     }
