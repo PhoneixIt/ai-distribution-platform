@@ -127,7 +127,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
   if (!mission) return <AppShell title="Mission"><p className="text-sm text-slate-500">{error || 'Loading mission…'}</p></AppShell>
 
   const summary = mission.result_summary || {}
-  return <AppShell title="Mission execution" subtitle="Evidence-backed work stays visible; external communication remains blocked until you explicitly approve a draft.">
+  return <AppShell title="Mission" subtitle="PortAi turns your objective into evidence-backed ecosystem work. Consequential external actions remain behind approval.">
     <Link href="/workflow" className="text-sm text-blue-700">← Missions</Link>
     <section className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -144,15 +144,19 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     </section>
 
     <section className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-wider text-blue-700">Execution stages</p><h2 className="mt-1 text-lg font-semibold">Contact research → personalized draft → human approval → send</h2></div><span className="text-xs text-slate-500">No automatic send</span></div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><p className="text-xs uppercase tracking-wider text-blue-700">PortAi execution</p><h2 className="mt-1 text-lg font-semibold">Give PortAi the objective; inspect the work as it progresses.</h2></div>
+        <span className="text-xs text-slate-500">Human approval remains required for consequential actions</span>
+      </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        {mission.current_stage === 'defined' || mission.current_stage === 'failed' ? <button disabled={!!busy} onClick={startDiscovery} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold disabled:opacity-40">{busy === 'Start discovery' ? 'Discovering…' : 'Start discovery →'}</button> : null}
-        <button disabled={!!busy || mission.current_stage !== 'dossier_ready'} onClick={() => runStage('/api/missions/' + mission.id + '/contacts','Contact research')} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold disabled:opacity-40">Research contacts</button>
-        <button disabled={!!busy || !['contacts_researched','draft_ready'].includes(mission.current_stage)} onClick={() => runStage('/api/missions/' + mission.id + '/drafts','Generate drafts')} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold disabled:opacity-40">Generate drafts</button>
+        {['defined','failed','no_results'].includes(mission.current_stage) ? <button disabled={!!busy} onClick={startDiscovery} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{busy === 'Start discovery' ? 'Running mission…' : 'Run mission →'}</button> : null}
+        {mission.current_stage === 'dossier_ready' ? <button disabled={!!busy} onClick={() => runStage('/api/missions/' + mission.id + '/contacts','Contact research')} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 disabled:opacity-40">Research contacts (optional)</button> : null}
+        {['contacts_researched','draft_ready'].includes(mission.current_stage) ? <button disabled={!!busy} onClick={() => runStage('/api/missions/' + mission.id + '/drafts','Generate drafts')} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">Prepare outreach →</button> : null}
       </div>
     </section>
 
-    {mission.error_message ? <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">Mission failed: {mission.error_message}</div> : null}
+    {mission.current_stage === 'no_results' ? <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"><p className="font-semibold">No qualified matches were found.</p><p className="mt-1 leading-6">The mission completed without a qualifying result. PortAi preserved the research run so you can refine the objective and run it again.</p></div> : null}
+    {mission.error_message ? <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><p className="font-semibold">PortAi could not complete this stage.</p><p className="mt-1">{mission.error_message}</p></div> : null}
     {error ? <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
     {notice ? <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">{notice}</div> : null}
 
