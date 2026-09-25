@@ -36,17 +36,26 @@ const ecosystemItems = [
 ]
 
 const rolePriorities: Record<WorkspaceRole, string[]> = {
-  vendor: ['/partners', '/distributors', '/customers', '/products', '/opportunities', '/engagements', '/vendors'],
-  distributor: ['/vendors', '/partners', '/customers', '/products', '/opportunities', '/engagements', '/distributors'],
+  vendor: ['/partners', '/distributors', '/opportunities', '/customers', '/products', '/engagements', '/vendors'],
+  distributor: ['/vendors', '/partners', '/opportunities', '/customers', '/products', '/engagements', '/distributors'],
   partner: ['/vendors', '/distributors', '/customers', '/opportunities', '/engagements', '/partners', '/products'],
-  customer: ['/vendors', '/distributors', '/partners', '/opportunities', '/engagements', '/products', '/customers'],
+  customer: ['/products', '/vendors', '/partners', '/opportunities', '/engagements', '/distributors', '/customers'],
   other: ['/partners', '/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
   unconfigured: ['/partners', '/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
 }
 
+const roleLabels: Record<WorkspaceRole, Record<string, string>> = {
+  vendor: { '/partners': 'Partners', '/distributors': 'Distributors', '/opportunities': 'Opportunities', '/customers': 'Customers', '/products': 'Products & solutions', '/engagements': 'Relationships', '/vendors': 'My company' },
+  distributor: { '/vendors': 'Vendors', '/partners': 'Partners', '/opportunities': 'Opportunities', '/customers': 'Customers', '/products': 'Products & portfolio', '/engagements': 'Vendor & partner relationships', '/distributors': 'My company' },
+  partner: { '/vendors': 'Vendors', '/distributors': 'Distributors', '/customers': 'Customers', '/opportunities': 'Opportunities', '/engagements': 'Relationships', '/partners': 'My profile & partners', '/products': 'Products & solutions' },
+  customer: { '/products': 'Products & solutions', '/vendors': 'Vendors', '/partners': 'Implementation partners', '/opportunities': 'Proposals & opportunities', '/engagements': 'Relationships', '/distributors': 'Distributors', '/customers': 'My organization' },
+  other: {},
+  unconfigured: {},
+}
+
 function getNavigation(profile: WorkspaceProfile) {
   const priority = rolePriorities[profile.primaryType]
-  const orderedItems = [...ecosystemItems].sort((left, right) => priority.indexOf(left.href) - priority.indexOf(right.href))
+  const orderedItems = [...ecosystemItems].sort((left, right) => priority.indexOf(left.href) - priority.indexOf(right.href)).map(item => ({ ...item, label: roleLabels[profile.primaryType][item.href] ?? item.label }))
   const dashboardLabel = profile.primaryType === 'other' ? 'Workspace dashboard' : 'Home'
 
   return [
