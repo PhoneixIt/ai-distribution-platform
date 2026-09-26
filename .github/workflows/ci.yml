@@ -43,6 +43,9 @@ jobs:
       - name: Discovery workflow lifecycle tests
         run: npm run test:discovery-enqueue
 
+      - name: Qualification contract tests
+        run: npm run test:qualification
+
       - name: Production build
         run: npm run build
         env:

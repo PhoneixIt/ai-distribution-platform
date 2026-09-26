@@ -331,6 +331,63 @@ test('the enqueue route never runs discovery synchronously in the request path',
   )
 })
 
+// --- agent-level request validation (defence in depth) ---
+
+const stubSearchProvider = {
+  async search() {
+    return []
+  },
+}
+
+test('discoverFromWeb rejects a request with no country', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+  const agent = createPartnerDiscoveryAgent({ webSearch: stubSearchProvider })
+
+  await assert.rejects(
+    () => agent.discoverFromWeb({ country: '', partnerTypes: ['MSSP'], technologyFocus: 'Cybersecurity', desiredCandidateCount: 5 }),
+    /requires a country/
+  )
+})
+
+test('discoverFromWeb rejects a request with no technology focus', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+  const agent = createPartnerDiscoveryAgent({ webSearch: stubSearchProvider })
+
+  await assert.rejects(
+    () => agent.discoverFromWeb({ country: 'Germany', partnerTypes: ['MSSP'], technologyFocus: '  ', desiredCandidateCount: 5 }),
+    /requires a technology focus/
+  )
+})
+
+test('discoverFromWeb rejects a request with no partner types', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+  const agent = createPartnerDiscoveryAgent({ webSearch: stubSearchProvider })
+
+  await assert.rejects(
+    () => agent.discoverFromWeb({ country: 'Germany', partnerTypes: [], technologyFocus: 'Cybersecurity', desiredCandidateCount: 5 }),
+    /requires at least one partner type/
+  )
+})
+
+test('discoverFromWeb accepts a complete parsed request', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+  const agent = createPartnerDiscoveryAgent({ webSearch: stubSearchProvider })
+
+  const result = await agent.discoverFromWeb({
+    country: 'Germany',
+    partnerTypes: ['MSSP'],
+    technologyFocus: 'Cybersecurity',
+    desiredCandidateCount: 5,
+  })
+
+  assert.equal(result.source, 'web-search')
+  assert.deepEqual(result.candidates, [])
+})
+
 // --- mock discovery must be unreachable from production ---
 
 test('discover() refuses to return fixture candidates when no candidate source is injected', async () => {
