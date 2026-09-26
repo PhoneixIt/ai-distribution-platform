@@ -63,13 +63,13 @@ function evidenceFor(
 function inferPartnerTypes(text: string): string[] {
   const inferred: string[] = []
   if (
-    /\bmanaged security service provider\b|\bmanaged security services?\b|\bmanaged detection and response\b|\bmanaged SOC\b|\bMSSP\b/i.test(
+    /\bmanaged security service provider\b|\bmanaged security services?\b|\bmanaged detection and response\b|\bmanaged SOC\b/i.test(
       text
     )
   )
     inferred.push('MSSP')
   if (
-    /\bmanaged service provider\b|\bmanaged services?\b|\bMSP\b/i.test(text)
+    /\bmanaged service provider\b|\bmanaged services?\b/i.test(text)
   )
     inferred.push('MSP')
   if (/\bsystem integrator\b|\bsystems integration\b/i.test(text))
@@ -219,7 +219,6 @@ function evaluatePartnerType(
   const values = [
     ...new Set([
       ...candidate.partnerTypes,
-      ...inferPartnerTypes(searchableCandidateText(candidate)),
     ]),
   ]
   const requestedValue = request.partnerTypes.join(', ')
