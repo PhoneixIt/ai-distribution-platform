@@ -15,7 +15,7 @@
     "test:e2e": "playwright test",
     "test:organization-roles": "node --experimental-strip-types --test tests/unit/organization-roles.test.mjs",
     "test:mission-dossiers": "node --experimental-strip-types --test tests/unit/mission-dossiers.test.mjs",
-    "test:web-discovery": "node --experimental-strip-types --test tests/unit/web-discovery.test.ts",
+    "test:web-discovery": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/web-discovery.test.ts",
     "prepare": "husky"
   },
   "dependencies": {
