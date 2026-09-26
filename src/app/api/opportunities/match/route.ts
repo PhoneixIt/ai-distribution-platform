@@ -35,6 +35,13 @@ export async function POST(request: Request) {
 
   const customer = Array.isArray(opportunity.customers) ? opportunity.customers[0] : opportunity.customers
 
+  const { data: partners, error: partnersError } = await supabase
+    .from('partners')
+    .select('id,name,website,description,partner_types,country,regions,industries,company_size,employee_range,specializations,certifications,technologies,services,customer_segments,deployment_capabilities,sales_regions,is_verified,verification_status,is_active')
+    .eq('is_active', true)
+    .limit(500)
+  if (partnersError) return NextResponse.json({ error: partnersError.message }, { status: 500 })
+
   const scored = (partners || [])
     .map((partner) => calculateOpportunityPartnerMatch(
       {
