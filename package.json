@@ -12,12 +12,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:organization-roles": "node --experimental-strip-types --test tests/unit/organization-roles.test.mjs",
     "test:mission-dossiers": "node --experimental-strip-types --test tests/unit/mission-dossiers.test.mjs",
     "test:web-discovery": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/web-discovery.test.ts",
     "test:discovery-enqueue": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/discovery-enqueue.test.ts",
     "test:qualification": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/qualification.test.ts",
+    "test:operating-layer": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/operating-layer-provider.test.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -49,9 +51,6 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix"
-    ],
-    "*.{ts,tsx}": [
-      "tsc --noEmit"
     ]
   }
 }
