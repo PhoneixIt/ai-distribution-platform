@@ -71,9 +71,9 @@ function readableText(html: string) {
 }
 
 function canonicalCompanyName(title: string, fallback: string) {
-  const cleaned = title.split(/\\s+[|:-]\\s+/)[0].trim()
+  const cleaned = title.split(/\s+[|:-]\s+/)[0].trim()
   if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback
-  return cleaned.replace(/\\s+/g, ' ')
+  return cleaned.replace(/\s+/g, ' ')
 }
 
 function pageTitle(html: string) {
@@ -465,7 +465,7 @@ export function createLocalCompanyResearchProvider(): CompanyResearchProvider {
       const confidence = Math.min(0.95, Math.max(0.2, confidenceBase + allFacts.length * 0.05))
 
       return {
-        companyName: request.companyName,
+        companyName: canonicalCompanyName(homepage.title, request.companyName),
         website: request.website,
         ...(descriptionFact ? { description: descriptionFact.value } : {}),
         ...(countryFact.length ? { country: request.country } : {}),
