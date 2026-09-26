@@ -4,7 +4,7 @@ import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
 import { createMissionDossierRecord, getDiscoveryMissionStage } from '@/lib/missions/dossiers'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 
-const MAX_CANDIDATES = 100
+const MAX_CANDIDATES = 200
 
 function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDiscoveryRequest {
   const partnerTypes = Array.isArray(input.partnerTypes)
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
   const { data: run, error: runError } = await supabase
     .from('discovery_runs')
-    .insert({ user_id: user.id, request: discoveryRequest, provider: 'exa+firecrawl', status: 'running' })
+    .insert({ user_id: user.id, request: discoveryRequest, provider: 'multi-search', status: 'running' })
     .select('id')
     .single()
 
