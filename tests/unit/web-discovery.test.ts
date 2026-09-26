@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { discoverPartnersFromWeb } from '../../src/agents/partner-discovery/web-discovery.ts'
+import { discoverPartnersFromWeb } from '../../src/agents/partner-discovery/web-discovery'
 import type {
   PartnerDiscoveryRequest,
   WebSearchProvider,
   WebSearchResult,
-} from '../../src/agents/partner-discovery/types.ts'
+} from '../../src/agents/partner-discovery/types'
 
 const request: PartnerDiscoveryRequest = {
   country: 'Germany',
