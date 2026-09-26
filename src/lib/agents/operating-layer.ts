@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getOpenAIToken } from '@/lib/ai/openai'
-import { createExaWebSearchProvider } from '@/agents/partner-discovery/web-search'
+import { createFirecrawlWebSearchProvider } from '@/agents/partner-discovery/firecrawl'
 
 export const AGENT_KEYS = ['ceo_orchestrator','vendor_manager','partner_manager','sales_agent','market_intelligence','commercial_agent','operations_agent'] as const
 export type AgentKey = typeof AGENT_KEYS[number]
@@ -224,7 +224,7 @@ const tools: Record<string, Tool> = {
     classification: 'fact',
     parameters: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'integer' } }, required: ['query','limit'], additionalProperties: false },
     async execute(args) {
-      return createExaWebSearchProvider().search({ query: text(args.query), maxResults: max(args.limit, 8) })
+      return createFirecrawlWebSearchProvider().search({ query: text(args.query), maxResults: max(args.limit, 8) })
     }
   },
 
