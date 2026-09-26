@@ -1,14 +1,11 @@
 import { createPartnerDiscoveryAgent } from './agent'
 import {
-  createLocalCompanyResearchProvider,
   createResearchDemoCandidate,
 } from './research'
 import {
   createFirecrawlCompanyResearchProvider,
   createFirecrawlWebSearchProvider,
-  createResilientWebSearchProvider,
 } from './firecrawl'
-import { createExaWebSearchProvider } from './web-search'
 import type {
   CompanyResearchProvider,
   PartnerCandidate,
@@ -122,18 +119,9 @@ export async function runPartnerDiscovery(
   request: PartnerDiscoveryRequest,
   dependencies: PartnerDiscoveryRunnerDependencies = {}
 ): Promise<PartnerDiscoveryReport> {
-  const webSearch =
-    dependencies.webSearch ||
-    createResilientWebSearchProvider(
-      createExaWebSearchProvider(),
-      createFirecrawlWebSearchProvider()
-    )
+  const webSearch = dependencies.webSearch || createFirecrawlWebSearchProvider()
 
-  const companyResearch =
-    dependencies.companyResearch ||
-    (process.env.FIRECRAWL_API_KEY
-      ? createFirecrawlCompanyResearchProvider()
-      : createLocalCompanyResearchProvider())
+  const companyResearch = dependencies.companyResearch || createFirecrawlCompanyResearchProvider()
 
   const agent = createPartnerDiscoveryAgent({ webSearch, companyResearch })
   const discovery = await agent.discoverFromWeb(request)
