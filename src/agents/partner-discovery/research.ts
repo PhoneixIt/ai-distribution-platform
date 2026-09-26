@@ -70,7 +70,7 @@ function readableText(html: string) {
   )
 }
 
-function pageTitle(html: string) {
+function canonicalCompanyName(title: string, fallback: string) {\n  const cleaned = title.split(/\\s+[|:-]\\s+/)[0].trim()\n  if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback\n  return cleaned.replace(/\\s+/g, ' ')\n}\n\nfunction pageTitle(html: string) {
   const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return match ? readableText(match[1]) : ''
 }
