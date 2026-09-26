@@ -265,3 +265,202 @@ test('the workflow module does not reintroduce a terminal already_running outcom
     'workflow must delegate failure persistence to the tested helper'
   )
 })
+
+// --- mission <-> discovery_run linkage ---
+
+test('the enqueue route links the mission to the run before emitting the event', () => {
+  const source = readFileSync('src/app/api/discovery/route.ts', 'utf8')
+
+  const insertIndex = source.indexOf(".from('discovery_runs')")
+  const linkIndex = source.indexOf('discovery_run_id: run.id')
+  const emitIndex = source.indexOf('inngest.send')
+
+  assert.ok(insertIndex > -1, 'route must create a discovery_runs row')
+  assert.ok(linkIndex > -1, 'route must persist missions.discovery_run_id at enqueue')
+  assert.ok(emitIndex > -1, 'route must emit the Inngest event')
+  assert.ok(
+    insertIndex < linkIndex,
+    'the run must exist before the mission can be linked to it'
+  )
+  assert.ok(
+    linkIndex < emitIndex,
+    'the mission must be linked before the workflow event is emitted, so a running, stalled or failed run stays traceable'
+  )
+})
+
+test('a failed mission link fails the run instead of emitting an unlinked event', () => {
+  const source = readFileSync('src/app/api/discovery/route.ts', 'utf8')
+  const linkIndex = source.indexOf('discovery_run_id: run.id')
+  const failIndex = source.indexOf("status: 'failed', error_message: 'Could not link discovery run to mission.'")
+
+  assert.ok(failIndex > -1, 'a link failure must mark the run failed')
+  assert.ok(
+    failIndex > linkIndex,
+    'the compensating failure write must follow the failed linkage attempt'
+  )
+  assert.ok(
+    source.includes("update({ discovery_run_id: run.id })"),
+    'the linkage must target the newly created run id'
+  )
+})
+
+test('the workflow still records the run id on completion', () => {
+  const source = readFileSync('src/inngest/functions.ts', 'utf8')
+
+  assert.ok(
+    source.includes('discovery_run_id: discoveryRunId'),
+    'completion must keep missions.discovery_run_id authoritative'
+  )
+})
+
+test('the enqueue route never runs discovery synchronously in the request path', () => {
+  const source = readFileSync('src/app/api/discovery/route.ts', 'utf8')
+
+  assert.equal(
+    source.includes('runPartnerDiscovery'),
+    false,
+    '/api/discovery must only enqueue; the durable Inngest worker performs discovery'
+  )
+  assert.ok(
+    source.includes('inngest.send'),
+    'the route must hand work to the durable workflow via inngest.send'
+  )
+  assert.ok(
+    source.includes("name: 'portai/mission.workflow.started'"),
+    'the emitted event must match the registered workflow trigger'
+  )
+})
+
+// --- agent-level request validation (defence in depth) ---
+
+const stubSearchProvider = {
+  async search() {
+    return []
+  },
+}
+
+test('discoverFromWeb rejects a request with no country', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+  const agent = createPartnerDiscoveryAgent({ webSearch: stubSearchProvider })
+
+  await assert.rejects(
+    () => agent.discoverFromWeb({ country: '', partnerTypes: ['MSSP'], technologyFocus: 'Cybersecurity', desiredCandidateCount: 5 }),
+    /requires a country/
+  )
+})
+
+test('discoverFromWeb rejects a request with no technology focus', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+  const agent = createPartnerDiscoveryAgent({ webSearch: stubSearchProvider })
+
+  await assert.rejects(
+    () => agent.discoverFromWeb({ country: 'Germany', partnerTypes: ['MSSP'], technologyFocus: '  ', desiredCandidateCount: 5 }),
+    /requires a technology focus/
+  )
+})
+
+test('discoverFromWeb rejects a request with no partner types', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+  const agent = createPartnerDiscoveryAgent({ webSearch: stubSearchProvider })
+
+  await assert.rejects(
+    () => agent.discoverFromWeb({ country: 'Germany', partnerTypes: [], technologyFocus: 'Cybersecurity', desiredCandidateCount: 5 }),
+    /requires at least one partner type/
+  )
+})
+
+test('discoverFromWeb accepts a complete parsed request', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+  const agent = createPartnerDiscoveryAgent({ webSearch: stubSearchProvider })
+
+  const result = await agent.discoverFromWeb({
+    country: 'Germany',
+    partnerTypes: ['MSSP'],
+    technologyFocus: 'Cybersecurity',
+    desiredCandidateCount: 5,
+  })
+
+  assert.equal(result.source, 'web-search')
+  assert.deepEqual(result.candidates, [])
+})
+
+// --- mock discovery must be unreachable from production ---
+
+test('discover() refuses to return fixture candidates when no candidate source is injected', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+
+  const agent = createPartnerDiscoveryAgent({})
+  const request = {
+    country: 'Germany',
+    partnerTypes: ['MSSP'],
+    technologyFocus: 'Cybersecurity',
+    desiredCandidateCount: 5,
+  }
+
+  await assert.rejects(
+    () => agent.discover(request),
+    /requires an injected candidateSource/,
+    'discover() must fail loudly instead of silently returning mock candidates'
+  )
+})
+
+test('discover() still honours an explicitly injected candidate source', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+
+  const agent = createPartnerDiscoveryAgent({
+    candidateSource: {
+      async discover() {
+        return [
+          {
+            companyName: 'Injected Co',
+            website: 'https://injected.example',
+            country: 'Germany',
+            partnerTypes: ['MSSP'],
+            capabilities: ['Managed security services'],
+            customerSegments: ['Mid-market'],
+            services: ['Managed security services'],
+            technologies: ['Cybersecurity'],
+            industries: [],
+            vendorPartnerships: [],
+            certifications: [],
+            locations: ['Germany'],
+            description: 'Injected candidate for the dependency-injection path.',
+            evidence: [
+              {
+                title: 'Injected evidence',
+                url: 'https://injected.example/about',
+                sourceType: 'company-website' as const,
+                excerpt: 'Injected evidence used by the test.',
+              },
+            ],
+            fitScore: 50,
+            qualificationReasons: [],
+            concerns: [],
+            verificationStatus: 'preliminary' as const,
+            researchStatus: 'researched' as const,
+            researchSources: [],
+            pagesFetched: 1,
+            failedUrls: [],
+          },
+        ]
+      },
+    },
+  })
+
+  const result = await agent.discover({
+    country: 'Germany',
+    partnerTypes: ['MSSP'],
+    technologyFocus: 'Cybersecurity',
+    desiredCandidateCount: 5,
+  })
+
+  assert.equal(result.source, 'provider')
+  assert.equal(result.candidates.length, 1)
+  assert.equal(result.candidates[0].companyName, 'Injected Co')
+})

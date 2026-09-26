@@ -29,7 +29,7 @@ jobs:
         run: npm run lint
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Organization role validation tests
         run: npm run test:organization-roles
@@ -42,6 +42,12 @@ jobs:
 
       - name: Discovery workflow lifecycle tests
         run: npm run test:discovery-enqueue
+
+      - name: Qualification contract tests
+        run: npm run test:qualification
+
+      - name: AI operating layer provider provenance tests
+        run: npm run test:operating-layer
 
       - name: Production build
         run: npm run build

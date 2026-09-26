@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
+import { parseDiscoveryIntent } from '@/lib/missions/discovery-intent'
 
 function clean(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
@@ -17,6 +18,10 @@ export async function POST(request: NextRequest) {
 
     if (!objective) return NextResponse.json({ error: 'Mission objective is required.' }, { status: 400 })
     if (objective.length > 4000) return NextResponse.json({ error: 'Mission objective is too long.' }, { status: 400 })
+    const inferred = parseDiscoveryIntent(objective)
+    const requestedPartnerTypes = Array.isArray(body?.partnerTypes)
+      ? body.partnerTypes.map(clean).filter(Boolean).slice(0, 10)
+      : []
 
     const membership = await supabase
       .from('org_members')
@@ -38,12 +43,10 @@ export async function POST(request: NextRequest) {
         vendor_name: clean(body?.vendorName) || null,
         product_name: clean(body?.productName) || null,
         market: clean(body?.market) || null,
-        country: clean(body?.country) || null,
-        partner_types: Array.isArray(body?.partnerTypes)
-          ? body.partnerTypes.map(clean).filter(Boolean).slice(0, 10)
-          : [],
-        technology_focus: clean(body?.technologyFocus) || null,
-        customer_segment: clean(body?.customerSegment) || null,
+        country: clean(body?.country) || inferred.country || null,
+        partner_types: requestedPartnerTypes.length ? requestedPartnerTypes : inferred.partnerTypes,
+        technology_focus: clean(body?.technologyFocus) || inferred.technologyFocus || null,
+        customer_segment: clean(body?.customerSegment) || inferred.customerSegment || null,
         status: 'draft',
         current_stage: 'defined',
       })

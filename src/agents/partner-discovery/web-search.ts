@@ -187,6 +187,10 @@ export function buildPartnerDiscoveryQueries(request: PartnerDiscoveryRequest) {
   const companySize = request.companySize?.trim()
   const queries: string[] = []
 
+  // Keep the user's original intent in the search context while structured
+  // filters continue to drive qualification and scoring.
+  addQuery(queries, request.objective?.slice(0, 500) || '')
+
   for (const partnerType of request.partnerTypes) {
     const type = partnerType.trim()
     if (!type) continue

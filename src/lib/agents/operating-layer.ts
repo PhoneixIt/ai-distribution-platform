@@ -453,16 +453,29 @@ async function definition(supabase: SupabaseClient, agentKey: AgentKey) {
   return result.data
 }
 
-async function createRun(supabase: SupabaseClient, orgId: string, userId: string, objective: string) {
+type ExecutionProvenance = {
+  token: string | null
+  provider: string
+  model: string | null
+  degraded: boolean
+  degradedReason: string | null
+}
+
+async function createRun(supabase: SupabaseClient, orgId: string, userId: string, objective: string, execution: ExecutionProvenance) {
   const runResult = await supabase.from('agent_runs').insert({
     org_id: orgId,
     initiated_by: userId,
     objective,
     status: 'running',
-    provider: 'openai_responses',
-    model: process.env.OPENAI_AGENT_MODEL || 'gpt-5.6-luna',
+    // The provider is resolved before the run is created so a run is never recorded
+    // against a model that did not actually answer.
+    provider: execution.provider,
+    model: execution.model,
     started_at: new Date().toISOString(),
-    metadata: { version: 'operating-layer-v1' }
+    metadata: {
+      version: 'operating-layer-v1',
+      ...(execution.degraded ? { degraded: true, degraded_reason: execution.degradedReason } : {})
+    }
   }).select('*').single()
   if (runResult.error) throw runResult.error
 
@@ -625,10 +638,49 @@ async function persist(context: Context, output: Output) {
   }
 }
 
-export async function runOperatingLayer(supabase: SupabaseClient, orgId: string, userId: string, objective: string) {
+/**
+ * Resolves which provider will actually answer this run.
+ *
+ * A run must never be recorded against a model that did not answer. When the
+ * credential cannot be resolved the run is marked degraded: it still completes
+ * with deterministic operating rules, but the persisted provider, model, status
+ * and error all state that no model took part.
+ */
+export async function resolveExecutionProvenance(
+  resolveToken: () => Promise<string | null>
+): Promise<ExecutionProvenance> {
+  let token: string | null = null
+  let reason: string | null = null
+  try {
+    token = await resolveToken()
+    if (!token) reason = 'The OpenAI provider credential returned no token.'
+  } catch (error) {
+    reason = error instanceof Error ? error.message : 'The OpenAI provider credential could not be resolved.'
+  }
+
+  if (token) {
+    return { token, provider: 'openai_responses', model: process.env.OPENAI_AGENT_MODEL || 'gpt-5.6-luna', degraded: false, degradedReason: null }
+  }
+  return { token: null, provider: 'rules_fallback', model: null, degraded: true, degradedReason: reason }
+}
+
+export type OperatingLayerDependencies = {
+  /** Injected in tests; production resolves the Vercel Connect connector. */
+  resolveOpenAIToken?: () => Promise<string | null>
+}
+
+export async function runOperatingLayer(
+  supabase: SupabaseClient,
+  orgId: string,
+  userId: string,
+  objective: string,
+  dependencies: OperatingLayerDependencies = {}
+) {
   const clean = text(objective)
   if (!clean) throw new Error('An AI operating objective is required.')
-  const { run, rootTask } = await createRun(supabase, orgId, userId, clean)
+  const execution = await resolveExecutionProvenance(dependencies.resolveOpenAIToken || getOpenAIToken)
+  const { token: openAIToken, provider, model, degraded, degradedReason: providerFailure } = execution
+  const { run, rootTask } = await createRun(supabase, orgId, userId, clean, execution)
   const data = await snapshot(supabase, orgId)
 
   await supabase.from('agent_tool_calls').insert({
@@ -653,7 +705,6 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
 
   try {
     let plan = routeObjective(clean)
-    const openAIToken = await getOpenAIToken().catch(() => null)
 
     if (openAIToken) {
       const d = await definition(supabase, 'ceo_orchestrator')
@@ -730,6 +781,11 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
       }
     }
 
+    // A degraded run completed its deterministic analysis but no model took part,
+    // so it is recorded as `partial` rather than `completed`. `partial` is a valid
+    // agent_runs status; `error_message` carries the provider failure.
+    const runStatus = final.approvals.length ? 'waiting_approval' : degraded ? 'partial' : 'completed'
+
     await supabase.from('agent_tasks').update({
       status: final.approvals.length ? 'waiting' : 'completed',
       output: final,
@@ -738,8 +794,26 @@ export async function runOperatingLayer(supabase: SupabaseClient, orgId: string,
       approval_status: final.approvals.length ? 'pending' : 'not_required',
       completed_at: final.approvals.length ? null : new Date().toISOString()
     }).eq('id', rootTask.id)
-    await supabase.from('agent_runs').update({ status: final.approvals.length ? 'waiting_approval' : 'completed', summary: final, confidence: final.confidence, completed_at: new Date().toISOString() }).eq('id', run.id)
-    return { runId: run.id, status: final.approvals.length ? 'waiting_approval' : 'completed', provider: openAIToken ? 'openai_responses' : 'rules_fallback', model: process.env.OPENAI_AGENT_MODEL || null, plan, results, final }
+    await supabase.from('agent_runs').update({
+      status: runStatus,
+      provider,
+      model,
+      summary: final,
+      confidence: final.confidence,
+      completed_at: new Date().toISOString(),
+      error_message: degraded ? providerFailure : null
+    }).eq('id', run.id)
+    return {
+      runId: run.id,
+      status: runStatus,
+      provider,
+      model,
+      degraded,
+      degradedReason: degraded ? providerFailure : null,
+      plan,
+      results,
+      final
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'AI operating layer failed.'
     const completedAt = new Date().toISOString()
