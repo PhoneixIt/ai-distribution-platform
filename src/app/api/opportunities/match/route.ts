@@ -1,19 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
-
-function normalize(values: unknown): string[] {
-  if (Array.isArray(values)) return values.flatMap((value) => normalize(value))
-  if (typeof values === 'string') return values.split(',').map((value) => value.trim().toLowerCase()).filter(Boolean)
-  return []
-}
-
-function overlapScore(needles: string[], haystack: string[]) {
-  if (!needles.length || !haystack.length) return 0
-  const matches = needles.filter((needle) =>
-    haystack.some((value) => value.includes(needle) || needle.includes(value)),
-  )
-  return Math.min(100, Math.round((matches.length / needles.length) * 100))
-}
+import { calculateOpportunityPartnerMatch } from '@/lib/matching/opportunity-partner'
 
 export async function POST(request: Request) {
   const { supabase, user, error: authError } = await getAuthenticatedServerClient()
@@ -47,78 +34,45 @@ export async function POST(request: Request) {
   if (opportunityError || !opportunity) return NextResponse.json({ error: opportunityError?.message || 'Opportunity not found.' }, { status: 404 })
 
   const customer = Array.isArray(opportunity.customers) ? opportunity.customers[0] : opportunity.customers
-  const requirementTerms = normalize(opportunity.requirements)
-  const technologyTerms = normalize(opportunity.technology_categories)
-  const descriptionTerms = String(opportunity.description || '').toLowerCase().split(/[^a-z0-9]+/).filter((value) => value.length > 3).slice(0, 20)
-  const capabilityNeeds = [...new Set([...technologyTerms, ...requirementTerms])]
-  const industryNeeds = normalize(customer?.industry)
-  const companySizeNeeds = normalize(customer?.company_size)
-  const geographyNeed = String(opportunity.preferred_region || '').trim().toLowerCase()
 
-  const { data: partners, error: partnersError } = await supabase
-    .from('partners')
-    .select('id,name,website,description,partner_types,country,regions,industries,company_size,employee_range,specializations,certifications,technologies,services,customer_segments,deployment_capabilities,sales_regions,is_verified,verification_status,is_active')
-    .eq('is_active', true)
-    .limit(500)
-  if (partnersError) return NextResponse.json({ error: partnersError.message }, { status: 500 })
-
-  const scored = (partners || []).map((partner) => {
-    const capabilities = normalize([
-      ...normalize(partner.specializations),
-      ...normalize(partner.technologies),
-      ...normalize(partner.services),
-      ...normalize(partner.deployment_capabilities),
-      ...normalize(partner.partner_types),
-      ...normalize(partner.certifications),
-    ])
-    const geography = normalize([
-      partner.country,
-      ...normalize(partner.regions),
-      ...normalize(partner.sales_regions),
-    ])
-    const industries = normalize(partner.industries)
-
-    const capabilityFit = overlapScore(capabilityNeeds, capabilities)
-    const geographyFit = geographyNeed ? overlapScore([geographyNeed], geography) : 50
-    const industryFit = industryNeeds.length ? overlapScore(industryNeeds, industries) : 50
-    const partnerSizes = normalize([partner.company_size, partner.employee_range])
-    const companySizeFit = companySizeNeeds.length ? overlapScore(companySizeNeeds, partnerSizes) : 50
-    const verificationFit = partner.is_verified || partner.verification_status === 'verified' ? 100 : 50
-    const matchScore = Math.round(capabilityFit * 0.40 + geographyFit * 0.25 + industryFit * 0.20 + companySizeFit * 0.05 + verificationFit * 0.10)
-
-    const strengths: string[] = []
-    const risks: string[] = []
-    if (capabilityFit >= 70) strengths.push('Strong technology and capability alignment')
-    else if (capabilityFit > 0) strengths.push('Partial capability alignment')
-    else risks.push('No direct capability overlap found')
-    if (geographyFit >= 70) strengths.push('Good geographic coverage')
-    else if (geographyNeed) risks.push('Geographic coverage needs verification')
-    if (industryFit >= 70) strengths.push('Relevant industry experience')
-    if (companySizeFit >= 70) strengths.push('Customer-size alignment')
-    if (partner.is_verified) strengths.push('Verified partner profile')
-    else risks.push('Partner profile is not verified')
-
-    const missingCapabilities = capabilityNeeds.filter((need) => !capabilities.some((value) => value.includes(need) || need.includes(value)))
-    const reason = strengths.length ? strengths.slice(0, 3).join('; ') : 'Limited structured data match; review the evidence before engagement.'
-    const recommendedAction = matchScore >= 75 ? 'Review and contact this partner.' : matchScore >= 55 ? 'Verify capabilities before outreach.' : 'Keep as a lower-priority candidate.'
-
-    if (descriptionTerms.some((term) => capabilities.some((value) => value.includes(term)))) strengths.push('Opportunity description contains relevant capability terms')
-
-    return {
-      partner,
-      matchScore,
-      capabilityFit,
-      industryFit,
-      geographyFit,
-      companySizeFit,
-      strengths,
-      risks,
-      missingCapabilities,
-      reason,
-      recommendedAction,
-    }
-  }).sort((a, b) => b.matchScore - a.matchScore)
-
+  const scored = (partners || [])
+    .map((partner) => calculateOpportunityPartnerMatch(
+      {
+        requirements: opportunity.requirements,
+        technologyCategories: opportunity.technology_categories,
+        description: opportunity.description,
+        preferredRegion: opportunity.preferred_region,
+        customerIndustry: customer?.industry,
+        customerCompanySize: customer?.company_size,
+      },
+      {
+        id: partner.id,
+        name: partner.name,
+        website: partner.website,
+        description: partner.description,
+        partnerTypes: partner.partner_types,
+        country: partner.country,
+        regions: partner.regions,
+        industries: partner.industries,
+        companySize: partner.company_size,
+        employeeRange: partner.employee_range,
+        specializations: partner.specializations,
+        certifications: partner.certifications,
+        technologies: partner.technologies,
+        services: partner.services,
+        customerSegments: partner.customer_segments,
+        deploymentCapabilities: partner.deployment_capabilities,
+        salesRegions: partner.sales_regions,
+        isVerified: partner.is_verified,
+        verificationStatus: partner.verification_status,
+      },
+    ))
+    .sort((left, right) =>
+      right.matchScore - left.matchScore ||
+      right.verificationFit - left.verificationFit ||
+      right.capabilityFit - left.capabilityFit ||
+      left.partner.name.localeCompare(right.partner.name),
+    )
   const top = scored.slice(0, 25)
   const { error: clearError } = await supabase
     .from('partner_matches')
@@ -170,6 +124,8 @@ export async function POST(request: Request) {
       capabilityFit: item.capabilityFit,
       industryFit: item.industryFit,
       geographyFit: item.geographyFit,
+      companySizeFit: item.companySizeFit,
+      verificationFit: item.verificationFit,
       strengths: item.strengths,
       risks: item.risks,
       missingCapabilities: item.missingCapabilities,
