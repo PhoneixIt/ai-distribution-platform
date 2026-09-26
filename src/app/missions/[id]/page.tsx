@@ -46,12 +46,24 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
 
+  async function readJson<T extends Record<string, unknown>>(response: Response): Promise<T> {
+    const raw = await response.text()
+    if (!raw.trim()) throw new Error(`Server returned an empty response (HTTP ${response.status}).`)
+    try {
+      return JSON.parse(raw) as T
+    } catch {
+      throw new Error(`Server returned an invalid response (HTTP ${response.status}).`)
+    }
+  }
+
   async function load(id: string) {
-    const [m, d] = await Promise.all([
-      fetch('/api/missions').then((r) => r.json()),
-      fetch('/api/missions/' + id + '/drafts').then((r) => r.json()),
+    const [missionResponse, draftsResponse] = await Promise.all([
+      fetch('/api/missions'),
+      fetch('/api/missions/' + id + '/drafts'),
     ])
-    const found = (m.missions || []).find((item: Mission) => item.id === id)
+    const m = await readJson<{ missions?: Mission[] }>(missionResponse)
+    const d = await readJson<{ drafts?: Draft[]; dossiers?: Dossier[] }>(draftsResponse)
+    const found = (m.missions || []).find((item) => item.id === id)
     if (!found) throw new Error('Mission not found.')
     setMission(found)
     setDrafts(d.drafts || [])
