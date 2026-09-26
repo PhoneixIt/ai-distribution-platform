@@ -201,7 +201,7 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         const evidenceItems = [...countryFacts, ...partnerTypeFacts, ...technologyFacts].map((fact) => fact.evidence)
         if (description) evidenceItems.push(makeEvidence(first.page, description))
         return {
-          companyName: request.companyName,
+          companyName: canonicalCompanyName(first.page.title, request.companyName),
           website: request.website,
           ...(description ? { description } : {}),
           ...(countryFacts[0]?.value ? { country: countryFacts[0].value, locations: [countryFacts[0].value] } : {}),
