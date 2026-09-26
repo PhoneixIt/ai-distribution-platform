@@ -50,7 +50,13 @@ async function firecrawlRequest<T>(path: string, body: unknown): Promise<T> {
   }
 }
 
-function canonicalCompanyName(title: string, fallback: string) {\n  const cleaned = title.split(/\\s+[|:-]\\s+/)[0].trim()\n  if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback\n  return cleaned.replace(/\\s+/g, ' ')\n}\n\nfunction cleanText(value: string) {
+function canonicalCompanyName(title: string, fallback: string) {
+  const cleaned = title.split(/\\s+[|:-]\\s+/)[0].trim()
+  if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback
+  return cleaned.replace(/\\s+/g, ' ')
+}
+
+function cleanText(value: string) {
   return value.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[#*_>`~-]+/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
@@ -114,7 +120,7 @@ function usefulInternalLinks(links: string[], root: URL) {
 }
 
 function failedResult(request: CompanyResearchRequest, error: unknown): CompanyResearchResult {
-  return { companyName: request.companyName, website: request.website, evidence: [], confidence: 0, researchStatus: 'failed', pagesFetched: 0, failedUrls: [error instanceof Error ? error.message : request.website] }
+  return { companyName: canonicalCompanyName(first.page.title, request.companyName), website: request.website, evidence: [], confidence: 0, researchStatus: 'failed', pagesFetched: 0, failedUrls: [error instanceof Error ? error.message : request.website] }
 }
 
 export function createFirecrawlWebSearchProvider(): WebSearchProvider {
