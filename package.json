@@ -15,13 +15,14 @@
     "test:e2e": "playwright test",
     "test:organization-roles": "node --experimental-strip-types --test tests/unit/organization-roles.test.mjs",
     "test:mission-dossiers": "node --experimental-strip-types --test tests/unit/mission-dossiers.test.mjs",
+    "test:web-discovery": "node --experimental-strip-types --test tests/unit/web-discovery.test.mjs",
     "prepare": "husky"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.75.2",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
-    "@vercel/analytics": "^2.0.1",
+    "@vercel/analytics": "^2.0.0",
     "@vercel/connect": "^2.3.0",
     "@vercel/speed-insights": "^2.0.0",
     "exa-js": "^2.7.0",
@@ -52,4 +53,3 @@
     ]
   }
 }
-
