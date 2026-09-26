@@ -29,6 +29,7 @@ export type PartnerDiscoveryReport = {
   candidatesNeedingReview: PartnerDiscoveryReportCandidate[]
   candidatesNotQualified: PartnerDiscoveryReportCandidate[]
   finalRankedCandidates: PartnerDiscoveryReportCandidate[]
+  searchQueriesFailed: number
   skippedResults: string[]
 }
 
@@ -148,6 +149,7 @@ export async function runPartnerDiscovery(
       (item) => item.qualification.status === 'not_qualified'
     ),
     finalRankedCandidates,
+    searchQueriesFailed: discovery.searchQueriesFailed,
     skippedResults: discovery.skippedResults,
   }
 }
