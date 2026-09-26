@@ -51,9 +51,9 @@ async function firecrawlRequest<T>(path: string, body: unknown): Promise<T> {
 }
 
 function canonicalCompanyName(title: string, fallback: string) {
-  const cleaned = title.split(/\\s+[|:-]\\s+/)[0].trim()
+  const cleaned = title.split(/\s+[|:-]\s+/)[0].trim()
   if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback
-  return cleaned.replace(/\\s+/g, ' ')
+  return cleaned.replace(/\s+/g, ' ')
 }
 
 function cleanText(value: string) {
