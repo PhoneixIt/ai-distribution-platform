@@ -385,8 +385,6 @@ export function createLocalCompanyResearchProvider(): CompanyResearchProvider {
       const partnerTypeFacts = matchedTerms(documents, [
         { pattern: /\bmanaged service provider\b/i, value: 'MSP' },
         { pattern: /\bmanaged security service provider\b/i, value: 'MSSP' },
-        { pattern: /\bMSSP\b/i, value: 'MSSP' },
-        { pattern: /\bMSP\b/i, value: 'MSP' },
         { pattern: /\bsystem integrator\b/i, value: 'System Integrator' },
         { pattern: /\bvalue[- ]added reseller\b/i, value: 'Value-added Reseller' },
         { pattern: /\breseller\b/i, value: 'Reseller' },
