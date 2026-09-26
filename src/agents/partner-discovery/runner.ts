@@ -28,6 +28,7 @@ export type PartnerDiscoveryReport = {
   searchQueries: string[]
   candidatesDiscovered: number
   candidatesResearched: number
+  candidatesResearchFailed: number
   candidatesQualified: PartnerDiscoveryReportCandidate[]
   candidatesNeedingReview: PartnerDiscoveryReportCandidate[]
   candidatesNotQualified: PartnerDiscoveryReportCandidate[]
@@ -40,7 +41,7 @@ export type PartnerDiscoveryRunnerDependencies = {
   companyResearch?: CompanyResearchProvider
 }
 
-const RESEARCH_CONCURRENCY = 8
+const RESEARCH_CONCURRENCY = 2
 
 function rankCandidates(left: PartnerDiscoveryReportCandidate, right: PartnerDiscoveryReportCandidate) {
   const statusRank = {
@@ -101,9 +102,19 @@ async function researchCandidatesInParallel(
         researchedCandidate = markResearchFailure(preliminaryCandidate, error)
       }
 
+      const qualification = agent.qualifyCandidate(researchedCandidate, request)
       results[index] = reportCandidate(
         researchedCandidate,
-        agent.qualifyCandidate(researchedCandidate, request)
+        researchedCandidate.researchStatus === 'researched' || qualification.status !== 'qualified'
+          ? qualification
+          : {
+              ...qualification,
+              status: 'needs_review',
+              concerns: [
+                ...qualification.concerns,
+                `Qualification is provisional because website research status is ${researchedCandidate.researchStatus}.`,
+              ],
+            }
       )
     }
   }
@@ -132,7 +143,13 @@ export async function runPartnerDiscovery(
   const companyResearch =
     dependencies.companyResearch ||
     (process.env.FIRECRAWL_API_KEY
-      ? createFirecrawlCompanyResearchProvider()
+      ? {
+          async research(request: Parameters<CompanyResearchProvider['research']>[0]) {
+            const primary = await createFirecrawlCompanyResearchProvider().research(request)
+            if (primary.researchStatus !== 'failed') return primary
+            return createLocalCompanyResearchProvider().research(request)
+          },
+        }
       : createLocalCompanyResearchProvider())
 
   const agent = createPartnerDiscoveryAgent({ webSearch, companyResearch })
@@ -148,7 +165,10 @@ export async function runPartnerDiscovery(
     searchQueries: discovery.searchQueries,
     candidatesDiscovered: discovery.candidates.length,
     candidatesResearched: reportCandidates.filter(
-      (item) => item.candidate.researchStatus !== 'unresearched'
+      (item) => item.candidate.researchStatus === 'researched' || item.candidate.researchStatus === 'partial'
+    ).length,
+    candidatesResearchFailed: reportCandidates.filter(
+      (item) => item.candidate.researchStatus === 'failed'
     ).length,
     candidatesQualified: finalRankedCandidates.filter(
       (item) => item.qualification.status === 'qualified'
@@ -240,7 +260,7 @@ export function formatPartnerDiscoveryReport(report: PartnerDiscoveryReport) {
     'PARTNER DISCOVERY',
     `Request: ${requestSummary}`,
     `Search queries: ${report.searchQueries.join(' | ') || 'None'}`,
-    `Discovered: ${report.candidatesDiscovered} | Researched: ${report.candidatesResearched}`,
+    `Discovered: ${report.candidatesDiscovered} | Researched: ${report.candidatesResearched} | Research failed: ${report.candidatesResearchFailed}`,
     '',
   ]
 

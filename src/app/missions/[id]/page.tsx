@@ -129,8 +129,10 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-4">
         <Metric label="Discovered" value={summary.discovered ?? 0} />
+        <Metric label="Verified" value={summary.verified ?? 0} />
         <Metric label="Qualified" value={summary.qualified ?? 0} />
-        <Metric label="Selected" value={mission.candidate_count} />
+        <Metric label="Selected" value={summary.selected ?? 0} />
+        <Metric label="Research failed" value={summary.research_failed ?? 0} />
         <Metric label="Contacts" value={summary.contacts_found ?? 0} />
         <Metric label="Apollo credits" value={summary.apollo_credits_consumed ?? 0} />
       </div>

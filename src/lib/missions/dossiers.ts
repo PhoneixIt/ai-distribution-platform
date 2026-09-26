@@ -53,7 +53,7 @@ export function createMissionDossierRecord(
 export function getDiscoveryMissionStage(
   qualifiedCandidateIds: string[],
   persistedDossierCandidateIds: string[],
-  requiredQualifiedCount = 10,
+  requiredQualifiedCount = 1,
 ): 'dossier_ready' | 'scored' {
   const persistedIds = new Set(persistedDossierCandidateIds)
   const everyQualifiedCandidateHasDossier = qualifiedCandidateIds.every((id) => persistedIds.has(id))

@@ -189,9 +189,12 @@ export async function POST(request: Request) {
         result_summary: {
           discovered: report.candidatesDiscovered,
           researched: report.candidatesResearched,
+          research_failed: report.candidatesResearchFailed,
+          verified: report.finalRankedCandidates.filter((item) => item.candidate.researchStatus === 'researched').length,
           returned: report.finalRankedCandidates.length,
           qualified: report.candidatesQualified.length,
           needs_review: report.candidatesNeedingReview.length,
+          selected: 0,
         },
         completed_at: null,
       }).eq('id', mission.id)
