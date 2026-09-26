@@ -33,14 +33,25 @@ export async function POST(_request: Request, context: Context) {
     .eq('discovery_run_id', mission.data.discovery_run_id)
     .eq('qualification_status', 'qualified')
     .order('rank', { ascending: true })
-    .limit(10)
   if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
   if (!candidates?.length) return NextResponse.json({ error: 'No qualified candidates are available for contact research.' }, { status: 409 })
 
   const domains = candidates.map((row) => domainFromWebsite(row.website)).filter((x): x is string => Boolean(x))
   if (!domains.length) return NextResponse.json({ error: 'No candidate websites can be enriched.' }, { status: 409 })
 
-  const orgPayload = await enrichOrganizations(candidates.map((row) => ({ name: row.company_name, website: row.website, domain: domainFromWebsite(row.website) })))
+  let orgPayload
+  try {
+    orgPayload = await enrichOrganizations(candidates.map((row) => ({ name: row.company_name, website: row.website, domain: domainFromWebsite(row.website) })))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Contact research provider failed.'
+    return NextResponse.json({
+      error: 'Contact research is unavailable.',
+      stage: 'contact_research',
+      provider: 'apollo',
+      reason: message,
+      configured: Boolean(process.env.APOLLO_API_KEY),
+    }, { status: 503 })
+  }
   const orgs = Array.isArray(orgPayload.organizations) ? orgPayload.organizations as Record<string, unknown>[] : []
 
   const companyCredits = Number(orgPayload.credits_consumed)
@@ -53,7 +64,19 @@ export async function POST(_request: Request, context: Context) {
   })
 
   const orgByDomain = new Map(orgs.map((org) => [String(org.primary_domain || org.domain || '').replace(/^www\./,''), org]))
-  const peopleSearch = await searchPeople(domains)
+  let peopleSearch
+  try {
+    peopleSearch = await searchPeople(domains)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Contact search provider failed.'
+    return NextResponse.json({
+      error: 'Contact research is unavailable.',
+      stage: 'contact_research',
+      provider: 'apollo',
+      reason: message,
+      configured: Boolean(process.env.APOLLO_API_KEY),
+    }, { status: 503 })
+  }
   const people = Array.isArray(peopleSearch.people) ? peopleSearch.people as Record<string, unknown>[] : []
 
   const selected = candidates.map((candidate) => {
@@ -63,7 +86,19 @@ export async function POST(_request: Request, context: Context) {
 
   if (selected.length) {
     const ids = selected.map((person) => String(person.id)).filter(Boolean)
-    const peoplePayload = await enrichPeople(ids)
+    let peoplePayload
+    try {
+      peoplePayload = await enrichPeople(ids)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Contact enrichment provider failed.'
+      return NextResponse.json({
+        error: 'Contact enrichment is unavailable.',
+        stage: 'contact_research',
+        provider: 'apollo',
+        reason: message,
+        configured: Boolean(process.env.APOLLO_API_KEY),
+      }, { status: 503 })
+    }
     const matches = Array.isArray(peoplePayload.matches) ? peoplePayload.matches as Record<string, unknown>[] : []
     const consumed = Number(peoplePayload.credits_consumed || 0)
     await supabase.from('mission_external_usage').insert({

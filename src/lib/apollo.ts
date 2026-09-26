@@ -4,7 +4,7 @@ const APOLLO_BASE = 'https://api.apollo.io/api/v1'
 
 function apiKey() {
   const key = process.env.APOLLO_API_KEY
-  if (!key) throw new Error('Apollo is not configured. Set APOLLO_API_KEY in the Preview environment.')
+  if (!key) throw new Error('APOLLO_API_KEY is not configured in this environment.')
   return key
 }
 
