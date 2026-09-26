@@ -219,7 +219,6 @@ function evaluatePartnerType(
   const values = [
     ...new Set([
       ...candidate.partnerTypes,
-      ...inferPartnerTypes(searchableCandidateText(candidate)),
     ]),
   ]
   const requestedValue = request.partnerTypes.join(', ')
