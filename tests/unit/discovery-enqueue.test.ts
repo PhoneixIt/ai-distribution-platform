@@ -265,3 +265,127 @@ test('the workflow module does not reintroduce a terminal already_running outcom
     'workflow must delegate failure persistence to the tested helper'
   )
 })
+
+// --- mission <-> discovery_run linkage ---
+
+test('the enqueue route links the mission to the run before emitting the event', () => {
+  const source = readFileSync('src/app/api/discovery/route.ts', 'utf8')
+
+  const insertIndex = source.indexOf(".from('discovery_runs')")
+  const linkIndex = source.indexOf('discovery_run_id: run.id')
+  const emitIndex = source.indexOf('inngest.send')
+
+  assert.ok(insertIndex > -1, 'route must create a discovery_runs row')
+  assert.ok(linkIndex > -1, 'route must persist missions.discovery_run_id at enqueue')
+  assert.ok(emitIndex > -1, 'route must emit the Inngest event')
+  assert.ok(
+    insertIndex < linkIndex,
+    'the run must exist before the mission can be linked to it'
+  )
+  assert.ok(
+    linkIndex < emitIndex,
+    'the mission must be linked before the workflow event is emitted, so a running, stalled or failed run stays traceable'
+  )
+})
+
+test('a failed mission link fails the run instead of emitting an unlinked event', () => {
+  const source = readFileSync('src/app/api/discovery/route.ts', 'utf8')
+  const linkIndex = source.indexOf('discovery_run_id: run.id')
+  const failIndex = source.indexOf("status: 'failed', error_message: 'Could not link discovery run to mission.'")
+
+  assert.ok(failIndex > -1, 'a link failure must mark the run failed')
+  assert.ok(
+    failIndex > linkIndex,
+    'the compensating failure write must follow the failed linkage attempt'
+  )
+  assert.ok(
+    source.includes("update({ discovery_run_id: run.id })"),
+    'the linkage must target the newly created run id'
+  )
+})
+
+test('the workflow still records the run id on completion', () => {
+  const source = readFileSync('src/inngest/functions.ts', 'utf8')
+
+  assert.ok(
+    source.includes('discovery_run_id: discoveryRunId'),
+    'completion must keep missions.discovery_run_id authoritative'
+  )
+})
+
+// --- mock discovery must be unreachable from production ---
+
+test('discover() refuses to return fixture candidates when no candidate source is injected', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+
+  const agent = createPartnerDiscoveryAgent({})
+  const request = {
+    country: 'Germany',
+    partnerTypes: ['MSSP'],
+    technologyFocus: 'Cybersecurity',
+    desiredCandidateCount: 5,
+  }
+
+  await assert.rejects(
+    () => agent.discover(request),
+    /requires an injected candidateSource/,
+    'discover() must fail loudly instead of silently returning mock candidates'
+  )
+})
+
+test('discover() still honours an explicitly injected candidate source', async () => {
+  // @ts-expect-error Node test runner loads the TypeScript source directly.
+  const { createPartnerDiscoveryAgent } = await import('../../src/agents/partner-discovery/agent.ts')
+
+  const agent = createPartnerDiscoveryAgent({
+    candidateSource: {
+      async discover() {
+        return [
+          {
+            companyName: 'Injected Co',
+            website: 'https://injected.example',
+            country: 'Germany',
+            partnerTypes: ['MSSP'],
+            capabilities: ['Managed security services'],
+            customerSegments: ['Mid-market'],
+            services: ['Managed security services'],
+            technologies: ['Cybersecurity'],
+            industries: [],
+            vendorPartnerships: [],
+            certifications: [],
+            locations: ['Germany'],
+            description: 'Injected candidate for the dependency-injection path.',
+            evidence: [
+              {
+                title: 'Injected evidence',
+                url: 'https://injected.example/about',
+                sourceType: 'company-website' as const,
+                excerpt: 'Injected evidence used by the test.',
+              },
+            ],
+            fitScore: 50,
+            qualificationReasons: [],
+            concerns: [],
+            verificationStatus: 'preliminary' as const,
+            researchStatus: 'researched' as const,
+            researchSources: [],
+            pagesFetched: 1,
+            failedUrls: [],
+          },
+        ]
+      },
+    },
+  })
+
+  const result = await agent.discover({
+    country: 'Germany',
+    partnerTypes: ['MSSP'],
+    technologyFocus: 'Cybersecurity',
+    desiredCandidateCount: 5,
+  })
+
+  assert.equal(result.source, 'provider')
+  assert.equal(result.candidates.length, 1)
+  assert.equal(result.candidates[0].companyName, 'Injected Co')
+})

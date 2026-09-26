@@ -110,6 +110,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: runError?.message || 'Could not create discovery run.' }, { status: 500 })
   }
 
+  // Link the mission to the run immediately, before the workflow starts. Without this
+  // the mission only learns its run id on success, so a running, stalled or failed run
+  // is untraceable from the mission and per-run candidate counts cannot be resolved.
+  // The column already exists in production; no schema change is involved.
+  const linkUpdate = await supabase
+    .from('missions')
+    .update({ discovery_run_id: run.id })
+    .eq('id', mission.id)
+
+  if (linkUpdate.error) {
+    // Keep mission and run coherent: fail the run rather than emit an event for a
+    // mission that cannot be linked back to it.
+    const failUpdate = await supabase
+      .from('discovery_runs')
+      .update({ status: 'failed', error_message: 'Could not link discovery run to mission.', completed_at: new Date().toISOString() })
+      .eq('id', run.id)
+    if (failUpdate.error) console.error('Failed to mark discovery run as failed after mission link error.', { runId: run.id, error: failUpdate.error })
+    const missionFailUpdate = await supabase
+      .from('missions')
+      .update({ status: 'failed', current_stage: 'failed', error_message: 'Could not link discovery run to mission.' })
+      .eq('id', mission.id)
+    if (missionFailUpdate.error) console.error('Failed to mark mission as failed after mission link error.', { missionId: mission.id, error: missionFailUpdate.error })
+    return NextResponse.json({ error: 'Could not link discovery run to mission.' }, { status: 500 })
+  }
+
   try {
     await inngest.send({
       name: 'portai/mission.workflow.started',

@@ -19,9 +19,15 @@ export function createPartnerDiscoveryAgent(dependencies: PartnerDiscoveryDepend
   return {
     async discover(request) {
       validateRequest(request)
-      const candidates = dependencies.candidateSource
-        ? await dependencies.candidateSource.discover(request)
-        : discoverMockPartners(request)
+      // Never fall back to fixture candidates: a missing candidate source must fail
+      // loudly rather than present mock data as real discovery. Production uses
+      // discoverFromWeb(); tests inject an explicit candidateSource.
+      if (!dependencies.candidateSource) {
+        throw new Error(
+          'discover() requires an injected candidateSource. Use discoverFromWeb() for provider-backed discovery.'
+        )
+      }
+      const candidates = await dependencies.candidateSource.discover(request)
       const scoredCandidates = candidates
         .map((candidate) => scorePartnerCandidate(candidate, request))
         .sort((left, right) => right.fitScore - left.fitScore)
@@ -30,7 +36,7 @@ export function createPartnerDiscoveryAgent(dependencies: PartnerDiscoveryDepend
         request,
         candidates: scoredCandidates,
         generatedAt: new Date().toISOString(),
-        source: dependencies.candidateSource ? 'provider' : 'mock',
+        source: 'provider',
         searchQueries: [],
         searchResultsProcessed: 0,
         skippedResults: [],
