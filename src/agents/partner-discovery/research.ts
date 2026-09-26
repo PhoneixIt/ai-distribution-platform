@@ -70,12 +70,6 @@ function readableText(html: string) {
   )
 }
 
-function canonicalCompanyName(title: string, fallback: string) {
-  const cleaned = title.split(/\s+[|:-]\s+/)[0].trim()
-  if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback
-  return cleaned.replace(/\s+/g, ' ')
-}
-
 function pageTitle(html: string) {
   const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return match ? readableText(match[1]) : ''
@@ -316,8 +310,7 @@ async function disallowedPaths(root: URL) {
   try {
     const robots = await fetchWithTimeout(new URL('/robots.txt', root).toString())
     const blocked = robots.text
-      .split(/\r?
-/)
+      .split(/\r?\n/)
       .filter((line) => /^\s*disallow\s*:/i.test(line))
       .map((line) => line.replace(/^\s*disallow\s*:/i, '').trim())
       .filter(Boolean)
@@ -335,7 +328,7 @@ function allowedByRobots(url: string, blockedPaths: string[]) {
 
 function createFailedResult(request: CompanyResearchRequest, failedUrls: string[]): CompanyResearchResult {
   return {
-    companyName: canonicalCompanyName(homepage.title, request.companyName),
+    companyName: request.companyName,
     website: request.website,
     evidence: [],
     confidence: 0,
@@ -385,6 +378,8 @@ export function createLocalCompanyResearchProvider(): CompanyResearchProvider {
       const partnerTypeFacts = matchedTerms(documents, [
         { pattern: /\bmanaged service provider\b/i, value: 'MSP' },
         { pattern: /\bmanaged security service provider\b/i, value: 'MSSP' },
+        { pattern: /\bMSSP\b/i, value: 'MSSP' },
+        { pattern: /\bMSP\b/i, value: 'MSP' },
         { pattern: /\bsystem integrator\b/i, value: 'System Integrator' },
         { pattern: /\bvalue[- ]added reseller\b/i, value: 'Value-added Reseller' },
         { pattern: /\breseller\b/i, value: 'Reseller' },
@@ -465,7 +460,7 @@ export function createLocalCompanyResearchProvider(): CompanyResearchProvider {
       const confidence = Math.min(0.95, Math.max(0.2, confidenceBase + allFacts.length * 0.05))
 
       return {
-        companyName: canonicalCompanyName(homepage.title, request.companyName),
+        companyName: request.companyName,
         website: request.website,
         ...(descriptionFact ? { description: descriptionFact.value } : {}),
         ...(countryFact.length ? { country: request.country } : {}),
