@@ -64,7 +64,7 @@ export default function DiscoveryPage() {
     ? partnerTypes.split(',').map((value) => value.trim()).filter(Boolean)
     : parsedIntent.partnerTypes
   const resolvedCustomerSegment = customerSegment.trim() || parsedIntent.customerSegment || ''
-  const resolvedCount = Math.min(100, Math.max(1, Number(count) || parsedIntent.desiredCandidateCount || 100))
+  const resolvedCount = Math.min(100, Math.max(1, Number(count) || parsedIntent.desiredCandidateCount || 25))
 
   async function runDiscovery(event: FormEvent) {
     event.preventDefault()
@@ -178,7 +178,7 @@ export default function DiscoveryPage() {
             <label className="text-sm text-slate-700">Customer segment<input value={customerSegment} onChange={(event) => setCustomerSegment(event.target.value)} placeholder={parsedIntent.customerSegment || 'e.g. Mid-market'} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500" /></label>
             <label className="text-sm text-slate-700">Results
               <select value={count} onChange={(event) => setCount(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-blue-500">
-                <option value="">Use objective ({parsedIntent.desiredCandidateCount || 100})</option>
+                <option value="">Use objective ({parsedIntent.desiredCandidateCount || 25})</option>
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -203,12 +203,15 @@ export default function DiscoveryPage() {
             </div>
 
             <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">Qualified ecosystem candidates</h2>
                   <p className="mt-1 text-sm text-slate-500">Candidates are ranked by current fit signals. Open a result to inspect evidence, gaps and qualification details before adding it to the shared network.</p>
                 </div>
-                <span className="text-sm text-slate-500">{report.finalRankedCandidates.length} results</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-slate-500">{report.finalRankedCandidates.length} results</span>
+                  {missionId ? <Link href={`/missions/${missionId}`} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-blue-500">Open mission</Link> : null}
+                </div>
               </div>
             </div>
 

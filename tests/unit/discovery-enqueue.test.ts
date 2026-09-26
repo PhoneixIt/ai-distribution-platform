@@ -313,6 +313,24 @@ test('the workflow still records the run id on completion', () => {
   )
 })
 
+test('the enqueue route never runs discovery synchronously in the request path', () => {
+  const source = readFileSync('src/app/api/discovery/route.ts', 'utf8')
+
+  assert.equal(
+    source.includes('runPartnerDiscovery'),
+    false,
+    '/api/discovery must only enqueue; the durable Inngest worker performs discovery'
+  )
+  assert.ok(
+    source.includes('inngest.send'),
+    'the route must hand work to the durable workflow via inngest.send'
+  )
+  assert.ok(
+    source.includes("name: 'portai/mission.workflow.started'"),
+    'the emitted event must match the registered workflow trigger'
+  )
+})
+
 // --- mock discovery must be unreachable from production ---
 
 test('discover() refuses to return fixture candidates when no candidate source is injected', async () => {

@@ -30,10 +30,10 @@ function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDisco
     vendorPartnership: input.vendorPartnership ? String(input.vendorPartnership).trim() : undefined,
     certification: input.certification ? String(input.certification).trim() : undefined,
     companySize: input.companySize ? String(input.companySize).trim() : undefined,
-    desiredCandidateCount: Math.min(
-      MAX_CANDIDATES,
-      Math.max(1, Number(input.desiredCandidateCount) || inferred.desiredCandidateCount || 10)
-    ),
+    // Intent-first default from the AI-matching line: explicit filters win, then an
+    // intent-parsed count, then a sensible default. This is a request target, not a
+    // qualification gate — completion is still derived from persisted evidence.
+    desiredCandidateCount: Math.min(MAX_CANDIDATES, Math.max(1, Number(input.desiredCandidateCount) || inferred.desiredCandidateCount || 25)),
   }
 }
 

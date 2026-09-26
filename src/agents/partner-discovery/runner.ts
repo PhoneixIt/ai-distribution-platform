@@ -42,7 +42,13 @@ export type PartnerDiscoveryRunnerDependencies = {
   companyResearch?: CompanyResearchProvider
 }
 
-const RESEARCH_CONCURRENCY = 2
+// Bounded deep-research budget (from the AI-matching line): research is capped so a
+// large desiredCandidateCount cannot trigger runaway provider spend. The cap only
+// bounds how many candidates are researched — discovered count still reflects the
+// full discovery result, and final results are still sliced to desiredCandidateCount.
+const RESEARCH_CONCURRENCY = 8
+const RESEARCH_MULTIPLIER = 2
+const MIN_RESEARCH_CANDIDATES = 20
 
 function rankCandidates(left: PartnerDiscoveryReportCandidate, right: PartnerDiscoveryReportCandidate) {
   const statusRank = {
@@ -166,11 +172,23 @@ export async function runPartnerDiscovery(
 
   const agent = createPartnerDiscoveryAgent({ webSearch, companyResearch })
   const discovery = await agent.discoverFromWeb(request)
-  const reportCandidates = await researchCandidatesInParallel(discovery.candidates, agent, request)
+  const researchLimit = Math.min(
+    discovery.candidates.length,
+    Math.max(request.desiredCandidateCount * RESEARCH_MULTIPLIER, MIN_RESEARCH_CANDIDATES)
+  )
+  const reportCandidates = await researchCandidatesInParallel(
+    discovery.candidates.slice(0, researchLimit),
+    agent,
+    request
+  )
 
   const finalRankedCandidates = reportCandidates
     .sort(rankCandidates)
     .slice(0, request.desiredCandidateCount)
+
+  const budgetNote = discovery.candidates.length > researchLimit
+    ? [`Research budget: ${researchLimit} of ${discovery.candidates.length} discovered candidates were deeply researched; remaining candidates were held for later expansion.`]
+    : []
 
   return {
     request,
@@ -194,7 +212,7 @@ export async function runPartnerDiscovery(
       (item) => item.qualification.status === 'not_qualified'
     ),
     finalRankedCandidates,
-    skippedResults: discovery.skippedResults,
+    skippedResults: [...discovery.skippedResults, ...budgetNote],
   }
 }
 
