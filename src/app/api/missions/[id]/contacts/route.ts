@@ -59,7 +59,7 @@ export async function POST(_request: Request, context: Context) {
   const selected = candidates.map((candidate) => {
     const domain = domainFromWebsite(candidate.website)
     return domain ? pickOneByDomain(people, domain) : null
-  }).filter((x): x is Record<string, unknown> => Boolean(x)).slice(0,10)
+  }).filter((x): x is Record<string, unknown> => Boolean(x))
 
   if (selected.length) {
     const ids = selected.map((person) => String(person.id)).filter(Boolean)
