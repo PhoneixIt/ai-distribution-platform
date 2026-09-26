@@ -3,6 +3,7 @@ import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
 import { createMissionDossierRecord, getDiscoveryMissionStage } from '@/lib/missions/dossiers'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
+import { buildDiscoverySearchDiagnostics } from '@/lib/discovery/runtime-diagnostics'
 
 const MAX_CANDIDATES = 100
 
@@ -32,8 +33,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: authError?.message || 'Authentication is unavailable.' }, { status: 401 })
   }
 
-  if (!process.env.EXA_API_KEY && !process.env.FIRECRAWL_API_KEY) {
-    return NextResponse.json({ error: 'No web discovery provider is configured on the server.' }, { status: 503 })
+  if (!process.env.FIRECRAWL_API_KEY) {
+    return NextResponse.json({ error: 'Firecrawl web discovery is not configured on the server.' }, { status: 503 })
   }
 
   let input: Partial<PartnerDiscoveryRequest>
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
 
   const { data: run, error: runError } = await supabase
     .from('discovery_runs')
-    .insert({ user_id: user.id, request: discoveryRequest, provider: 'exa+firecrawl', status: 'running' })
+    .insert({ user_id: user.id, request: discoveryRequest, provider: 'firecrawl', status: 'running' })
     .select('id')
     .single()
 
@@ -96,6 +97,84 @@ export async function POST(request: Request) {
 
   try {
     const report = await runPartnerDiscovery(discoveryRequest)
+    const searchDiagnostics = buildDiscoverySearchDiagnostics(
+      report.searchQueries.length,
+      report.searchQueriesFailed,
+      report.skippedResults,
+    )
+
+    if (searchDiagnostics?.code === 'DISCOVERY_SEARCH_FAILURE') {
+      const diagnosticMessage = JSON.stringify(searchDiagnostics)
+      const runFailureUpdate = await supabase
+        .from('discovery_runs')
+        .update({
+          status: 'failed',
+          search_queries: report.searchQueries,
+          discovered_count: 0,
+          researched_count: 0,
+          returned_count: 0,
+          error_message: diagnosticMessage,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', run.id)
+
+      if (runFailureUpdate.error) {
+        console.error('Failed to persist discovery provider failure diagnostics.', {
+          runId: run.id,
+          error: runFailureUpdate.error,
+        })
+      }
+
+      if (mission) {
+        const missionFailureUpdate = await supabase
+          .from('missions')
+          .update({
+            status: 'failed',
+            current_stage: 'failed',
+            discovery_run_id: run.id,
+            error_message: diagnosticMessage,
+            candidate_count: 0,
+            result_summary: {
+              discovered: 0,
+              researched: 0,
+              returned: 0,
+              qualified: 0,
+              needs_review: 0,
+              search_queries_failed: searchDiagnostics.failedQueries,
+            },
+          })
+          .eq('id', mission.id)
+
+        if (missionFailureUpdate.error) {
+          console.error('Failed to persist mission discovery failure diagnostics.', {
+            missionId: mission.id,
+            error: missionFailureUpdate.error,
+          })
+        }
+      }
+
+      console.error('Discovery provider failed for every search query.', {
+        runId: run.id,
+        missionId: mission?.id || null,
+        provider: searchDiagnostics.provider,
+        failedQueries: searchDiagnostics.failedQueries,
+        totalQueries: searchDiagnostics.totalQueries,
+        details: searchDiagnostics.details,
+      })
+
+      return NextResponse.json({
+        missionId: mission?.id || null,
+        runId: run.id,
+        error: 'Web discovery failed for every search query.',
+        diagnostics: {
+          code: searchDiagnostics.code,
+          provider: searchDiagnostics.provider,
+          failedQueries: searchDiagnostics.failedQueries,
+          totalQueries: searchDiagnostics.totalQueries,
+        },
+      }, { status: 502 })
+    }
+
     const rows = report.finalRankedCandidates.map((item, index) => ({
       discovery_run_id: run.id,
       company_name: item.candidate.companyName,
@@ -171,11 +250,12 @@ export async function POST(request: Request) {
       : null
 
     const runUpdate = await supabase.from('discovery_runs').update({
-      status: 'completed',
+      status: searchDiagnostics ? 'partial' : 'completed',
       search_queries: report.searchQueries,
       discovered_count: report.candidatesDiscovered,
       researched_count: report.candidatesResearched,
       returned_count: report.finalRankedCandidates.length,
+      error_message: searchDiagnostics ? JSON.stringify(searchDiagnostics) : null,
       completed_at: new Date().toISOString(),
     }).eq('id', run.id)
     if (runUpdate.error) throw runUpdate.error
@@ -192,6 +272,7 @@ export async function POST(request: Request) {
           returned: report.finalRankedCandidates.length,
           qualified: report.candidatesQualified.length,
           needs_review: report.candidatesNeedingReview.length,
+          search_queries_failed: report.searchQueriesFailed,
         },
         completed_at: null,
       }).eq('id', mission.id)
