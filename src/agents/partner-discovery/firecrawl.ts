@@ -10,6 +10,7 @@ import type {
 const FIRECRAWL_API_URL = 'https://api.firecrawl.dev/v2'
 const TIMEOUT_MS = 20_000
 const RESEARCH_PAGE_LIMIT = 5
+const SECONDARY_RESEARCH_CONCURRENCY = 2
 
 type SearchResponse = {
   web?: Array<{ title?: string; url?: string; description?: string; markdown?: string }>
@@ -164,11 +165,14 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         const pages: ResearchPage[] = [first.page]
         const failedUrls: string[] = []
         const secondaryUrls = usefulInternalLinks(first.links, root)
-        const secondary = await Promise.allSettled(secondaryUrls.map(scrapePage))
-        for (let i = 0; i < secondary.length; i += 1) {
-          const result = secondary[i]
-          if (result.status === 'fulfilled' && result.value.page.text) pages.push(result.value.page)
-          else failedUrls.push(secondaryUrls[i])
+        for (let start = 0; start < secondaryUrls.length; start += SECONDARY_RESEARCH_CONCURRENCY) {
+          const batch = secondaryUrls.slice(start, start + SECONDARY_RESEARCH_CONCURRENCY)
+          const secondary = await Promise.allSettled(batch.map(scrapePage))
+          for (let i = 0; i < secondary.length; i += 1) {
+            const result = secondary[i]
+            if (result.status === 'fulfilled' && result.value.page.text) pages.push(result.value.page)
+            else failedUrls.push(batch[i])
+          }
         }
 
         const countryFacts = findFacts(pages, [{ pattern: /\bGermany\b|\bDeutschland\b/i, value: 'Germany' }, { pattern: /\bMittelstand\b|\bMittelständ\w*/i, value: 'Germany' }])
