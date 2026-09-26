@@ -1,6 +1,6 @@
 import type { PartnerDiscoveryRequest } from './types'
 
-const MAX_DISCOVERY_QUERIES = 12
+const MAX_DISCOVERY_QUERIES = 6
 
 function addQuery(queries: string[], value: string) {
   const normalized = value.replace(/\s+/g, ' ').trim()
