@@ -3,6 +3,7 @@ import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
 import { createMissionDossierRecord, getDiscoveryMissionStage } from '@/lib/missions/dossiers'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
+import { inngest } from '@/inngest/client'
 
 const MAX_CANDIDATES = 200
 
@@ -70,6 +71,17 @@ export async function POST(request: Request) {
 
   if (recentRun && Date.now() - new Date(recentRun.created_at).getTime() < 60_000) {
     return NextResponse.json({ error: 'Please wait about one minute before starting another discovery run.' }, { status: 429 })
+  }
+
+  if (mission && process.env.INNGEST_EVENT_KEY) {
+    try {
+      await inngest.send({
+        name: 'portai/mission.workflow.started',
+        data: { missionId: mission.id, userId: user.id, runType: 'discovery' },
+      })
+    } catch (error) {
+      console.warn('Inngest workflow event could not be sent; continuing synchronously.', error)
+    }
   }
 
   if (mission) {
