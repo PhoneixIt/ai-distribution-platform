@@ -1,114 +1,267 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import type { SupabaseClient } from '@supabase/supabase-js'
+// @ts-expect-error Node test runner loads the TypeScript source directly.
+import { buildDiscoveryRunCompletionUpdate, buildDiscoveryWorkflowFailureUpdate, persistDiscoveryWorkflowFailure, resolveDiscoveryRunGuard } from '../../src/inngest/discovery-run-state.ts'
+import type { DiscoveryCompletionReport } from '../../src/inngest/discovery-run-state.ts'
+// @ts-expect-error Node test runner loads the TypeScript source directly.
+import { missionDiscoveryWorkflow } from '../../src/inngest/functions.ts'
 
-// --- Discovery route: enqueue behavior ---
+/**
+ * These tests exercise the real production workflow lifecycle module used by
+ * src/inngest/functions.ts. They intentionally do not re-state the rules: they call
+ * production code, so reintroducing either defect makes them fail.
+ */
 
-test('discovery POST requires missionId to enqueue a workflow', () => {
-  const missingMissionId = ''
-  assert.equal(missingMissionId, '')
-  assert.ok(!missingMissionId)
-})
+const PRODUCTION_RUN_STATUSES = ['running', 'completed', 'partial', 'failed']
 
-test('discovery POST creates a discovery_run with status running', () => {
-  const discoveryRun = { id: 'run-1', status: 'running' }
-  assert.equal(discoveryRun.status, 'running')
-})
+const report: DiscoveryCompletionReport = {
+  searchQueries: ['mssp germany cybersecurity', 'distributor germany cybersecurity'],
+  candidatesDiscovered: 12,
+  candidatesResearched: 8,
+  candidatesResearchFailed: 4,
+  candidatesQualified: [{ id: 'a' }, { id: 'b' }],
+  candidatesNeedingReview: [{ id: 'c' }],
+  finalRankedCandidates: [
+    { candidate: { researchStatus: 'researched' } },
+    { candidate: { researchStatus: 'researched' } },
+    { candidate: { researchStatus: 'failed' } },
+  ],
+}
 
-test('discovery POST does not call runPartnerDiscovery directly — it only enqueues', () => {
-  const directCalls: string[] = []
+type RecordedWrite = {
+  table: string
+  values: Record<string, unknown>
+  column: string
+  value: string
+}
 
-  // The route only calls supabase.insert and inngest.send, NOT runPartnerDiscovery
-  assert.equal(directCalls.length, 0)
-})
+function createRecordingSupabase(options: { runError?: Error; missionError?: Error } = {}) {
+  const writes: RecordedWrite[] = []
 
-test('discovery POST emits Inngest event with required identifiers', () => {
-  const eventData = { missionId: 'mission-1', discoveryRunId: 'run-1', userId: 'user-1' }
-  assert.equal(eventData.missionId, 'mission-1')
-  assert.equal(eventData.discoveryRunId, 'run-1')
-  assert.equal(eventData.userId, 'user-1')
-})
-
-test('discovery POST returns error when Inngest send fails and leaves state consistent', () => {
-  const enqueueFailed = true
-  const response = enqueueFailed
-    ? { error: 'Failed to queue discovery workflow.', status: 500 }
-    : { status: 'running' }
-  assert.equal(response.status, 500)
-})
-
-// --- Inngest function: idempotency ---
-
-test('Inngest function skips execution when discovery run is already completed', () => {
-  const runStatuses = ['running', 'completed', 'failed']
-  const completed = runStatuses.find((s) => s === 'completed')
-  assert.equal(completed, 'completed')
-})
-
-test('Inngest function skips execution when discovery run is already running', () => {
-  const runStatuses = ['running', 'completed', 'failed']
-  const running = runStatuses.find((s) => s === 'running')
-  assert.equal(running, 'running')
-})
-
-test('Inngest function transitions failed run to running before discovery', () => {
-  const transitions = { from: 'failed', to: 'running' }
-  assert.equal(transitions.from, 'failed')
-  assert.equal(transitions.to, 'running')
-})
-
-// --- Inngest function: failure handling ---
-
-test('Inngest function persists failure on discovery_runs and missions when discovery fails', () => {
-  const failureState = {
-    discoveryRuns: { status: 'failed', error_message: 'Discovery failed.' },
-    missions: { status: 'failed', current_stage: 'failed' },
+  const client = {
+    from(table: string) {
+      return {
+        update(values: Record<string, unknown>) {
+          return {
+            async eq(column: string, value: string) {
+              writes.push({ table, values, column, value })
+              const error = table === 'discovery_runs' ? options.runError : options.missionError
+              return { data: null, error: error ?? null }
+            },
+          }
+        },
+      }
+    },
   }
-  assert.equal(failureState.discoveryRuns.status, 'failed')
-  assert.equal(failureState.missions.status, 'failed')
-  assert.equal(failureState.missions.current_stage, 'failed')
+
+  return { writes, supabase: client as unknown as SupabaseClient }
+}
+
+function writeFor(writes: RecordedWrite[], table: string) {
+  const match = writes.find((write) => write.table === table)
+  assert.ok(match, `expected a write to ${table}`)
+  return match
+}
+
+test('an API-created running discovery run is eligible for workflow execution', () => {
+  // src/app/api/discovery/route.ts inserts every run with status 'running'.
+  assert.equal(resolveDiscoveryRunGuard('running'), 'proceed')
 })
 
-// --- Inngest function: success path ---
+test('a partial discovery run is still eligible for workflow execution', () => {
+  assert.equal(resolveDiscoveryRunGuard('partial'), 'proceed')
+})
 
-test('Inngest function persists candidates and updates mission stage on success', () => {
-  const successState = {
-    discoveryRuns: { status: 'completed', completed_at: '2026-01-01' },
-    missions: { status: 'running', current_stage: 'dossier_ready', candidate_count: 5 },
+test('the guard never returns an already_running terminal outcome for any production status', () => {
+  const outcomes = PRODUCTION_RUN_STATUSES.map((status) => resolveDiscoveryRunGuard(status))
+
+  assert.deepEqual(outcomes, ['proceed', 'already_completed', 'proceed', 'already_failed'])
+  assert.equal(
+    outcomes.includes('already_running' as never),
+    false,
+    '`running` must not be treated as terminal or discovery can never execute'
+  )
+})
+
+test('completed runs remain idempotent and are not reprocessed', () => {
+  assert.equal(resolveDiscoveryRunGuard('completed'), 'already_completed')
+})
+
+test('failed runs are not reprocessed after retries are exhausted', () => {
+  assert.equal(resolveDiscoveryRunGuard('failed'), 'already_failed')
+})
+
+test('a successful discovery completes the run and advances the mission to dossier_ready', () => {
+  const completion = buildDiscoveryRunCompletionUpdate({
+    discoveryRunId: 'run-1',
+    report,
+    completedAt: '2026-09-26T12:00:00.000Z',
+  })
+
+  assert.equal(completion.run.status, 'completed')
+  assert.equal(completion.run.completed_at, '2026-09-26T12:00:00.000Z')
+  assert.equal(completion.run.returned_count, 3)
+  assert.equal(completion.run.discovered_count, 12)
+  assert.equal(completion.run.researched_count, 8)
+  assert.deepEqual(completion.run.search_queries, report.searchQueries)
+
+  assert.equal(completion.missionStage, 'dossier_ready')
+  assert.equal(completion.mission.current_stage, 'dossier_ready')
+  assert.equal(completion.mission.discovery_run_id, 'run-1')
+  assert.equal(completion.mission.candidate_count, 3)
+  assert.deepEqual(completion.mission.result_summary, {
+    discovered: 12,
+    researched: 8,
+    research_failed: 4,
+    verified: 2,
+    returned: 3,
+    qualified: 2,
+    needs_review: 1,
+    selected: 0,
+  })
+})
+
+test('a successful discovery with no qualified candidates advances the mission to scored', () => {
+  const completion = buildDiscoveryRunCompletionUpdate({
+    discoveryRunId: 'run-2',
+    report: { ...report, candidatesQualified: [], candidatesNeedingReview: [] },
+    completedAt: '2026-09-26T12:00:00.000Z',
+  })
+
+  assert.equal(completion.run.status, 'completed')
+  assert.equal(completion.missionStage, 'scored')
+  assert.equal(completion.mission.current_stage, 'scored')
+})
+
+test('a workflow failure persists failed status on the discovery run', async () => {
+  const { writes, supabase } = createRecordingSupabase()
+
+  await persistDiscoveryWorkflowFailure(supabase, {
+    missionId: 'mission-1',
+    discoveryRunId: 'run-1',
+    error: new Error('Firecrawl Search HTTP 402: payment required'),
+    completedAt: '2026-09-26T12:00:00.000Z',
+  })
+
+  const runWrite = writeFor(writes, 'discovery_runs')
+  assert.equal(runWrite.values.status, 'failed')
+  assert.equal(runWrite.column, 'id')
+  assert.equal(runWrite.value, 'run-1')
+  assert.equal(runWrite.values.completed_at, '2026-09-26T12:00:00.000Z')
+})
+
+test('a workflow failure marks the associated mission failed at stage failed', async () => {
+  const { writes, supabase } = createRecordingSupabase()
+
+  await persistDiscoveryWorkflowFailure(supabase, {
+    missionId: 'mission-1',
+    discoveryRunId: 'run-1',
+    error: new Error('provider chain exhausted'),
+  })
+
+  const missionWrite = writeFor(writes, 'missions')
+  assert.equal(missionWrite.values.status, 'failed')
+  assert.equal(missionWrite.values.current_stage, 'failed')
+  assert.equal(missionWrite.value, 'mission-1')
+})
+
+test('a workflow failure retains the original error in the persisted error information', async () => {
+  const { writes, supabase } = createRecordingSupabase()
+  const original = new Error('Exa web search requires EXA_API_KEY in the server environment.')
+
+  await persistDiscoveryWorkflowFailure(supabase, {
+    missionId: 'mission-1',
+    discoveryRunId: 'run-1',
+    error: original,
+  })
+
+  const runMessage = String(writeFor(writes, 'discovery_runs').values.error_message)
+  const missionMessage = String(writeFor(writes, 'missions').values.error_message)
+
+  assert.ok(runMessage.includes(original.message), 'run error_message must retain the original error')
+  assert.ok(missionMessage.includes(original.message), 'mission error_message must retain the original error')
+  assert.equal(runMessage, missionMessage)
+})
+
+test('a workflow failure surfaces database errors instead of swallowing them', async () => {
+  const { supabase } = createRecordingSupabase({ runError: new Error('permission denied') })
+
+  await assert.rejects(
+    () =>
+      persistDiscoveryWorkflowFailure(supabase, {
+        missionId: 'mission-1',
+        discoveryRunId: 'run-1',
+        error: new Error('discovery blew up'),
+      }),
+    /permission denied/
+  )
+})
+
+test('persisted lifecycle state never writes queued or started_at', () => {
+  const completion = buildDiscoveryRunCompletionUpdate({
+    discoveryRunId: 'run-1',
+    report,
+    completedAt: '2026-09-26T12:00:00.000Z',
+  })
+  const failure = buildDiscoveryWorkflowFailureUpdate(
+    new Error('boom'),
+    '2026-09-26T12:00:00.000Z'
+  )
+
+  const allValues = [completion.run, completion.mission, failure.run, failure.mission]
+
+  for (const values of allValues) {
+    assert.equal('queued' in values, false, 'production discovery_runs has no queued status')
+    assert.equal(values.status === 'queued', false)
+    assert.equal('started_at' in values, false, 'production discovery_runs has no started_at column')
   }
-  assert.equal(successState.discoveryRuns.status, 'completed')
-  assert.equal(successState.missions.current_stage, 'dossier_ready')
-  assert.equal(successState.missions.candidate_count, 5)
-})
 
-test('Inngest function marks mission as dossier_ready when qualified candidates exist', () => {
-  const qualifiedCount = 3
-  const missionStage = qualifiedCount >= 1 ? 'dossier_ready' : 'scored'
-  assert.equal(missionStage, 'dossier_ready')
-})
-
-test('Inngest function marks mission as scored when no qualified candidates exist', () => {
-  const qualifiedCount = 0
-  const missionStage = qualifiedCount >= 1 ? 'dossier_ready' : 'scored'
-  assert.equal(missionStage, 'scored')
-})
-
-// --- Inngest function: minimum required data ---
-
-test('Inngest event payload contains only minimum required identifiers', () => {
-  const payload = { missionId: 'mission-1', discoveryRunId: 'run-1', userId: 'user-1' }
-  assert.equal(Object.keys(payload).length, 3)
-  assert.ok('missionId' in payload)
-  assert.ok('discoveryRunId' in payload)
-  assert.ok('userId' in payload)
-})
-
-// --- Database ownership model ---
-
-test('discovery_runs are user-owned and missions are org-owned', () => {
-  const ownership = {
-    discoveryRuns: { owner: 'user_id' },
-    missions: { owner: 'org_id' },
+  const statuses = allValues.map((values) => values.status)
+  for (const status of statuses) {
+    assert.ok(
+      status === undefined || PRODUCTION_RUN_STATUSES.includes(String(status)) || status === 'running',
+      `unexpected status written: ${String(status)}`
+    )
   }
-  assert.equal(ownership.discoveryRuns.owner, 'user_id')
-  assert.equal(ownership.missions.owner, 'org_id')
+})
+
+// --- Wiring: the registered Inngest function must actually use this logic ---
+
+type RegisteredFunctionOptions = {
+  id: string
+  retries?: number
+  onFailure?: unknown
+  triggers: Array<{ event: string }>
+}
+
+const registeredOptions = missionDiscoveryWorkflow.opts as unknown as RegisteredFunctionOptions
+
+test('the registered workflow triggers on the event the API emits', () => {
+  assert.equal(registeredOptions.id, 'portai-mission-discovery')
+  assert.deepEqual(
+    registeredOptions.triggers.map((trigger) => trigger.event),
+    ['portai/mission.workflow.started']
+  )
+})
+
+test('the registered workflow persists failure after retries are exhausted', () => {
+  assert.equal(typeof registeredOptions.onFailure, 'function')
+  assert.equal(registeredOptions.retries, 2)
+})
+
+test('the workflow module does not reintroduce a terminal already_running outcome', () => {
+  const source = readFileSync('src/inngest/functions.ts', 'utf8')
+
+  assert.equal(
+    source.includes('already_running'),
+    false,
+    'the `running` guard must not be reintroduced; it made every API-created run skip discovery'
+  )
+  assert.ok(source.includes('resolveDiscoveryRunGuard'), 'workflow must delegate to the tested guard')
+  assert.ok(
+    source.includes('persistDiscoveryWorkflowFailure'),
+    'workflow must delegate failure persistence to the tested helper'
+  )
 })

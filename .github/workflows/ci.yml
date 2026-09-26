@@ -40,6 +40,9 @@ jobs:
       - name: Web discovery identity tests
         run: npm run test:web-discovery
 
+      - name: Discovery workflow lifecycle tests
+        run: npm run test:discovery-enqueue
+
       - name: Production build
         run: npm run build
         env:

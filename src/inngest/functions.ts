@@ -3,6 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import { createMissionDossierRecord, type DiscoveryCandidateForDossier } from '@/lib/missions/dossiers'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
+import {
+  buildDiscoveryRunCompletionUpdate,
+  persistDiscoveryWorkflowFailure,
+  resolveDiscoveryRunGuard,
+} from './discovery-run-state'
 
 const MAX_CANDIDATES = 200
 
@@ -13,6 +18,28 @@ export const missionDiscoveryWorkflow = inngest.createFunction(
     retries: 2,
     concurrency: 1,
     rateLimit: { limit: 1, period: '10s' },
+    // Runs after the final retry is exhausted so a failed discovery can never be
+    // left stranded in `running`. The original error is persisted, not swallowed.
+    onFailure: async ({ event, error }) => {
+      const originalEvent = event.data.event.data as {
+        missionId?: string
+        discoveryRunId?: string
+      }
+      const missionId = originalEvent?.missionId
+      const discoveryRunId = originalEvent?.discoveryRunId
+
+      if (!missionId || !discoveryRunId) {
+        throw new Error(
+          'Discovery workflow failure payload is missing missionId or discoveryRunId.'
+        )
+      }
+
+      await persistDiscoveryWorkflowFailure(createAdminClient(), {
+        missionId,
+        discoveryRunId,
+        error,
+      })
+    },
   },
   async ({ event, step }) => {
     const { missionId, discoveryRunId } = event.data
@@ -31,15 +58,17 @@ export const missionDiscoveryWorkflow = inngest.createFunction(
       return runData
     })
 
-    if (run.status === 'completed') {
+    // Production only allows running | completed | partial | failed. The API creates the
+    // run as `running` before emitting the event, so `running` and `partial` are ACTIVE
+    // states this workflow must still process. Treating `running` as terminal made every
+    // API-created run return before `execute-discovery`. Only completed/failed are skipped.
+    const guard = resolveDiscoveryRunGuard(run.status)
+
+    if (guard === 'already_completed') {
       return { status: 'already_completed', discoveryRunId }
     }
 
-    if (run.status === 'running') {
-      return { status: 'already_running', discoveryRunId }
-    }
-
-    if (run.status === 'failed') {
+    if (guard === 'already_failed') {
       return { status: 'already_failed', discoveryRunId }
     }
 
@@ -164,49 +193,32 @@ export const missionDiscoveryWorkflow = inngest.createFunction(
       return dossierData
     })
 
-    const qualifiedCount = report.candidatesQualified.length
-    const needsReviewCount = report.candidatesNeedingReview.length
-    const missionStage = qualifiedCount >= 1 ? 'dossier_ready' : 'scored'
+    const completion = await step.run('update-mission-and-run', async () => {
+      const completionUpdate = buildDiscoveryRunCompletionUpdate({
+        discoveryRunId,
+        report,
+        completedAt: new Date().toISOString(),
+      })
 
-    await step.run('update-mission-and-run', async () => {
       const missionUpdate = await supabase
         .from('missions')
-        .update({
-          discovery_run_id: discoveryRunId,
-          status: 'running',
-          current_stage: missionStage,
-          candidate_count: report.finalRankedCandidates.length,
-          result_summary: {
-            discovered: report.candidatesDiscovered,
-            researched: report.candidatesResearched,
-            research_failed: report.candidatesResearchFailed,
-            verified: report.finalRankedCandidates.filter(
-              (item: { candidate: { researchStatus: string } }) => item.candidate.researchStatus === 'researched'
-            ).length,
-            returned: report.finalRankedCandidates.length,
-            qualified: qualifiedCount,
-            needs_review: needsReviewCount,
-            selected: 0,
-          },
-          completed_at: null,
-        })
+        .update(completionUpdate.mission)
         .eq('id', missionId)
 
       if (missionUpdate.error) throw missionUpdate.error
 
       const runUpdate = await supabase
         .from('discovery_runs')
-        .update({
-          status: 'completed',
-          search_queries: report.searchQueries,
-          discovered_count: report.candidatesDiscovered,
-          researched_count: report.candidatesResearched,
-          returned_count: report.finalRankedCandidates.length,
-          completed_at: new Date().toISOString(),
-        })
+        .update(completionUpdate.run)
         .eq('id', discoveryRunId)
 
       if (runUpdate.error) throw runUpdate.error
+
+      return {
+        qualifiedCount: completionUpdate.qualifiedCount,
+        needsReviewCount: completionUpdate.needsReviewCount,
+        missionStage: completionUpdate.missionStage,
+      }
     })
 
     return {
@@ -214,7 +226,9 @@ export const missionDiscoveryWorkflow = inngest.createFunction(
       discoveryRunId,
       missionId,
       candidatesDiscovered: report.candidatesDiscovered,
-      qualifiedCount,
+      qualifiedCount: completion.qualifiedCount,
+      needsReviewCount: completion.needsReviewCount,
+      missionStage: completion.missionStage,
     }
   }
 )
