@@ -50,12 +50,6 @@ async function firecrawlRequest<T>(path: string, body: unknown): Promise<T> {
   }
 }
 
-function canonicalCompanyName(title: string, fallback: string) {
-  const cleaned = title.split(/\s+[|:-]\s+/)[0].trim()
-  if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback
-  return cleaned.replace(/\s+/g, ' ')
-}
-
 function cleanText(value: string) {
   return value.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[#*_>`~-]+/g, ' ').replace(/\s+/g, ' ').trim()
 }
@@ -120,7 +114,7 @@ function usefulInternalLinks(links: string[], root: URL) {
 }
 
 function failedResult(request: CompanyResearchRequest, error: unknown): CompanyResearchResult {
-  return { companyName: canonicalCompanyName(first.page.title, request.companyName), website: request.website, evidence: [], confidence: 0, researchStatus: 'failed', pagesFetched: 0, failedUrls: [error instanceof Error ? error.message : request.website] }
+  return { companyName: request.companyName, website: request.website, evidence: [], confidence: 0, researchStatus: 'failed', pagesFetched: 0, failedUrls: [error instanceof Error ? error.message : request.website] }
 }
 
 export function createFirecrawlWebSearchProvider(): WebSearchProvider {
@@ -185,6 +179,8 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         const partnerTypeFacts = findFacts(pages, [
           { pattern: /\bmanaged security service provider\b/i, value: 'MSSP' },
           { pattern: /\bmanaged service provider\b/i, value: 'MSP' },
+          { pattern: /\bMSSP\b/i, value: 'MSSP' },
+          { pattern: /\bMSP\b/i, value: 'MSP' },
           { pattern: /\bsystem integrator\b/i, value: 'System Integrator' },
           { pattern: /\bvalue[- ]added reseller\b/i, value: 'Value-added Reseller' },
           { pattern: /\breseller\b/i, value: 'Reseller' },
@@ -201,7 +197,7 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         const evidenceItems = [...countryFacts, ...partnerTypeFacts, ...technologyFacts].map((fact) => fact.evidence)
         if (description) evidenceItems.push(makeEvidence(first.page, description))
         return {
-          companyName: canonicalCompanyName(first.page.title, request.companyName),
+          companyName: request.companyName,
           website: request.website,
           ...(description ? { description } : {}),
           ...(countryFacts[0]?.value ? { country: countryFacts[0].value, locations: [countryFacts[0].value] } : {}),
