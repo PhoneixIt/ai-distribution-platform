@@ -70,7 +70,13 @@ function readableText(html: string) {
   )
 }
 
-function canonicalCompanyName(title: string, fallback: string) {\n  const cleaned = title.split(/\\s+[|:-]\\s+/)[0].trim()\n  if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback\n  return cleaned.replace(/\\s+/g, ' ')\n}\n\nfunction pageTitle(html: string) {
+function canonicalCompanyName(title: string, fallback: string) {
+  const cleaned = title.split(/\\s+[|:-]\\s+/)[0].trim()
+  if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback
+  return cleaned.replace(/\\s+/g, ' ')
+}
+
+function pageTitle(html: string) {
   const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return match ? readableText(match[1]) : ''
 }
@@ -310,7 +316,8 @@ async function disallowedPaths(root: URL) {
   try {
     const robots = await fetchWithTimeout(new URL('/robots.txt', root).toString())
     const blocked = robots.text
-      .split(/\r?\n/)
+      .split(/\r?
+/)
       .filter((line) => /^\s*disallow\s*:/i.test(line))
       .map((line) => line.replace(/^\s*disallow\s*:/i, '').trim())
       .filter(Boolean)
@@ -328,7 +335,7 @@ function allowedByRobots(url: string, blockedPaths: string[]) {
 
 function createFailedResult(request: CompanyResearchRequest, failedUrls: string[]): CompanyResearchResult {
   return {
-    companyName: request.companyName,
+    companyName: canonicalCompanyName(homepage.title, request.companyName),
     website: request.website,
     evidence: [],
     confidence: 0,
