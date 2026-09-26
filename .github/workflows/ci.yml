@@ -37,6 +37,9 @@ jobs:
       - name: Mission dossier persistence tests
         run: npm run test:mission-dossiers
 
+      - name: Web discovery identity tests
+        run: npm run test:web-discovery
+
       - name: Production build
         run: npm run build
         env:
