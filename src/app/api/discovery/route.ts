@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { runPartnerDiscovery } from '@/agents/partner-discovery/runner'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
-import { createMissionDossierRecord, getDiscoveryMissionStage } from '@/lib/missions/dossiers'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 import { inngest } from '@/inngest/client'
 
@@ -45,21 +43,22 @@ export async function POST(request: Request) {
   }
 
   const missionId = typeof (input as Record<string, unknown>).missionId === 'string' ? String((input as Record<string, unknown>).missionId).trim() : ''
+  if (!missionId) {
+    return NextResponse.json({ error: 'missionId is required to enqueue a discovery workflow.' }, { status: 400 })
+  }
+
   const discoveryRequest = normalizeRequest(input)
   if (!discoveryRequest.country || !discoveryRequest.technologyFocus) return NextResponse.json({ error: 'Country and technology focus are required.' }, { status: 400 })
   if (!discoveryRequest.partnerTypes.length) return NextResponse.json({ error: 'At least one partner type is required.' }, { status: 400 })
 
-  let mission: { id: string; org_id: string } | null = null
-  if (missionId) {
-    const missionResult = await supabase
-      .from('missions')
-      .select('id,org_id,status,current_stage')
-      .eq('id', missionId)
-      .maybeSingle()
-    if (missionResult.error) return NextResponse.json({ error: missionResult.error.message }, { status: 500 })
-    if (!missionResult.data) return NextResponse.json({ error: 'Mission was not found in this workspace.' }, { status: 404 })
-    mission = { id: missionResult.data.id, org_id: missionResult.data.org_id }
-  }
+  const missionResult = await supabase
+    .from('missions')
+    .select('id,org_id,status,current_stage')
+    .eq('id', missionId)
+    .maybeSingle()
+  if (missionResult.error) return NextResponse.json({ error: missionResult.error.message }, { status: 500 })
+  if (!missionResult.data) return NextResponse.json({ error: 'Mission was not found in this workspace.' }, { status: 404 })
+  const mission = { id: missionResult.data.id, org_id: missionResult.data.org_id }
 
   const { data: recentRun } = await supabase
     .from('discovery_runs')
@@ -73,24 +72,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Please wait about one minute before starting another discovery run.' }, { status: 429 })
   }
 
-  if (mission && process.env.INNGEST_EVENT_KEY) {
-    try {
-      await inngest.send({
-        name: 'portai/mission.workflow.started',
-        data: { missionId: mission.id, userId: user.id, runType: 'discovery' },
-      })
-    } catch (error) {
-      console.warn('Inngest workflow event could not be sent; continuing synchronously.', error)
-    }
-  }
-
-  if (mission) {
-    const missionUpdate = await supabase
-      .from('missions')
-      .update({ status: 'running', current_stage: 'discovering', error_message: null })
-      .eq('id', mission.id)
-    if (missionUpdate.error) return NextResponse.json({ error: missionUpdate.error.message }, { status: 500 })
-  }
+  const missionUpdate = await supabase
+    .from('missions')
+    .update({ status: 'running', current_stage: 'discovering', error_message: null })
+    .eq('id', mission.id)
+  if (missionUpdate.error) return NextResponse.json({ error: missionUpdate.error.message }, { status: 500 })
 
   const { data: run, error: runError } = await supabase
     .from('discovery_runs')
@@ -99,138 +85,25 @@ export async function POST(request: Request) {
     .single()
 
   if (runError || !run) {
-    if (mission) {
-      const failureUpdate = await supabase.from('missions').update({ status: 'failed', current_stage: 'failed', error_message: runError?.message || 'Could not create discovery run.' }).eq('id', mission.id)
-      if (failureUpdate.error) console.error('Failed to mark mission after discovery run creation error.', { missionId: mission.id, error: failureUpdate.error })
-    }
+    const failureUpdate = await supabase.from('missions').update({ status: 'failed', current_stage: 'failed', error_message: runError?.message || 'Could not create discovery run.' }).eq('id', mission.id)
+    if (failureUpdate.error) console.error('Failed to mark mission after discovery run creation error.', { missionId: mission.id, error: failureUpdate.error })
     return NextResponse.json({ error: runError?.message || 'Could not create discovery run.' }, { status: 500 })
   }
 
   try {
-    const report = await runPartnerDiscovery(discoveryRequest)
-    const rows = report.finalRankedCandidates.map((item, index) => ({
-      discovery_run_id: run.id,
-      company_name: item.candidate.companyName,
-      website: item.candidate.website || null,
-      company_type: item.candidate.partnerTypes.some((type) => /distributor/i.test(type)) ? 'distributor' : 'partner',
-      country: item.candidate.country || null,
-      description: item.candidate.description || null,
-      partner_types: item.candidate.partnerTypes,
-      technologies: item.candidate.technologies,
-      customer_segments: item.candidate.customerSegments,
-      industries: item.candidate.industries,
-      services: item.candidate.services,
-      vendor_partnerships: item.candidate.vendorPartnerships,
-      certifications: item.candidate.certifications,
-      fit_score: item.candidate.fitScore,
-      qualification_status: item.qualification.status,
-      qualification_score: item.qualification.score,
-      qualification_reasons: item.qualification.reasons,
-      concerns: item.qualification.concerns,
-      research_status: item.candidate.researchStatus,
-      research_confidence: item.candidate.researchConfidence || 0,
-      evidence: item.candidate.evidence,
-      rank: index + 1,
-    }))
-
-    let savedCandidates: Array<{ id: string; website: string | null; company_name: string; qualification_status: string }> = []
-    if (rows.length) {
-      const { data: insertedCandidates, error: candidateError } = await supabase
-        .from('discovery_candidates')
-        .insert(rows)
-        .select('id,website,company_name,qualification_status')
-      if (candidateError) throw candidateError
-      savedCandidates = insertedCandidates || []
-      if (savedCandidates.length !== rows.length) {
-        throw new Error(`Discovery candidate persistence was incomplete (${savedCandidates.length}/${rows.length} rows returned).`)
-      }
-    }
-
-    let dossierCandidateIds: string[] = []
-    let persistedDossierCandidateIds: string[] = []
-    if (mission) {
-      const qualifiedCandidates = savedCandidates.filter((candidate) => candidate.qualification_status === 'qualified')
-      dossierCandidateIds = qualifiedCandidates.map((candidate) => candidate.id)
-
-      if (qualifiedCandidates.length) {
-        const candidatesForDossiers = await supabase
-          .from('discovery_candidates')
-          .select('id,company_name,website,country,customer_segments,services,partner_types,fit_score,qualification_score,qualification_status,qualification_reasons,concerns,evidence')
-          .eq('discovery_run_id', run.id)
-          .eq('qualification_status', 'qualified')
-          .order('rank', { ascending: true })
-        if (candidatesForDossiers.error) throw candidatesForDossiers.error
-        if ((candidatesForDossiers.data || []).length !== qualifiedCandidates.length) {
-          throw new Error(`Could not verify all qualified discovery candidates (${(candidatesForDossiers.data || []).length}/${qualifiedCandidates.length} rows found).`)
-        }
-
-        const dossierRows = (candidatesForDossiers.data || []).map((candidate) => createMissionDossierRecord(mission.org_id, mission.id, candidate))
-        const dossierWrite = await supabase
-          .from('mission_dossiers')
-          .upsert(dossierRows, { onConflict: 'mission_id,candidate_id' })
-          .select('id,candidate_id')
-        if (dossierWrite.error) throw dossierWrite.error
-
-        persistedDossierCandidateIds = (dossierWrite.data || []).map((dossier) => dossier.candidate_id)
-        if (persistedDossierCandidateIds.length !== dossierCandidateIds.length || dossierCandidateIds.some((id) => !persistedDossierCandidateIds.includes(id))) {
-          throw new Error(`Dossier persistence was incomplete (${persistedDossierCandidateIds.length}/${dossierCandidateIds.length} rows returned).`)
-        }
-      }
-    }
-
-    const missionStage = mission
-      ? getDiscoveryMissionStage(dossierCandidateIds, persistedDossierCandidateIds)
-      : null
-
-    const runUpdate = await supabase.from('discovery_runs').update({
-      status: 'completed',
-      search_queries: report.searchQueries,
-      discovered_count: report.candidatesDiscovered,
-      researched_count: report.candidatesResearched,
-      returned_count: report.finalRankedCandidates.length,
-      completed_at: new Date().toISOString(),
-    }).eq('id', run.id)
-    if (runUpdate.error) throw runUpdate.error
-
-    if (mission) {
-      const missionUpdate = await supabase.from('missions').update({
-        discovery_run_id: run.id,
-        status: 'running',
-        current_stage: missionStage,
-        candidate_count: report.finalRankedCandidates.length,
-        result_summary: {
-          discovered: report.candidatesDiscovered,
-          researched: report.candidatesResearched,
-          research_failed: report.candidatesResearchFailed,
-          verified: report.finalRankedCandidates.filter((item) => item.candidate.researchStatus === 'researched').length,
-          returned: report.finalRankedCandidates.length,
-          qualified: report.candidatesQualified.length,
-          needs_review: report.candidatesNeedingReview.length,
-          selected: 0,
-        },
-        completed_at: null,
-      }).eq('id', mission.id)
-      if (missionUpdate.error) throw missionUpdate.error
-    }
-
-    const candidateIdsByWebsite = new Map(savedCandidates.map((item) => [item.website, item.id]))
-    const finalRankedCandidates = report.finalRankedCandidates.map((item) => ({
-      ...item,
-      candidateId: candidateIdsByWebsite.get(item.candidate.website) || null,
-    }))
-
-    return NextResponse.json({ missionId: mission?.id || null, runId: run.id, missionStage, dossiersCreated: dossierCandidateIds.length, report: { ...report, finalRankedCandidates } })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error || 'Discovery failed.')
-    console.error('Mission discovery failed before all workflow data was persisted.', { missionId: mission?.id || null, runId: run.id, error })
-    const runFailureUpdate = await supabase.from('discovery_runs').update({ status: 'failed', error_message: message, completed_at: new Date().toISOString() }).eq('id', run.id)
-    if (runFailureUpdate.error) console.error('Failed to mark discovery run as failed.', { runId: run.id, error: runFailureUpdate.error })
-    if (mission) {
-      const missionFailureUpdate = await supabase.from('missions').update({ status: 'failed', current_stage: 'failed', error_message: message, discovery_run_id: run.id }).eq('id', mission.id)
-      if (missionFailureUpdate.error) console.error('Failed to mark mission as failed.', { missionId: mission.id, error: missionFailureUpdate.error })
-    }
-    return NextResponse.json({ runId: run.id, error: message }, { status: 500 })
+    await inngest.send({
+      name: 'portai/mission.workflow.started',
+      data: { missionId: mission.id, discoveryRunId: run.id, userId: user.id },
+    })
+  } catch {
+    const failUpdate = await supabase.from('discovery_runs').update({ status: 'failed', error_message: 'Failed to queue Inngest event.', completed_at: new Date().toISOString() }).eq('id', run.id)
+    if (failUpdate.error) console.error('Failed to mark discovery run as failed after Inngest error.', { runId: run.id, error: failUpdate.error })
+    const missionFailUpdate = await supabase.from('missions').update({ status: 'failed', current_stage: 'failed', error_message: 'Failed to queue Inngest event.' }).eq('id', mission.id)
+    if (missionFailUpdate.error) console.error('Failed to mark mission as failed after Inngest error.', { missionId: mission.id, error: missionFailUpdate.error })
+    return NextResponse.json({ error: 'Failed to queue discovery workflow.' }, { status: 500 })
   }
+
+  return NextResponse.json({ missionId: mission.id, runId: run.id, status: 'running' })
 }
 
 export async function GET() {
@@ -246,4 +119,3 @@ export async function GET() {
   if (queryError) return NextResponse.json({ error: queryError.message }, { status: 500 })
   return NextResponse.json({ runs: data || [] })
 }
-

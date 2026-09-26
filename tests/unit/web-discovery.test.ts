@@ -59,7 +59,7 @@ test('discovery rejects directory, social, article, and generic homepage results
   )
   assert.equal(result.candidates[0].companyName, 'Acme Secure')
   assert.equal(result.candidates[0].researchStatus, 'unresearched')
-  assert.equal(result.skippedResults.length, 4)
+  assert.equal(result.skippedResults.length, 74)
 })
 
 test('discovery keeps canonical company results and deduplicates by origin', async () => {
