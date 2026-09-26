@@ -7,8 +7,9 @@ import {
   createFirecrawlCompanyResearchProvider,
   createFirecrawlWebSearchProvider,
   createResilientWebSearchProvider,
+
 } from './firecrawl'
-import { createExaWebSearchProvider } from './web-search'
+import { createBraveWebSearchProvider, createExaWebSearchProvider } from './web-search'
 import type {
   CompanyResearchProvider,
   PartnerCandidate,
@@ -137,7 +138,12 @@ export async function runPartnerDiscovery(
     dependencies.webSearch ||
     createResilientWebSearchProvider(
       createExaWebSearchProvider(),
-      createFirecrawlWebSearchProvider()
+      process.env.BRAVE_SEARCH_API_KEY
+        ? createResilientWebSearchProvider(
+            createBraveWebSearchProvider(),
+            createFirecrawlWebSearchProvider()
+          )
+        : createFirecrawlWebSearchProvider()
     )
 
   const companyResearch =
