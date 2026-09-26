@@ -143,7 +143,13 @@ export async function runPartnerDiscovery(
   const companyResearch =
     dependencies.companyResearch ||
     (process.env.FIRECRAWL_API_KEY
-      ? createFirecrawlCompanyResearchProvider()
+      ? {
+          async research(request: Parameters<CompanyResearchProvider['research']>[0]) {
+            const primary = await createFirecrawlCompanyResearchProvider().research(request)
+            if (primary.researchStatus !== 'failed') return primary
+            return createLocalCompanyResearchProvider().research(request)
+          },
+        }
       : createLocalCompanyResearchProvider())
 
   const agent = createPartnerDiscoveryAgent({ webSearch, companyResearch })
