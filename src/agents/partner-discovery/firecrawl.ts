@@ -185,8 +185,6 @@ export function createFirecrawlCompanyResearchProvider(): CompanyResearchProvide
         const partnerTypeFacts = findFacts(pages, [
           { pattern: /\bmanaged security service provider\b/i, value: 'MSSP' },
           { pattern: /\bmanaged service provider\b/i, value: 'MSP' },
-          { pattern: /\bMSSP\b/i, value: 'MSSP' },
-          { pattern: /\bMSP\b/i, value: 'MSP' },
           { pattern: /\bsystem integrator\b/i, value: 'System Integrator' },
           { pattern: /\bvalue[- ]added reseller\b/i, value: 'Value-added Reseller' },
           { pattern: /\breseller\b/i, value: 'Reseller' },
