@@ -40,9 +40,29 @@ async function firecrawlRequest<T>(path: string, body: unknown): Promise<T> {
       body: JSON.stringify(body),
       signal: controller.signal,
     })
-    const payload = (await response.json()) as { data?: T; error?: string }
-    if (!response.ok) throw new Error(payload.error || `Firecrawl HTTP ${response.status}`)
-    if (payload.data === undefined) throw new Error('Firecrawl returned no data.')
+
+    const responseText = await response.text()
+    let payload: { data?: T; error?: unknown }
+    try {
+      payload = JSON.parse(responseText) as { data?: T; error?: unknown }
+    } catch {
+      throw new Error(`Firecrawl HTTP ${response.status} returned a non-JSON response.`)
+    }
+
+    if (!response.ok) {
+      const errorMessage =
+        typeof payload.error === 'string'
+          ? payload.error
+          : payload.error
+            ? JSON.stringify(payload.error)
+            : response.statusText || `Firecrawl HTTP ${response.status}`
+      throw new Error(`Firecrawl HTTP ${response.status}: ${errorMessage}`)
+    }
+
+    if (payload.data === undefined) {
+      throw new Error('Firecrawl returned a successful response without data.')
+    }
+
     return payload.data
   } finally {
     clearTimeout(timeout)
@@ -125,7 +145,6 @@ export function createFirecrawlWebSearchProvider(): WebSearchProvider {
         query,
         limit: Math.min(Math.max(request.maxResults ?? 10, 1), 100),
         sources: ['web'],
-        scrapeOptions: { formats: ['markdown'] },
       })
       return (result.web || []).filter((item) => item.url).map((item) => ({
         title: item.title || item.url || 'Untitled',

@@ -33,6 +33,7 @@ export function createPartnerDiscoveryAgent(dependencies: PartnerDiscoveryDepend
         source: dependencies.candidateSource ? 'provider' : 'mock',
         searchQueries: [],
         searchResultsProcessed: 0,
+        searchQueriesFailed: 0,
         skippedResults: [],
       }
       return result

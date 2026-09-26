@@ -63,6 +63,7 @@ export type PartnerDiscoveryResult = {
   source: 'mock' | 'provider' | 'web-search'
   searchQueries: string[]
   searchResultsProcessed: number
+  searchQueriesFailed: number
   skippedResults: string[]
 }
 
