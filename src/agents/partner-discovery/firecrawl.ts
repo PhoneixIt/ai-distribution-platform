@@ -50,7 +50,7 @@ async function firecrawlRequest<T>(path: string, body: unknown): Promise<T> {
   }
 }
 
-function cleanText(value: string) {
+function canonicalCompanyName(title: string, fallback: string) {\n  const cleaned = title.split(/\\s+[|:-]\\s+/)[0].trim()\n  if (!cleaned || /^(home|start|offering|services?|security|cybersecurity)$/i.test(cleaned)) return fallback\n  return cleaned.replace(/\\s+/g, ' ')\n}\n\nfunction cleanText(value: string) {
   return value.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[#*_>`~-]+/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
