@@ -58,30 +58,6 @@ function evidenceFor(
 }
 
 /**
- * Infer partner types from text (MSSP, MSP, SI, VAR, Reseller, Distributor)
- */
-function inferPartnerTypes(text: string): string[] {
-  const inferred: string[] = []
-  if (
-    /\bmanaged security service provider\b|\bmanaged security services?\b|\bmanaged detection and response\b|\bmanaged SOC\b|\bMSSP\b/i.test(
-      text
-    )
-  )
-    inferred.push('MSSP')
-  if (
-    /\bmanaged service provider\b|\bmanaged services?\b|\bMSP\b/i.test(text)
-  )
-    inferred.push('MSP')
-  if (/\bsystem integrator\b|\bsystems integration\b/i.test(text))
-    inferred.push('System Integrator')
-  if (/\bvalue[- ]added reseller\b|\bVAR\b/i.test(text))
-    inferred.push('Value-added Reseller')
-  if (/\breseller\b/i.test(text)) inferred.push('Reseller')
-  if (/\bdistributor\b/i.test(text)) inferred.push('Distributor')
-  return [...new Set(inferred)]
-}
-
-/**
  * Infer customer segments from text (SMB, Mid-market, Enterprise)
  */
 function inferCustomerSegments(text: string): string[] {
@@ -219,7 +195,6 @@ function evaluatePartnerType(
   const values = [
     ...new Set([
       ...candidate.partnerTypes,
-      ...inferPartnerTypes(searchableCandidateText(candidate)),
     ]),
   ]
   const requestedValue = request.partnerTypes.join(', ')

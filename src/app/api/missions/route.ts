@@ -72,10 +72,61 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('missions')
-    .select('id,objective,vendor_name,product_name,market,country,partner_types,technology_focus,customer_segment,status,current_stage,candidate_count,discovery_run_id,ai_run_id,error_message,created_at,updated_at,completed_at')
+    .select('id,objective,vendor_name,product_name,market,country,partner_types,technology_focus,customer_segment,status,current_stage,candidate_count,discovery_run_id,ai_run_id,error_message,created_at,updated_at,completed_at,result_summary')
     .order('created_at', { ascending: false })
     .limit(20)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ missions: data || [] })
+
+  const missions = data || []
+  const runIds = missions.map((mission) => mission.discovery_run_id).filter(Boolean)
+  const candidateCounts = new Map<string, { discovered: number; verified: number; qualified: number; needs_review: number; research_failed: number }>()
+
+  if (runIds.length) {
+    const { data: candidates, error: candidateError } = await supabase
+      .from('discovery_candidates')
+      .select('discovery_run_id,research_status,qualification_status')
+      .in('discovery_run_id', runIds)
+
+    if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
+
+    for (const candidate of candidates || []) {
+      const current = candidateCounts.get(candidate.discovery_run_id) || {
+        discovered: 0,
+        verified: 0,
+        qualified: 0,
+        needs_review: 0,
+        research_failed: 0,
+      }
+      current.discovered += 1
+      if (candidate.research_status === 'researched') current.verified += 1
+      if (candidate.research_status === 'failed') current.research_failed += 1
+      if (candidate.qualification_status === 'qualified') current.qualified += 1
+      if (candidate.qualification_status === 'needs_review') current.needs_review += 1
+      candidateCounts.set(candidate.discovery_run_id, current)
+    }
+  }
+
+  const enrichedMissions = missions.map((mission) => {
+    const counts = mission.discovery_run_id ? candidateCounts.get(mission.discovery_run_id) : undefined
+    return counts
+      ? {
+          ...mission,
+          result_summary: {
+            ...(mission.result_summary || {}),
+            ...counts,
+            selected: 0,
+            returned: mission.candidate_count,
+          },
+        }
+      : {
+          ...mission,
+          result_summary: {
+            ...(mission.result_summary || {}),
+            selected: 0,
+          },
+        }
+  })
+
+  return NextResponse.json({ missions: enrichedMissions })
 }

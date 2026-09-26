@@ -64,6 +64,19 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     return () => { active = false }
   }, [params])
 
+  // Discovery runs asynchronously in the durable workflow. While the persisted
+  // mission stage is `discovering`, refresh so the page reflects real state instead
+  // of assuming the enqueue request meant completion.
+  useEffect(() => {
+    if (!mission) return
+    if (mission.current_stage !== 'discovering') return
+    const id = mission.id
+    const timer = setInterval(() => {
+      void load(id).catch(() => { /* keep the last known state; the error banner covers hard failures */ })
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [mission])
+
   async function action(id: string, endpoint: string, body: Record<string, unknown>) {
     setBusy(id + endpoint); setError(''); setNotice('')
     try {
@@ -102,7 +115,9 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
         throw new Error(payload.error || 'Discovery failed.')
       }
       await load(mission.id)
-      setNotice('Discovery completed. PortAi has prepared the candidates for review.')
+      // The POST only means the workflow was enqueued. Completion is derived below
+      // from the persisted mission stage, never from this response.
+      setNotice('Discovery started. PortAi is running the workflow in the background.')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Discovery failed.')
     } finally {
@@ -126,6 +141,14 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
   if (!mission) return <AppShell title="Mission"><p className="text-sm text-slate-500">{error || 'Loading mission…'}</p></AppShell>
 
   const summary = mission.result_summary || {}
+  // Lifecycle message is derived from persisted state only.
+  const discoveryState = mission.error_message || mission.current_stage === 'failed'
+    ? { tone: 'red', text: 'Discovery failed. ' + (mission.error_message || '') }
+    : mission.current_stage === 'discovering'
+      ? { tone: 'blue', text: 'Discovery in progress. Candidates appear here once the workflow finishes.' }
+      : ['scored', 'dossier_ready'].includes(mission.current_stage)
+        ? { tone: 'green', text: 'Discovery completed. PortAi has prepared the candidates for review.' }
+        : null
   return <AppShell title="Mission execution" subtitle="Evidence-backed work stays visible; external communication remains blocked until you explicitly approve a draft.">
     <Link href="/workflow" className="text-sm text-blue-700">← Missions</Link>
     <section className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-6">
@@ -138,8 +161,9 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
         <Metric label="Qualified" value={summary.qualified ?? 0} />
         <Metric label="Selected" value={mission.candidate_count} />
         <Metric label="Contacts" value={summary.contacts_found ?? 0} />
-        <Metric label="Apollo credits" value={summary.apollo_credits_consumed ?? 0} />
+        <Metric label="Apollo credits" value={summary.hunter_credits_consumed ?? 0} />
       </div>
+      {discoveryState ? <p className={'mt-4 rounded-xl border px-4 py-3 text-sm ' + (discoveryState.tone === 'red' ? 'border-red-200 bg-red-50 text-red-700' : discoveryState.tone === 'green' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-blue-200 bg-blue-50 text-blue-800')}>{discoveryState.text}</p> : null}
     </section>
 
     <section className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">

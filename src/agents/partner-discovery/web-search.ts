@@ -10,7 +10,7 @@ const DUCKDUCKGO_HTML_URL = 'https://html.duckduckgo.com/html/'
 const EXA_API_KEY_ENV = 'EXA_API_KEY'
 const DEFAULT_MAX_RESULTS = 10
 const MAX_RESULTS_LIMIT = 100
-const MAX_DISCOVERY_QUERIES = 12
+const MAX_DISCOVERY_QUERIES = 24
 
 function decodeHtml(value: string) {
   return value
@@ -96,6 +96,45 @@ export function createExaWebSearchProvider(): WebSearchProvider {
           ...(snippet ? { snippet } : {}),
         }
       })
+    },
+  }
+}
+
+
+
+export function createBraveWebSearchProvider(): WebSearchProvider {
+  return {
+    async search(request: WebSearchRequest) {
+      const query = request.query.trim()
+      if (!query) throw new Error('Web search requires a query.')
+      const apiKey = process.env.BRAVE_SEARCH_API_KEY
+      if (!apiKey) throw new Error('Brave web search requires BRAVE_SEARCH_API_KEY in the server environment.')
+
+      const response = await fetch(
+        'https://api.search.brave.com/res/v1/web/search?q=' +
+          encodeURIComponent(query) +
+          '&count=' +
+          String(normalizeMaxResults(request.maxResults)),
+        {
+          headers: {
+            Accept: 'application/json',
+            'X-Subscription-Token': apiKey,
+          },
+          cache: 'no-store',
+        }
+      )
+
+      const raw = await response.text()
+      if (!response.ok) throw new Error(`Brave Search HTTP ${response.status}: ${raw.slice(0, 240)}`)
+
+      let payload: { web?: { results?: Array<{ title?: string; url?: string; description?: string }> } } = {}
+      try { payload = raw ? JSON.parse(raw) : {} } catch { throw new Error('Brave Search returned invalid JSON.') }
+
+      return (payload.web?.results || []).filter((item) => item.url).map((item) => ({
+        title: item.title || item.url || 'Untitled',
+        url: item.url as string,
+        ...(item.description ? { snippet: item.description } : {}),
+      }))
     },
   }
 }
