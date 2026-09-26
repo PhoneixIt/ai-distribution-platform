@@ -48,26 +48,17 @@ export async function updateSession(request: NextRequest) {
     console.error('[supabase-proxy] getClaims failed:', error.message)
   }
 
-  const protectedPrefixes = ['/app', '/discovery', '/opportunities', '/missions', '/matches', '/workflow', '/partners', '/vendors', '/distributors', '/customers', '/settings', '/workforce', '/engagements', '/products']
-
-  const isPublicEntryRoute = pathname === '/' || pathname === '/login' || pathname === '/signup'
-  const isProtectedRoute = protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'))
-
-  // Authenticated users should be redirected away from public entry pages
-  if (claims && !claims.is_anonymous && isPublicEntryRoute) {
+  // Keep the marketing/auth pages from being shown to an already-authenticated
+  // visitor, but do not server-redirect protected workspace routes. OAuth is
+  // completed in the browser and the workspace shell validates that same browser
+  // session; duplicating that decision here can create a redirect loop immediately
+  // after the PKCE code exchange.
+  if (claims && !claims.is_anonymous && (pathname === '/' || pathname === '/login' || pathname === '/signup')) {
     const url = request.nextUrl.clone()
     url.pathname = '/app'
     const redirectResponse = NextResponse.redirect(url)
     copyCookies(supabaseResponse, redirectResponse)
     return redirectResponse
-  }
-
-  // Unauthenticated or anonymous users must be redirected to login for protected routes
-  if ((!claims || claims.is_anonymous) && isProtectedRoute) {
-    const next = request.nextUrl.pathname + request.nextUrl.search
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('next', next)
-    return NextResponse.redirect(loginUrl)
   }
 
   return supabaseResponse
