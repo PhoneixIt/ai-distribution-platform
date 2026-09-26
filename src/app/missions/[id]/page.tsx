@@ -90,7 +90,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
           technologyFocus: mission.technology_focus,
           partnerTypes: mission.partner_types,
           customerSegment: mission.customer_segment,
-          desiredCandidateCount: 100,
+          desiredCandidateCount: 200,
         }),
       })
       const payload = await readJson(response)
