@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 // @ts-expect-error Node test runner loads the TypeScript source directly.
 import { discoverPartnersFromWeb } from '../../src/agents/partner-discovery/web-discovery.ts'
-// @ts-expect-error Node test runner loads the TypeScript source directly.
 import type {
   PartnerDiscoveryRequest,
   WebSearchProvider,
