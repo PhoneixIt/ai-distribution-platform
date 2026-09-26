@@ -4,4 +4,4 @@ import { functions } from '@/inngest/functions'
 
 export const runtime = 'nodejs'
 
-export const POST = serve({ client: inngest, functions })
+export const { GET, POST, PUT } = serve({ client: inngest, functions })
