@@ -173,7 +173,7 @@ export async function discoverPartnersFromWeb(
     DISCOVERY_POOL_MAXIMUM
   )
   const candidates = new Map<string, PartnerCandidate>()
-  const skippedResults: string[] = []
+  const skippedResults = new Set<string>()
   let searchResultsProcessed = 0
 
   for (const query of searchQueries) {
@@ -182,7 +182,7 @@ export async function discoverPartnersFromWeb(
     try {
       results = await provider.search({ query, maxResults: 10 })
     } catch (error) {
-      skippedResults.push(
+      skippedResults.add(
         `Query failed: ${query} (${error instanceof Error ? error.message : 'Unknown search error.'})`
       )
       continue
@@ -192,13 +192,13 @@ export async function discoverPartnersFromWeb(
 
     for (const result of results) {
       if (!result.title.trim() || !isHttpUrl(result.url)) {
-        skippedResults.push(`Invalid result skipped: ${result.url || result.title}`)
+        skippedResults.add(`Invalid result skipped: ${result.url || result.title}`)
         continue
       }
 
       try {
         if (!isLikelyCompanyResult(result)) {
-          skippedResults.push(`Non-company or non-canonical result skipped: ${result.url}`)
+          skippedResults.add(`Non-company or non-canonical result skipped: ${result.url}`)
           continue
         }
 
@@ -206,18 +206,18 @@ export async function discoverPartnersFromWeb(
         const key = candidateKey(candidate)
 
         if (!candidate.companyName || !candidate.website || !key) {
-          skippedResults.push(`Invalid result skipped: ${result.url || result.title}`)
+          skippedResults.add(`Invalid result skipped: ${result.url || result.title}`)
           continue
         }
 
         if (candidates.has(key)) {
-          skippedResults.push(`Duplicate result skipped: ${result.url}`)
+          skippedResults.add(`Duplicate result skipped: ${result.url}`)
           continue
         }
 
         candidates.set(key, scorePartnerCandidate(candidate, request))
       } catch {
-        skippedResults.push(`Unusable result skipped: ${result.url || result.title}`)
+        skippedResults.add(`Unusable result skipped: ${result.url || result.title}`)
       }
     }
   }
@@ -231,7 +231,7 @@ export async function discoverPartnersFromWeb(
     source: 'web-search',
     searchQueries,
     searchResultsProcessed,
-    skippedResults,
+    skippedResults: [...skippedResults],
   }
 }
 
