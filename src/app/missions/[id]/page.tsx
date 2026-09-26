@@ -81,7 +81,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     try {
       const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const payload = await readJson(response)
-      if (!response.ok) throw new Error(payload.error || 'Action failed.')
+      if (!response.ok) throw new Error(String(payload.error || 'Action failed.'))
       const missionId = mission?.id
       if (missionId) await load(missionId)
       setNotice('Action completed.')
@@ -106,7 +106,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
         }),
       })
       const payload = await readJson(response)
-      if (!response.ok) throw new Error(payload.error || 'Discovery failed.')
+      if (!response.ok) throw new Error(String(payload.error || 'Discovery failed.'))
       await load(mission.id)
       setNotice('Discovery completed. PortAi has prepared the candidates for review.')
     } catch (e) {
@@ -122,7 +122,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     try {
       const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
       const payload = await readJson(response)
-      if (!response.ok) throw new Error(payload.error || 'Stage failed.')
+      if (!response.ok) throw new Error(String(payload.error || 'Stage failed.'))
       await load(mission.id)
       setNotice(label + ' completed.')
     } catch (e) { setError(e instanceof Error ? e.message : 'Stage failed.') }
