@@ -36,13 +36,6 @@ export async function POST(_request: Request, context: Context) {
     .limit(10)
   if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
   if (!candidates?.length) return NextResponse.json({ error: 'No qualified candidates are available for contact research.' }, { status: 409 })
-  if (candidates.length < 10) {
-    return NextResponse.json({
-      error: 'Mission requires 10 qualified candidates before contact research can start.',
-      qualifiedCandidates: candidates.length,
-      required: 10
-    }, { status: 409 })
-  }
 
   const domains = candidates.map((row) => domainFromWebsite(row.website)).filter((x): x is string => Boolean(x))
   if (!domains.length) return NextResponse.json({ error: 'No candidate websites can be enriched.' }, { status: 409 })
