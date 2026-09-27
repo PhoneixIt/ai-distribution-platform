@@ -20,6 +20,7 @@
     "test:discovery-enqueue": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/discovery-enqueue.test.ts",
     "test:qualification": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/qualification.test.ts",
     "test:operating-layer": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/operating-layer-provider.test.ts",
+    "test:mission-summary": "node --experimental-strip-types --experimental-loader ./scripts/resolve-typescript.mjs --no-warnings --test tests/unit/mission-result-summary.test.ts",
     "prepare": "husky"
   },
   "dependencies": {
