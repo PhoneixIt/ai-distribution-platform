@@ -31,17 +31,15 @@ const ecosystemItems = [
   { href: '/partners', label: 'Partners' },
   { href: '/customers', label: 'Customers' },
   { href: '/products', label: 'Products & solutions' },
-  { href: '/opportunities', label: 'Opportunities' },
-  { href: '/engagements', label: 'Relationships' },
 ]
 
 const rolePriorities: Record<WorkspaceRole, string[]> = {
-  vendor: ['/partners', '/distributors', '/customers', '/products', '/opportunities', '/engagements', '/vendors'],
-  distributor: ['/vendors', '/partners', '/customers', '/products', '/opportunities', '/engagements', '/distributors'],
-  partner: ['/vendors', '/distributors', '/customers', '/opportunities', '/engagements', '/partners', '/products'],
-  customer: ['/vendors', '/distributors', '/partners', '/opportunities', '/engagements', '/products', '/customers'],
-  other: ['/partners', '/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
-  unconfigured: ['/partners', '/vendors', '/distributors', '/customers', '/products', '/opportunities', '/engagements'],
+  vendor: ['/partners', '/distributors', '/customers', '/products', '/vendors'],
+  distributor: ['/vendors', '/partners', '/customers', '/products', '/distributors'],
+  partner: ['/vendors', '/distributors', '/customers', '/partners', '/products'],
+  customer: ['/vendors', '/distributors', '/partners', '/products', '/customers'],
+  other: ['/partners', '/vendors', '/distributors', '/customers', '/products'],
+  unconfigured: ['/partners', '/vendors', '/distributors', '/customers', '/products'],
 }
 
 function getNavigation(profile: WorkspaceProfile) {
@@ -50,36 +48,24 @@ function getNavigation(profile: WorkspaceProfile) {
   const dashboardLabel = profile.primaryType === 'other' ? 'Workspace dashboard' : 'Home'
 
   return [
-    { label: 'Workspace', items: [{ href: '/app', label: dashboardLabel }, ...orderedItems] },
+    { label: 'Home', items: [{ href: '/app', label: dashboardLabel }] },
     { label: 'AI & discovery', items: [
       { href: '/workflow', label: 'Missions' },
       { href: '/discovery', label: 'Discover' },
       { href: '/matches', label: 'AI matching' },
-      { href: '/workforce', label: 'AI assistant' },
+      { href: '/workforce', label: 'AI workforce' },
     ]},
+    { label: 'Ecosystem', items: orderedItems },
     { label: 'Business', items: [
       { href: '/opportunities', label: 'Opportunities' },
       { href: '/engagements', label: 'Relationships' },
-      { href: '#', label: 'Deal registration', comingSoon: true },
-      { href: '#', label: 'Co-selling', comingSoon: true },
-      { href: '#', label: 'Account mapping', comingSoon: true },
     ]},
-    { label: 'Growth', items: [
-      { href: '#', label: 'Onboarding', comingSoon: true },
-      { href: '#', label: 'Training & certifications', comingSoon: true },
-      { href: '#', label: 'Campaigns & MDF', comingSoon: true },
-      { href: '#', label: 'Partner performance', comingSoon: true },
-    ]},
-    { label: 'Revenue & intelligence', items: [
+    { label: 'Intelligence', items: [
       { href: '/pricing', label: 'Pricing' },
-      { href: '#', label: 'Pipeline & revenue', comingSoon: true },
-      { href: '#', label: 'Ecosystem insights', comingSoon: true },
-      { href: '#', label: 'Marketplace', comingSoon: true },
     ]},
     { label: 'Administration', items: [
       { href: '/settings', label: 'Settings' },
-      { href: '#', label: 'Integrations', comingSoon: true },
-      { href: '#', label: 'Users & roles', comingSoon: true },
+      { href: '/integrations', label: 'Integrations' },
     ]},
   ]
 }

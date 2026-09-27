@@ -248,7 +248,7 @@ export default function OpportunitiesPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Opportunities</h1>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-sm text-slate-500">
               Track customer demand and route the right channel partners.
             </p>
           </div>
@@ -262,7 +262,7 @@ export default function OpportunitiesPage() {
         </div>
 
         {error ? (
-          <div className="rounded-xl border border-red-900 bg-red-950/20 p-4 text-sm text-red-300">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </div>
         ) : null}
@@ -270,7 +270,7 @@ export default function OpportunitiesPage() {
         {show ? (
           <form
             onSubmit={createOpportunity}
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-5"
+            className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
           >
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Input
@@ -329,16 +329,16 @@ export default function OpportunitiesPage() {
                 value={form.timeline}
                 onChange={(value) => setForm({ ...form, timeline: value })}
               />
-              <label className="text-sm text-slate-300">
+              <label className="text-sm text-slate-700">
                 Expected close date
                 <input
                   type="date"
                   value={form.expected_close_date}
                   onChange={(event) => setForm({ ...form, expected_close_date: event.target.value })}
-                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
                 />
               </label>
-              <label className="text-sm text-slate-300 md:col-span-2">
+              <label className="text-sm text-slate-700 md:col-span-2">
                 Description
                 <textarea
                   value={form.description}
@@ -346,7 +346,7 @@ export default function OpportunitiesPage() {
                     setForm({ ...form, description: event.target.value })
                   }
                   rows={3}
-                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
                 />
               </label>
             </div>
@@ -361,18 +361,18 @@ export default function OpportunitiesPage() {
         ) : null}
 
         {loading ? (
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-500">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
             Loading pipeline…
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-800 p-10 text-center">
+          <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center">
             <p className="font-medium">No opportunities yet.</p>
             <p className="mt-2 text-sm text-slate-500">
               Create a customer first, then create your first channel opportunity.
             </p>
             <Link
               href="/customers"
-              className="mt-4 inline-block text-sm text-blue-400"
+              className="mt-4 inline-block text-sm text-blue-700"
             >
               Go to customers →
             </Link>
@@ -382,13 +382,13 @@ export default function OpportunitiesPage() {
             {items.map((opportunity) => (
               <article
                 key={opportunity.id}
-                className="rounded-2xl border border-slate-800 bg-slate-900 p-5"
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="font-semibold">{opportunity.title}</h2>
-                      <span className="rounded-full border border-slate-700 px-2.5 py-1 text-[11px] text-slate-400">
+                      <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] text-slate-500">
                         {opportunity.status}
                       </span>
                     </div>
@@ -405,11 +405,11 @@ export default function OpportunitiesPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/opportunities/${opportunity.id}`} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-blue-500">Open</Link>
+                    <Link href={`/opportunities/${opportunity.id}`} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:border-blue-500">Open</Link>
                     <select
                     value={opportunity.stage}
                     onChange={(event) => void updateStage(opportunity.id, event.target.value)}
-                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm capitalize text-slate-200"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm capitalize text-slate-800"
                   >
                     {stages.map((stage) => (
                       <option key={stage} value={stage}>
@@ -419,7 +419,7 @@ export default function OpportunitiesPage() {
                     </select>
                   </div>
                 </div>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
                     className="h-full rounded-full bg-blue-500 transition-all"
                     style={{
@@ -448,13 +448,13 @@ function Input({
   required?: boolean
 }) {
   return (
-    <label className="text-sm text-slate-300">
+    <label className="text-sm text-slate-700">
       {label}
       <input
         required={required}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
       />
     </label>
   )
@@ -472,12 +472,12 @@ function Select({
   options: string[][]
 }) {
   return (
-    <label className="text-sm text-slate-300">
+    <label className="text-sm text-slate-700">
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
       >
         <option value="">Select…</option>
         {options.map(([valueOption, labelOption]) => (

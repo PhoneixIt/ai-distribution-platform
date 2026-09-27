@@ -6,10 +6,17 @@ import { discoverPartnersFromWeb } from './web-discovery'
 import { MOCK_CANDIDATES } from './__fixtures__/mock-candidates'
 import type { PartnerCandidate, PartnerDiscoveryAgent, PartnerDiscoveryDependencies, PartnerDiscoveryRequest, PartnerDiscoveryResult } from './types'
 
+/**
+ * Defence in depth. The API route is the primary validation boundary and rejects
+ * incomplete requests with a 400 after intent parsing, so anything reaching the agent
+ * already carries these fields. This guard exists so direct/internal callers and tests
+ * cannot bypass the requirement. It validates the parsed request; it does not
+ * re-parse or otherwise constrain the intent parser.
+ */
 function validateRequest(request: PartnerDiscoveryRequest): void {
-  if (!request.country.trim()) throw new Error('Partner discovery requires a country.')
-  if (!request.technologyFocus.trim()) throw new Error('Partner discovery requires a technology focus.')
-  if (request.partnerTypes.length === 0) throw new Error('Partner discovery requires at least one partner type.')
+  if (!request.country?.trim()) throw new Error('Partner discovery requires a country.')
+  if (!request.technologyFocus?.trim()) throw new Error('Partner discovery requires a technology focus.')
+  if (!request.partnerTypes?.length) throw new Error('Partner discovery requires at least one partner type.')
   if (!Number.isInteger(request.desiredCandidateCount) || request.desiredCandidateCount < 1) {
     throw new Error('Desired candidate count must be a positive integer.')
   }
@@ -19,9 +26,15 @@ export function createPartnerDiscoveryAgent(dependencies: PartnerDiscoveryDepend
   return {
     async discover(request) {
       validateRequest(request)
-      const candidates = dependencies.candidateSource
-        ? await dependencies.candidateSource.discover(request)
-        : discoverMockPartners(request)
+      // Never fall back to fixture candidates: a missing candidate source must fail
+      // loudly rather than present mock data as real discovery. Production uses
+      // discoverFromWeb(); tests inject an explicit candidateSource.
+      if (!dependencies.candidateSource) {
+        throw new Error(
+          'discover() requires an injected candidateSource. Use discoverFromWeb() for provider-backed discovery.'
+        )
+      }
+      const candidates = await dependencies.candidateSource.discover(request)
       const scoredCandidates = candidates
         .map((candidate) => scorePartnerCandidate(candidate, request))
         .sort((left, right) => right.fitScore - left.fitScore)
@@ -30,7 +43,7 @@ export function createPartnerDiscoveryAgent(dependencies: PartnerDiscoveryDepend
         request,
         candidates: scoredCandidates,
         generatedAt: new Date().toISOString(),
-        source: dependencies.candidateSource ? 'provider' : 'mock',
+        source: 'provider',
         searchQueries: [],
         searchResultsProcessed: 0,
         skippedResults: [],
@@ -38,7 +51,8 @@ export function createPartnerDiscoveryAgent(dependencies: PartnerDiscoveryDepend
       return result
     },
 
-    discoverFromWeb(request, provider = dependencies.webSearch) {
+    async discoverFromWeb(request, provider = dependencies.webSearch) {
+      validateRequest(request)
       if (!provider) throw new Error('A web search provider is required for web discovery.')
       return discoverPartnersFromWeb(request, provider)
     },

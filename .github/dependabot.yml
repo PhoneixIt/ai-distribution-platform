@@ -5,6 +5,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # TypeScript majors are adopted deliberately, never automatically.
+      # TypeScript 7 is a native-compiler major whose peer range (<7.0.0) broke
+      # `npm install` on the Vercel production build (dpl_H1HWkrQJNd7w8PkGSzQD4JiUpErj).
+      # Upgrading requires verifying the Next.js 16 type integration and
+      # eslint-config-next against the new compiler in the same change.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"

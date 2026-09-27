@@ -2,8 +2,8 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
-import { ButtonPrimary, Card } from '@/components/ui'
+import AppShell from '@/components/app-shell'
+import { ButtonPrimary, ButtonSecondary, Card } from '@/components/ui'
 import { getAuthenticatedClient } from '@/lib/supabase/client'
 import { createPartner } from '@/lib/supabase/services'
 
@@ -46,11 +46,11 @@ export default function AddPartnerPage() {
   }
 
   return (
-    <AuthenticatedLayout>
+    <AppShell title="Add a partner" subtitle="Add a real organization to your network and record the details you know.">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Add Partner</h1>
-          <p className="mt-1 text-slate-400">Create a new partner record in your directory.</p>
+          <p className="mt-1 text-slate-500">Create a new partner record in your directory.</p>
         </div>
 
         <Card className="max-w-2xl">
@@ -62,21 +62,21 @@ export default function AddPartnerPage() {
             <Field label="Partner Types (comma-separated)"><input value={partnerTypes} onChange={(event) => setPartnerTypes(event.target.value)} placeholder="e.g., MSP, Reseller, System Integrator" className={input} /></Field>
             <Field label="Technologies (comma-separated)"><input value={technologies} onChange={(event) => setTechnologies(event.target.value)} placeholder="e.g., Cybersecurity, Cloud Infrastructure" className={input} /></Field>
 
-            {error && <div className="rounded-lg border border-red-900/60 bg-red-950/20 p-3 text-sm text-red-300">{error}</div>}
+            {error && <div className="rounded-lg border border-red-900/60 bg-red-950/20 p-3 text-sm text-red-700">{error}</div>}
 
             <div className="flex gap-3 pt-4">
               <ButtonPrimary type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create Partner'}</ButtonPrimary>
-              <ButtonPrimary href="/partners" className="bg-slate-700 hover:bg-slate-600">Cancel</ButtonPrimary>
+              <ButtonSecondary href="/partners">Cancel</ButtonSecondary>
             </div>
           </form>
         </Card>
       </div>
-    </AuthenticatedLayout>
+    </AppShell>
   )
 }
 
-const input = 'mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none'
+const input = 'mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:outline-none'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block text-sm font-medium text-slate-300">{label}{children}</label>
+  return <label className="block text-sm font-medium text-slate-700">{label}{children}</label>
 }

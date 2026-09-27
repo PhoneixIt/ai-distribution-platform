@@ -1,27 +1,39 @@
 import { NextResponse } from 'next/server'
 import type { PartnerDiscoveryRequest } from '@/agents/partner-discovery/types'
+import { parseDiscoveryIntent } from '@/lib/missions/discovery-intent'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
 import { inngest } from '@/inngest/client'
 
 const MAX_CANDIDATES = 200
 
+/**
+ * Request normalization keeps the intent-first behaviour from the recovery branch:
+ * when the caller does not supply structured filters, they are inferred from the
+ * mission objective. Explicit filters always win over inferred values.
+ */
 function normalizeRequest(input: Partial<PartnerDiscoveryRequest>): PartnerDiscoveryRequest {
+  const objective = String(input.objective || '').trim()
+  const inferred = parseDiscoveryIntent(objective)
   const partnerTypes = Array.isArray(input.partnerTypes)
     ? input.partnerTypes.map((value) => String(value).trim()).filter(Boolean)
     : []
 
   return {
-    country: String(input.country || '').trim(),
+    objective: objective || undefined,
+    country: String(input.country || '').trim() || inferred.country || '',
     market: input.market ? String(input.market).trim() : undefined,
-    partnerTypes,
-    technologyFocus: String(input.technologyFocus || '').trim(),
+    partnerTypes: partnerTypes.length ? partnerTypes : inferred.partnerTypes,
+    technologyFocus: String(input.technologyFocus || '').trim() || inferred.technologyFocus || '',
     industry: input.industry ? String(input.industry).trim() : undefined,
-    customerSegment: input.customerSegment ? String(input.customerSegment).trim() : undefined,
+    customerSegment: input.customerSegment ? String(input.customerSegment).trim() : inferred.customerSegment,
     serviceOrCapability: input.serviceOrCapability ? String(input.serviceOrCapability).trim() : undefined,
     vendorPartnership: input.vendorPartnership ? String(input.vendorPartnership).trim() : undefined,
     certification: input.certification ? String(input.certification).trim() : undefined,
     companySize: input.companySize ? String(input.companySize).trim() : undefined,
-    desiredCandidateCount: Math.min(MAX_CANDIDATES, Math.max(1, Number(input.desiredCandidateCount) || 10)),
+    // Intent-first default from the AI-matching line: explicit filters win, then an
+    // intent-parsed count, then a sensible default. This is a request target, not a
+    // qualification gate — completion is still derived from persisted evidence.
+    desiredCandidateCount: Math.min(MAX_CANDIDATES, Math.max(1, Number(input.desiredCandidateCount) || inferred.desiredCandidateCount || 25)),
   }
 }
 
@@ -48,8 +60,14 @@ export async function POST(request: Request) {
   }
 
   const discoveryRequest = normalizeRequest(input)
-  if (!discoveryRequest.country || !discoveryRequest.technologyFocus) return NextResponse.json({ error: 'Country and technology focus are required.' }, { status: 400 })
-  if (!discoveryRequest.partnerTypes.length) return NextResponse.json({ error: 'At least one partner type is required.' }, { status: 400 })
+  if (!discoveryRequest.country || !discoveryRequest.technologyFocus || !discoveryRequest.partnerTypes.length) {
+    return NextResponse.json(
+      {
+        error: 'Discovery needs a target country, technology focus, and at least one partner type. Add them to the objective or enter them in the filters.',
+      },
+      { status: 400 }
+    )
+  }
 
   const missionResult = await supabase
     .from('missions')
@@ -78,6 +96,8 @@ export async function POST(request: Request) {
     .eq('id', mission.id)
   if (missionUpdate.error) return NextResponse.json({ error: missionUpdate.error.message }, { status: 500 })
 
+  // The run is persisted BEFORE the event is emitted, with the production-compatible
+  // status `running`. The durable workflow owns all subsequent state transitions.
   const { data: run, error: runError } = await supabase
     .from('discovery_runs')
     .insert({ user_id: user.id, request: discoveryRequest, provider: 'multi-search', status: 'running' })
@@ -88,6 +108,31 @@ export async function POST(request: Request) {
     const failureUpdate = await supabase.from('missions').update({ status: 'failed', current_stage: 'failed', error_message: runError?.message || 'Could not create discovery run.' }).eq('id', mission.id)
     if (failureUpdate.error) console.error('Failed to mark mission after discovery run creation error.', { missionId: mission.id, error: failureUpdate.error })
     return NextResponse.json({ error: runError?.message || 'Could not create discovery run.' }, { status: 500 })
+  }
+
+  // Link the mission to the run immediately, before the workflow starts. Without this
+  // the mission only learns its run id on success, so a running, stalled or failed run
+  // is untraceable from the mission and per-run candidate counts cannot be resolved.
+  // The column already exists in production; no schema change is involved.
+  const linkUpdate = await supabase
+    .from('missions')
+    .update({ discovery_run_id: run.id })
+    .eq('id', mission.id)
+
+  if (linkUpdate.error) {
+    // Keep mission and run coherent: fail the run rather than emit an event for a
+    // mission that cannot be linked back to it.
+    const failUpdate = await supabase
+      .from('discovery_runs')
+      .update({ status: 'failed', error_message: 'Could not link discovery run to mission.', completed_at: new Date().toISOString() })
+      .eq('id', run.id)
+    if (failUpdate.error) console.error('Failed to mark discovery run as failed after mission link error.', { runId: run.id, error: failUpdate.error })
+    const missionFailUpdate = await supabase
+      .from('missions')
+      .update({ status: 'failed', current_stage: 'failed', error_message: 'Could not link discovery run to mission.' })
+      .eq('id', mission.id)
+    if (missionFailUpdate.error) console.error('Failed to mark mission as failed after mission link error.', { missionId: mission.id, error: missionFailUpdate.error })
+    return NextResponse.json({ error: 'Could not link discovery run to mission.' }, { status: 500 })
   }
 
   try {
@@ -103,6 +148,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to queue discovery workflow.' }, { status: 500 })
   }
 
+  // Enqueue accepted. This is NOT completion: the workflow has not run yet.
   return NextResponse.json({ missionId: mission.id, runId: run.id, status: 'running' })
 }
 

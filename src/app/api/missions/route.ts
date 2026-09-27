@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedServerClient } from '@/lib/supabase/server'
+import { parseDiscoveryIntent } from '@/lib/missions/discovery-intent'
+import { enrichMissionResultSummary, tallyCandidatesByRun } from '@/lib/missions/result-summary'
+import type { CandidateTally } from '@/lib/missions/result-summary'
 
 function clean(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
@@ -17,6 +20,10 @@ export async function POST(request: NextRequest) {
 
     if (!objective) return NextResponse.json({ error: 'Mission objective is required.' }, { status: 400 })
     if (objective.length > 4000) return NextResponse.json({ error: 'Mission objective is too long.' }, { status: 400 })
+    const inferred = parseDiscoveryIntent(objective)
+    const requestedPartnerTypes = Array.isArray(body?.partnerTypes)
+      ? body.partnerTypes.map(clean).filter(Boolean).slice(0, 10)
+      : []
 
     const membership = await supabase
       .from('org_members')
@@ -38,12 +45,10 @@ export async function POST(request: NextRequest) {
         vendor_name: clean(body?.vendorName) || null,
         product_name: clean(body?.productName) || null,
         market: clean(body?.market) || null,
-        country: clean(body?.country) || null,
-        partner_types: Array.isArray(body?.partnerTypes)
-          ? body.partnerTypes.map(clean).filter(Boolean).slice(0, 10)
-          : [],
-        technology_focus: clean(body?.technologyFocus) || null,
-        customer_segment: clean(body?.customerSegment) || null,
+        country: clean(body?.country) || inferred.country || null,
+        partner_types: requestedPartnerTypes.length ? requestedPartnerTypes : inferred.partnerTypes,
+        technology_focus: clean(body?.technologyFocus) || inferred.technologyFocus || null,
+        customer_segment: clean(body?.customerSegment) || inferred.customerSegment || null,
         status: 'draft',
         current_stage: 'defined',
       })
@@ -77,7 +82,7 @@ export async function GET() {
 
   const missions = data || []
   const runIds = missions.map((mission) => mission.discovery_run_id).filter(Boolean)
-  const candidateCounts = new Map<string, { discovered: number; verified: number; qualified: number; needs_review: number; research_failed: number }>()
+  let tallies: Map<string, CandidateTally> = new Map()
 
   if (runIds.length) {
     const { data: candidates, error: candidateError } = await supabase
@@ -86,44 +91,10 @@ export async function GET() {
       .in('discovery_run_id', runIds)
 
     if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
-
-    for (const candidate of candidates || []) {
-      const current = candidateCounts.get(candidate.discovery_run_id) || {
-        discovered: 0,
-        verified: 0,
-        qualified: 0,
-        needs_review: 0,
-        research_failed: 0,
-      }
-      current.discovered += 1
-      if (candidate.research_status === 'researched') current.verified += 1
-      if (candidate.research_status === 'failed') current.research_failed += 1
-      if (candidate.qualification_status === 'qualified') current.qualified += 1
-      if (candidate.qualification_status === 'needs_review') current.needs_review += 1
-      candidateCounts.set(candidate.discovery_run_id, current)
-    }
+    tallies = tallyCandidatesByRun(candidates)
   }
 
-  const enrichedMissions = missions.map((mission) => {
-    const counts = mission.discovery_run_id ? candidateCounts.get(mission.discovery_run_id) : undefined
-    return counts
-      ? {
-          ...mission,
-          result_summary: {
-            ...(mission.result_summary || {}),
-            ...counts,
-            selected: 0,
-            returned: mission.candidate_count,
-          },
-        }
-      : {
-          ...mission,
-          result_summary: {
-            ...(mission.result_summary || {}),
-            selected: 0,
-          },
-        }
-  })
+  const enrichedMissions = missions.map((mission) => enrichMissionResultSummary(mission, tallies))
 
   return NextResponse.json({ missions: enrichedMissions })
 }

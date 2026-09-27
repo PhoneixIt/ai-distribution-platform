@@ -91,3 +91,21 @@ No UI capability is advertised as an external action unless a real backend tool 
 3. **Revenue risk** — route to Sales Agent, inspect open opportunities and product-line revenue, identify risk signals and create follow-up actions.
 
 When OpenAI is configured, the orchestrator selects specialists and specialists can call their permitted tools. Without a key, the same state transitions can be exercised through the explicit rules fallback so the UI does not pretend an unavailable model is running.
+
+### Provider provenance is persisted, not assumed
+
+A run is never recorded against a model that did not answer. The provider is resolved
+**before** the `agent_runs` row is created, so there is no window in which a run claims
+OpenAI while running on rules.
+
+| Condition | `agent_runs.provider` | `agent_runs.model` | `agent_runs.status` | `agent_runs.error_message` |
+| --- | --- | --- | --- | --- |
+| Credential resolved | `openai_responses` | effective model | `completed` / `waiting_approval` | `null` |
+| Credential missing, empty, or throws | `rules_fallback` | `null` | `partial` | the provider failure |
+
+`partial` is a valid `agent_runs` status and is the honest terminal state for a run that
+completed its deterministic analysis with no model participation. The run response also
+carries `degraded` and `degradedReason` so an API consumer never has to infer the state.
+The credential error is never swallowed: it is captured, persisted, and returned.
+
+Enforced by `tests/unit/operating-layer-provider.test.ts` (`npm run test:operating-layer`).

@@ -2,112 +2,221 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
-import { ensureWorkspace } from '@/lib/supabase/workspace'
+import AppShell from '@/components/app-shell'
+
+type Mission = {
+  id: string
+  objective: string
+  vendor_name: string | null
+  product_name: string | null
+  country: string | null
+  partner_types: string[]
+  technology_focus: string | null
+  customer_segment: string | null
+  status: string
+  current_stage: string
+  candidate_count: number
+  discovery_run_id: string | null
+  result_summary: Record<string, unknown>
+}
 
 type Match = {
-  id: string
-  opportunity_id: string
-  partner_id: string
-  match_score: number
-  capability_fit_score: number | null
-  industry_fit_score: number | null
-  geography_fit_score: number | null
-  match_reason: string | null
-  recommended_action: string | null
-  status: string
   rank: number
-  opportunities?: { id: string; title: string } | null
-  partners?: { id: string; name: string; website: string | null; country: string | null; is_verified: boolean } | null
+  matchScore: number
+  technologyFit: number
+  partnerFit: number
+  geographyFit: number
+  segmentFit: number
+  evidenceFit: number
+  qualificationStatus: string
+  researchStatus: string
+  researchConfidence: number
+  company: {
+    id: string
+    name: string
+    website: string | null
+    country: string | null
+    description: string | null
+  }
+  strengths: string[]
+  risks: string[]
+  reasons: string[]
+  concerns: string[]
+  evidence: unknown[]
+  recommendedAction: string
 }
 
 export default function MatchesPage() {
+  const [missions, setMissions] = useState<Mission[]>([])
+  const [selectedMissionId, setSelectedMissionId] = useState('')
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
+  const [running, setRunning] = useState(false)
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
 
-  useEffect(() => {
-    let active = true
-    async function load() {
-      try {
-        const { supabase, orgId } = await ensureWorkspace()
-        const { data, error: queryError } = await supabase
-          .from('partner_matches')
-          .select('id,opportunity_id,partner_id,match_score,capability_fit_score,industry_fit_score,geography_fit_score,match_reason,recommended_action,status,rank,opportunities(id,title),partners(id,name,website,country,is_verified)')
-          .eq('org_id', orgId)
-          .order('match_score', { ascending: false })
-          .limit(100)
-        if (queryError) throw queryError
-        if (!active) return
-        setMatches((data || []).map((row) => ({
-          ...row,
-          opportunities: Array.isArray(row.opportunities) ? row.opportunities[0] ?? null : row.opportunities,
-          partners: Array.isArray(row.partners) ? row.partners[0] ?? null : row.partners,
-        })) as Match[])
-      } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : 'Could not load AI matches.')
-      } finally {
-        if (active) setLoading(false)
-      }
+  async function loadMissions() {
+    setLoading(true)
+    setError('')
+    try {
+      const response = await fetch('/api/matching/mission')
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'Could not load missions.')
+      const nextMissions = (payload.missions || []) as Mission[]
+      setMissions(nextMissions)
+      if (!selectedMissionId && nextMissions.length) setSelectedMissionId(nextMissions[0].id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load missions.')
+    } finally {
+      setLoading(false)
     }
-    void load()
-    return () => { active = false }
+  }
+
+  // Data-fetching effect: state updates happen after the async request resolves.
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- loadMissions awaits the request before any setState, so this is not a cascading render. */
+  useEffect(() => {
+    void loadMissions()
   }, [])
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+
+  async function runMatching() {
+    if (!selectedMissionId) return
+    setRunning(true)
+    setError('')
+    setMessage('')
+    setMatches([])
+    try {
+      const response = await fetch('/api/matching/mission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ missionId: selectedMissionId }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'AI matching failed.')
+      setMatches((payload.matches || []) as Match[])
+      setMessage(`Matching complete: ${payload.matched} candidates ranked from the selected mission.`)
+      await loadMissions()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'AI matching failed.')
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  const selectedMission = missions.find((mission) => mission.id === selectedMissionId) || null
 
   return (
-    <AuthenticatedLayout>
+    <AppShell title="AI matching" subtitle="Run an explainable matching mission against the real companies PortAi has already discovered and researched.">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">AI Matches</h1>
-          <p className="mt-1 text-sm text-slate-400">Partner recommendations generated from your opportunity and partner data.</p>
-        </div>
-
-        {error && <div className="rounded-xl border border-red-900 bg-red-950/20 p-4 text-sm text-red-300">{error}</div>}
-        {loading ? (
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-500">Loading matches…</div>
-        ) : matches.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-800 p-10 text-center">
-            <p className="font-medium">No AI matches yet.</p>
-            <p className="mt-2 text-sm text-slate-500">Open an opportunity and run partner matching to generate ranked recommendations.</p>
-            <Link href="/opportunities" className="mt-4 inline-block text-sm text-blue-400">Go to opportunities →</Link>
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Mission-driven matching</p>
+          <h1 className="mt-2 text-3xl font-bold">Match the best companies to a mission</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            PortAi uses the selected mission criteria, discovery evidence and research status to rank candidates. No opportunity record is required for this mission-level matching step.
+          </p>
+          <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
+            <select
+              value={selectedMissionId}
+              onChange={(event) => { setSelectedMissionId(event.target.value); setMatches([]); setMessage('') }}
+              disabled={!missions.length || running}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500"
+            >
+              {!missions.length ? <option value="">No discovered missions available</option> : missions.map((mission) => (
+                <option key={mission.id} value={mission.id}>{mission.objective}</option>
+              ))}
+            </select>
+            <button
+              disabled={!selectedMissionId || running || loading}
+              onClick={() => void runMatching()}
+              className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {running ? 'Running AI matching…' : matches.length ? 'Re-run AI matching' : 'Run AI matching'}
+            </button>
           </div>
-        ) : (
-          <div className="space-y-3">
+          {selectedMission && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-4">
+              <Metric label="Candidates" value={selectedMission.candidate_count} />
+              <Metric label="Country" value={selectedMission.country || 'Not specified'} />
+              <Metric label="Technology" value={selectedMission.technology_focus || 'Objective only'} />
+              <Metric label="Partner type" value={selectedMission.partner_types.join(', ') || 'Objective only'} />
+            </div>
+          )}
+        </section>
+
+        {error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+        {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{message}</div>}
+
+        {!loading && !missions.length ? (
+          <section className="rounded-2xl border border-dashed border-slate-200 p-10 text-center">
+            <p className="font-medium">No completed discovery mission is available yet.</p>
+            <p className="mt-2 text-sm text-slate-500">Run a discovery mission first; its researched companies will then become available to the matching engine.</p>
+            <Link href="/discovery" className="mt-4 inline-block text-sm font-medium text-blue-700">Start a discovery mission →</Link>
+          </section>
+        ) : null}
+
+        {matches.length ? (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Ranked mission matches</p>
+                <h2 className="mt-1 text-xl font-semibold">{matches.length} candidates</h2>
+              </div>
+              <span className="text-xs text-slate-500">Deterministic + evidence-backed</span>
+            </div>
+
             {matches.map((match) => (
-              <article key={match.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <article key={match.company.id + '-' + match.rank} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-semibold">{match.partners?.name || 'Partner'}</h2>
-                      {match.partners?.is_verified && <span className="rounded-full border border-emerald-900 px-2 py-1 text-[11px] text-emerald-400">Verified</span>}
-                      <span className="rounded-full border border-slate-700 px-2 py-1 text-[11px] text-slate-400">{match.status}</span>
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-bold text-slate-700">{match.rank}</span>
+                      <h3 className="text-lg font-semibold">{match.company.name}</h3>
+                      <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-500">{match.qualificationStatus.replaceAll('_', ' ')}</span>
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">{match.opportunities?.title || 'Opportunity'} · {match.partners?.country || 'Country not set'}</p>
-                    <p className="mt-3 text-sm text-slate-300">{match.match_reason || 'Structured data indicates potential fit.'}</p>
+                    <p className="mt-2 text-sm text-slate-500">{match.company.country || 'Country not verified'} · Research {match.researchStatus}</p>
+                    <p className="mt-3 text-sm text-slate-700">{match.company.description || 'No verified description recorded.'}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {match.strengths.map((item) => <span key={item} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">{item}</span>)}
+                    </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-xs uppercase tracking-wider text-slate-500">Match score</p>
-                    <p className="text-3xl font-bold text-blue-400">{Math.round(Number(match.match_score))}%</p>
+                    <p className="text-xs uppercase tracking-wider text-slate-500">Match</p>
+                    <p className="text-3xl font-bold text-blue-700">{match.matchScore}%</p>
+                    <p className="mt-1 text-xs text-slate-500">Evidence {match.evidenceFit}%</p>
                   </div>
                 </div>
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <Metric label="Capability" value={match.capability_fit_score} />
-                  <Metric label="Industry" value={match.industry_fit_score} />
-                  <Metric label="Geography" value={match.geography_fit_score} />
+
+                <div className="mt-5 grid gap-3 md:grid-cols-4">
+                  <Metric label="Technology" value={match.technologyFit + '%'} />
+                  <Metric label="Partner type" value={match.partnerFit + '%'} />
+                  <Metric label="Geography" value={match.geographyFit + '%'} />
+                  <Metric label="Customer segment" value={match.segmentFit + '%'} />
                 </div>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
-                  <p className="text-sm text-slate-400">{match.recommended_action || 'Review the partner before outreach.'}</p>
-                  <Link href={`/opportunities/${match.opportunity_id}`} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-blue-500">Open opportunity</Link>
-                </div>
+
+                <details className="mt-5 border-t border-slate-200 pt-4">
+                  <summary className="cursor-pointer text-sm font-medium text-blue-700">View reasoning & evidence</summary>
+                  <div className="mt-4 grid gap-5 md:grid-cols-2">
+                    <div>
+                      <h4 className="text-sm font-semibold">Why it matched</h4>
+                      <ul className="mt-2 space-y-2 text-sm text-slate-500">{(match.reasons.length ? match.reasons : match.strengths).map((item) => <li key={item}>• {item}</li>)}</ul>
+                      {!!match.risks.length && <><h4 className="mt-5 text-sm font-semibold">Risks</h4><ul className="mt-2 space-y-2 text-sm text-slate-500">{match.risks.map((item) => <li key={item}>• {item}</li>)}</ul></>}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold">Recommended next step</h4>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">{match.recommendedAction}</p>
+                      {!!match.evidence.length && <><h4 className="mt-5 text-sm font-semibold">Evidence</h4><ul className="mt-2 space-y-2 text-xs text-slate-500">{match.evidence.slice(0, 6).map((item, index) => <li key={index}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>)}</ul></>}
+                    </div>
+                  </div>
+                </details>
               </article>
             ))}
-          </div>
-        )}
+          </section>
+        ) : null}
       </div>
-    </AuthenticatedLayout>
+    </AppShell>
   )
 }
 
-function Metric({ label, value }: { label: string; value: number | null }) {
-  return <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2"><p className="text-[10px] uppercase tracking-wider text-slate-600">{label}</p><p className="mt-1 text-sm font-semibold text-slate-300">{value == null ? '—' : `${Math.round(Number(value))}%`}</p></div>
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs uppercase tracking-wider text-slate-500">{label}</p><p className="mt-2 truncate text-sm font-semibold text-slate-800">{String(value)}</p></div>
 }
