@@ -42,15 +42,24 @@ const GENERIC_RESULT_TITLES = [
   /^soc as a service$/i,
   /^cybersecurity managed services$/i,
   /^cybersecurity consulting$/i,
-  /^security systems integrators?(?: in germany)?$/i,
-  /^global system integrators?(?: in germany)?$/i,
-  /^industrial automation companies in germany$/i,
-  /^managed service providers? in germany$/i,
-  /^top \d+ managed service providers?\b/i,
-  /^top .* managed service providers?\b/i,
-  /^.* companies? in germany$/i,
-  /^.* providers? in germany$/i,
+  /^security systems integrators?$/i,
+  /^global system integrators?$/i,
+  /^industrial automation companies$/i,
+  /^managed service providers?$/i,
+  // "Top N ..." listicles.
+  /^top\s+\d+\s+\S/i,
+  // Directory/listicle titles: a plural noun phrase qualified by a place, e.g.
+  // "Managed Service Providers in Netherlands" or "Top MSPs in Netherlands".
+  // These rules used to name "germany" literally, so listicles for every other
+  // market were admitted as candidate companies.
+  /\b(?:companies|providers|partners|distributors|resellers|integrators|msps?|mssps?|firms|agencies|consultants|advisors)\s+(?:in|for|near|serving)\s+[^|]{2,48}$/i,
 ]
+
+/**
+ * A trailing page label is a document title artifact, not part of the company
+ * name: "Dutch NCCA: Home" is the organisation "Dutch NCCA", not "Dutch NCCA: Home".
+ */
+const PAGE_LABEL_SUFFIX = /\s*[|:-]\s*(?:home|homepage|start(?:seite)?|overview)\s*$/i
 
 const ARTICLE_LIKE_TITLE =
   /\b(?:study|studie|report|bericht|news|article|obligations|deadlines|measures|workforce|lagebild|state of|press release|job|jobs|career|careers)\b/i
@@ -65,7 +74,7 @@ function companyNameFromDomain(result: WebSearchResult) {
 }
 
 function companyNameFromResult(result: WebSearchResult) {
-  const title = result.title.trim()
+  const title = result.title.trim().replace(PAGE_LABEL_SUFFIX, '').trim()
   const domainName = companyNameFromDomain(result)
 
   if (GENERIC_RESULT_TITLES.some((pattern) => pattern.test(title)) || ARTICLE_LIKE_TITLE.test(title)) {
@@ -75,7 +84,9 @@ function companyNameFromResult(result: WebSearchResult) {
   const partnershipTitle = title.match(/^([A-Z][A-Za-z0-9&.\s-]{2,50})\s+(?:partnership|partners?)\b/i)
   if (partnershipTitle?.[1]?.trim()) return partnershipTitle[1].trim()
 
-  const titleName = title.split(/\s+[|:-]\s+/)[0].trim()
+  // Split on the first separator with or without surrounding spaces so that
+  // "Dutch NCCA: Home" yields "Dutch NCCA".
+  const titleName = title.split(/\s*[|:-]\s+/)[0].trim()
   const wordCount = titleName.split(/\s+/).filter(Boolean).length
   const looksLikeSentence =
     /\b(?:für|for|and|with|services|beratung|consulting|selection|security workforce)\b/i.test(
@@ -111,9 +122,17 @@ function isLikelyCompanyResult(result: WebSearchResult) {
       return false
     }
 
-    const title = result.title.trim()
+    // A trailing page label is stripped first, so "Dutch NCCA: Home" is judged on
+    // "Dutch NCCA" instead of being discarded because "Home" is a generic title.
+    const title = result.title.trim().replace(PAGE_LABEL_SUFFIX, '').trim()
     if (!title) return false
-    if (GENERIC_RESULT_TITLES.some((pattern) => pattern.test(title))) return false
+    // A listicle title is often "Managed IT Services In Netherlands | Top MSPs in
+    // Netherlands - InfoMSP", so every delimited segment is checked as well as
+    // the whole title.
+    const segments = [title, ...title.split(/\s*[|:-]\s+/).filter(Boolean)]
+    if (segments.some((segment) => GENERIC_RESULT_TITLES.some((pattern) => pattern.test(segment)))) {
+      return false
+    }
     if (ARTICLE_LIKE_TITLE.test(title)) return false
 
     return true
