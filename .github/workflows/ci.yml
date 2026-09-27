@@ -49,6 +49,9 @@ jobs:
       - name: AI operating layer provider provenance tests
         run: npm run test:operating-layer
 
+      - name: Mission result summary tests
+        run: npm run test:mission-summary
+
       - name: Production build
         run: npm run build
         env:
